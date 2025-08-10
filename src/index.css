@@ -1,0 +1,34 @@
+:root {
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh; /* высота экрана */
+  width: 100vw; /* ширина экрана */
+  overflow-x: hidden; /* запрещаем горизонтальную прокрутку */
+  background-color: #00ff0d; /* общий фон приложения */
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Центрируем рабочую область с ограничением по ширине */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#root {
+  max-width: 100vh; /* ограничение ширины высотой экрана */
+  width: 100%;
+  min-height: 100vh;
+}
