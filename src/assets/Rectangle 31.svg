@@ -1,0 +1,24 @@
+<svg width="406" height="93" viewBox="0 0 406 93" fill="none" xmlns="http://www.w3.org/2000/svg">
+<foreignObject x="-15" y="-15" width="436" height="123"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(7.5px);clip-path:url(#bgblur_0_85_233_clip_path);height:100%;width:100%"></div></foreignObject><g opacity="0.7" filter="url(#filter0_n_85_233)" data-figma-bg-blur-radius="15">
+<path d="M0 7C0 3.13401 3.13401 0 7 0H399C402.866 0 406 3.13401 406 7V86C406 89.866 402.866 93 399 93H318.001C315.62 93 313.403 91.7904 312.115 89.789L303.067 75.734C301.779 73.7325 299.561 72.5229 297.181 72.5229H87.6378C85.5838 72.5229 83.6335 73.425 82.3035 74.9902L69.0965 90.5327C67.7665 92.0979 65.8162 93 63.7623 93H7C3.13401 93 0 89.866 0 86V7Z" fill="#D9D9D9" fill-opacity="0.25"/>
+</g>
+<defs>
+<filter id="filter0_n_85_233" x="-15" y="-15" width="436" height="123" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="1.6666666269302368 1.6666666269302368" stitchTiles="stitch" numOctaves="3" result="noise" seed="7582" />
+<feColorMatrix in="noise" type="luminanceToAlpha" result="alphaNoise" />
+<feComponentTransfer in="alphaNoise" result="coloredNoise1">
+<feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "/>
+</feComponentTransfer>
+<feComposite operator="in" in2="shape" in="coloredNoise1" result="noise1Clipped" />
+<feFlood flood-color="rgba(0, 0, 0, 0.25)" result="color1Flood" />
+<feComposite operator="in" in2="noise1Clipped" in="color1Flood" result="color1" />
+<feMerge result="effect1_noise_85_233">
+<feMergeNode in="shape" />
+<feMergeNode in="color1" />
+</feMerge>
+</filter>
+<clipPath id="bgblur_0_85_233_clip_path" transform="translate(15 15)"><path d="M0 7C0 3.13401 3.13401 0 7 0H399C402.866 0 406 3.13401 406 7V86C406 89.866 402.866 93 399 93H318.001C315.62 93 313.403 91.7904 312.115 89.789L303.067 75.734C301.779 73.7325 299.561 72.5229 297.181 72.5229H87.6378C85.5838 72.5229 83.6335 73.425 82.3035 74.9902L69.0965 90.5327C67.7665 92.0979 65.8162 93 63.7623 93H7C3.13401 93 0 89.866 0 86V7Z"/>
+</clipPath></defs>
+</svg>
