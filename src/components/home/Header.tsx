@@ -14,20 +14,33 @@ const StyledInfo = styled.div`
   padding: 16px 23px;
 `;
 
-const StyledUser = styled.div``;
+const StyledUser = styled.div`
+  display:flex;`;
 
 const StyledButton = styled.button`
-border: none;
-background: transparent;
-&:nth-child(2) {
-    margin-left: 34px;
-  }
+  border: none;
+  background: transparent;
+  &:nth-child(2) {
+      margin-left: 34px;
+    }
 `;
 
 
 const StyledIcon = styled.img``;
 
-const StyledUserImg = styled.img``;
+const StyledUserImgWrapper = styled.div`
+  width:35px;
+  height:35px;
+  overflow: hidden;
+  border-radius:50%;
+  border: 1px solid #85FFF0;
+  box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
+  -webkit-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
+  -moz-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
+`
+
+const StyledUserImg = styled.img`
+`;
 
 const StyledUserTextWrapper = styled.div`
 display:flex;
@@ -50,7 +63,9 @@ export default function Header() {
           <StyledUserText>Good Evening,</StyledUserText>
           <StyledUserText>Alex!</StyledUserText>
         </StyledUserTextWrapper>
-        <StyledUserImg src={avatar}/>
+        <StyledUserImgWrapper>
+          <StyledUserImg src={avatar}/>
+        </StyledUserImgWrapper>
       </StyledUser>
     </StyledWrapper>
   );
