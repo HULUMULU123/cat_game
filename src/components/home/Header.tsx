@@ -5,13 +5,14 @@ import rules from "../../assets/icons/rules.svg";
 import avatar from "../../assets/avatar.jpg"
 const StyledWrapper = styled.div`
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 23px;
 `;
 
 const StyledInfo = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 23px;
+  
 `;
 
 const StyledUser = styled.div`
@@ -33,20 +34,26 @@ const StyledUserImgWrapper = styled.div`
   height:35px;
   overflow: hidden;
   border-radius:50%;
-  border: 1px solid #85FFF0;
+  border: 2px solid #85FFF0;
   box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
   -webkit-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
   -moz-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
 `
 
 const StyledUserImg = styled.img`
+  width:100%;
 `;
 
 const StyledUserTextWrapper = styled.div`
 display:flex;
 flex-direction:column;
 justify-content:right`;
-const StyledUserText = styled.span``;
+const StyledUserText = styled.span`
+color: rgba(255,255,255,0.5);
+&:nth-child(2) {
+      color: rgba(255,255,255,1);
+    }
+`;
 export default function Header() {
   return (
     <StyledWrapper>
