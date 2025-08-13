@@ -47,7 +47,9 @@ const StyledUserImg = styled.img`
 const StyledUserTextWrapper = styled.div`
 display:flex;
 flex-direction:column;
-justify-content:right`;
+
+text-align:right;
+margin-right:11px;`;
 const StyledUserText = styled.span`
 color: rgba(255,255,255,0.5);
 font-size: 14px;
