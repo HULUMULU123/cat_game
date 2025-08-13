@@ -50,6 +50,8 @@ flex-direction:column;
 justify-content:right`;
 const StyledUserText = styled.span`
 color: rgba(255,255,255,0.5);
+font-size: 14px;
+font-weight: 300;
 &:nth-child(2) {
       color: rgba(255,255,255,1);
     }

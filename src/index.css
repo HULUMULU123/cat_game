@@ -1,6 +1,12 @@
 :root {
 }
 
+@font-face {
+  font-family: 'Gilroy';
+  src: url('./assets/fonts/Gilroy-ExtraBold.otf') format('opentype');
+  
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -11,6 +17,7 @@ a:hover {
 }
 
 body {
+  font-family: 'Gilroy', sans-serif;
   margin: 0;
   padding: 0;
   height: 100vh; /* высота экрана */
