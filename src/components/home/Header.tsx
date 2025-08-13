@@ -22,7 +22,7 @@ const StyledButton = styled.button`
   border: none;
   background: transparent;
   &:nth-child(2) {
-      margin-left: 34px;
+      margin-left: 16px;
     }
 `;
 
