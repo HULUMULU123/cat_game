@@ -13,10 +13,17 @@ const StyledWrapper = styled.div`
 
 const StyledContentWrapper = styled.div`
   width: 90%;
-  margin: 18px auto 9px auto;
+  margin: 0 auto;
+  padding: 21px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 `
 const StyledCoinWrapper = styled.div`
   display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 20px;
 `
 const StyledCoinImg = styled.img`
   width: 37px;
@@ -25,13 +32,19 @@ const StyledCoinImg = styled.img`
 const StyledCoinCount = styled.span``
 
 const StyledCoinLine = styled.span`
+  display:block;
   width:100%;
   height:1px;
   border-radius:5px;
+  background: #85FFF0;
+  box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
+  -webkit-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
+  -moz-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
   `
 
 const StyledCoinName = styled.span`
-margin-left: auto;`
+margin-left: auto;
+`
 
 export default function CrashCount() {
   return (
