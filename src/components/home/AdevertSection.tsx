@@ -6,6 +6,7 @@ const StyledWrapper = styled.div`
     display:flex;
     justify-content:space-between;
     width: 90%;
+    background: #fff;
 `
 
 const StyledColumn = styled.div`
