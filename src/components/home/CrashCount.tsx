@@ -12,7 +12,7 @@ const StyledWrapper = styled.div`
 `;
 
 const StyledContentWrapper = styled.div`
-  width: 90%;
+  width: 88%;
   margin: 0 auto;
   padding: 21px 0;
   display: flex;
@@ -23,7 +23,7 @@ const StyledCoinWrapper = styled.div`
   display:flex;
   align-items:center;
   justify-content:center;
-  gap: 20px;
+  gap: 10px;
 `
 const StyledCoinImg = styled.img`
   width: 37px;
