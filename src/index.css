@@ -7,6 +7,18 @@
   
 }
 
+@font-face {
+  font-family: 'Conthrax'; 
+  src: url('./assets/fonts/Conthrax.ttf') format('truetype');
+  font-style: normal;    /* или italic */
+}
+
+@font-face {
+  font-family: 'Roboto'; 
+  src: url('./assets/fonts/Roboto.ttf') format('truetype');
+  font-style: normal;    /* или italic */
+}
+
 a {
   font-weight: 500;
   color: #646cff;

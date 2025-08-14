@@ -17,7 +17,7 @@ const StyledContentWrapper = styled.div`
   padding: 21px 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 4px;
 `
 const StyledCoinWrapper = styled.div`
   display:flex;
@@ -29,7 +29,12 @@ const StyledCoinImg = styled.img`
   width: 37px;
   `
 
-const StyledCoinCount = styled.span``
+const StyledCoinCount = styled.span`
+  font-family: 'Conthrax', sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  color: #fff;
+  `
 
 const StyledCoinLine = styled.span`
   display:block;
@@ -43,7 +48,11 @@ const StyledCoinLine = styled.span`
   `
 
 const StyledCoinName = styled.span`
-margin-left: auto;
+  margin-left: auto;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 100;
+  font-size: 14px;
+  color: #fff;
 `
 
 export default function CrashCount() {
