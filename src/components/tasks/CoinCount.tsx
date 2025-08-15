@@ -8,6 +8,7 @@ padding: 15px 20px;
 `
 
 const StyledCoinWrapper = styled.div`
+display:flex;
 margin:0 auto;
 align-items: center;
 `
@@ -25,9 +26,11 @@ height: 30px;`
 
 export default function CoinCount() {
   return (
-    <StyledCoinWrapper>
-        <StyledCoinImg src={coin}/>
-        <StyledCoinCount>500</StyledCoinCount>
-    </StyledCoinWrapper>
+    <StyledContentWrapper>
+        <StyledCoinWrapper>
+            <StyledCoinImg src={coin}/>
+            <StyledCoinCount>500</StyledCoinCount>
+        </StyledCoinWrapper>
+    </StyledContentWrapper>
   )
 }
