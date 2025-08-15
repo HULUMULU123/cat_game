@@ -104,9 +104,11 @@ const StyledActiveIndicator = styled.div`
 `
 const StyledLight = styled.div`
   margin: 0 auto;
-  box-shadow: 1px 3px 55px -1px rgba(44,194,169,0.75);
--webkit-box-shadow: 1px 3px 55px -1px rgba(44,194,169,0.75);
--moz-box-shadow: 1px 3px 55px -1px rgba(44,194,169,0.75);
+  height:2px;
+  width: 100%;
+  box-shadow: 1px -76px 51px -1px rgba(44,194,169,0.75);
+-webkit-box-shadow: 1px -76px 51px -1px rgba(44,194,169,0.75);
+-moz-box-shadow: 1px -76px 51px -1px rgba(44,194,169,0.75);
 `
 export default function Layout() {
   const location = useLocation();
