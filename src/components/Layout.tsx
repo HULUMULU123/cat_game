@@ -124,7 +124,7 @@ export default function Layout() {
           $main={true}
           $active={location.pathname === "/" ? 1 : 0}
         >
-          <StyledMyIcon $main={true} $active={location.pathname === "/" ? 1 : 0} />
+          <MyIcon fill={location.pathname === "/" ? '#2CC2A9' : "#fff" }/>
         </NavButton>
 
         <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
