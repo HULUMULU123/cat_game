@@ -3,10 +3,11 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import tasks from "../assets/icons/tasks.svg";
 import logo from "../assets/icons/logo.svg";
-import { ReactComponent as MyIcon }  from "../assets/icons/rain.svg";
+import rain  from "../assets/icons/rain.svg";
 import quiz from "../assets/icons/quiz.svg";
 import prize from "../assets/icons/prize.svg";
 import bg from "../assets/bg_image.png"
+import MyIcon from "./tasks/CoinCount";
 const LayoutWrapper = styled.div`
   /* padding-bottom: 70px; отступ под меню */
   /* ограничение ширины высотой экрана */
@@ -93,12 +94,7 @@ const StyledIcon = styled.img`
   }};
 `;
 
-const StyledMyIcon = styled(MyIcon)`
-  width: ${({ $main }) => ($main ? "40px" : "30px")};
-  height: ${({ $main }) => ($main ? "40px" : "30px")};
-  fill: ${({ $main, $active }) =>
-    $main && $active ? "#2CC2A9" : "white"};
-`;
+
 export default function Layout() {
   const location = useLocation();
 
