@@ -30,13 +30,15 @@ background: #4fc5bf;
   box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
   -webkit-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
   -moz-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
-  /* Размытие заднего фона */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  border-radius: 7px;
+  padding: 0 5px;
 `
 
 const StyledButtonImg = styled.img`
-width: 80%;`
+width: 60%;
+margin: 0 auto`
 
 const StyledButtonSpan = styled.span`
 color: #fff;
