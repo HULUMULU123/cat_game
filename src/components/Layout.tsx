@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import tasks from "../assets/icons/tasks.svg";
 import logo from "../assets/icons/logo.svg";
-import rain from "../assets/icons/rain.svg";
+import { ReactComponent as MyIcon }  from "../assets/icons/rain.svg";
 import quiz from "../assets/icons/quiz.svg";
 import prize from "../assets/icons/prize.svg";
 import bg from "../assets/bg_image.png"
@@ -93,6 +93,12 @@ const StyledIcon = styled.img`
   }};
 `;
 
+const StyledMyIcon = styled(MyIcon)`
+  width: ${({ $main }) => ($main ? "40px" : "30px")};
+  height: ${({ $main }) => ($main ? "40px" : "30px")};
+  fill: ${({ $main, $active }) =>
+    $main && $active ? "#2CC2A9" : "white"};
+`;
 export default function Layout() {
   const location = useLocation();
 
@@ -118,7 +124,7 @@ export default function Layout() {
           $main={true}
           $active={location.pathname === "/" ? 1 : 0}
         >
-          <StyledIcon $main={true} $active={location.pathname === "/" ? 1 : 0} src={rain} />
+          <StyledMyIcon $main={true} $active={location.pathname === "/" ? 1 : 0} />
         </NavButton>
 
         <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
