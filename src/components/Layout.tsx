@@ -17,7 +17,8 @@ const LayoutWrapper = styled.div`
   /* background-color: #f9f9f9; */
 
   background-image: url(${bg});
-  backdrop-filter: blur(100px);
+  background-position: center; /* центрировать */
+  background-repeat: no-repeat;
   background-size: 110%;
   position: relative;
 `;
