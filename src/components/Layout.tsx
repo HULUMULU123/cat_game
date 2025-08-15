@@ -77,11 +77,7 @@ const NavButton = styled(Link)`
     $main ? "1px 1px 18px 0px rgba(0, 223, 152, 0.75)" : "none"};
   -moz-box-shadow: ${({ $main }) =>
     $main ? "1px 1px 18px 0px rgba(0, 223, 152, 0.75)" : "none"};
-  svg {
-    fill: white;
-    width: 15px;
-    height: 15px;
-  }
+  
 `;
 
 const StyledIcon = styled.img`
