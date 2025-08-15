@@ -56,7 +56,7 @@ const BottomNav = styled.nav`
 const NavButton = styled(Link)`
   background: ${({ $main, $active }) => {
     if ($main && $active) return "white";
-    if ($main) return "green";
+    if ($main) return "#2CC2A9";
     return ""; // цвет по умолчанию
   }};
 
@@ -86,6 +86,11 @@ const NavButton = styled(Link)`
 const StyledIcon = styled.img`
   width: ${({ $main }) => ($main ? "40px" : "30px")};
   height: ${({ $main }) => ($main ? "40px" : "30px")};
+
+  fill: ${({ $main, $active }) => {
+    if ($main && $active) return "#2CC2A9";
+    return "white"; // цвет по умолчанию
+  }};
 `;
 
 export default function Layout() {
@@ -113,7 +118,7 @@ export default function Layout() {
           $main={true}
           $active={location.pathname === "/" ? 1 : 0}
         >
-          <StyledIcon $main src={rain} />
+          <StyledIcon $main={true} $active={location.pathname === "/" ? 1 : 0} src={rain} />
         </NavButton>
 
         <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
