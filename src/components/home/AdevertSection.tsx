@@ -33,16 +33,17 @@ background: #4fc5bf;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 7px;
-  padding: 0 5px;
+  padding: 5px 0;
 `
 
 const StyledButtonImg = styled.img`
 width: 60%;
-margin: 0 auto`
+margin: 0 auto;`
 
 const StyledButtonSpan = styled.span`
 color: #fff;
 font-family: 'Roboto', sans-serif;
+font-size: 12px;
 font-weight: 200;
 text-align: center;
 margin: 3px auto;
@@ -63,7 +64,7 @@ export default function AdevertSection() {
             </StyledColumn>
         <StyledColumn>
             <StyledButton>
-                <StyledButtonImg src={ozon}/>
+                <StyledButtonImg src={ozon} style={{width:'70%'}}/>
                 {/* <StyledButtonSpan></StyledButtonSpan> */}
             </StyledButton>
         </StyledColumn>
