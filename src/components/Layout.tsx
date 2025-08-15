@@ -132,7 +132,7 @@ export default function Layout() {
           active={location.pathname === "/simulation" ? 1 : 0}
         >
           <StyledIcon src={logo} />
-          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
+          <StyledActiveIndicator $active={location.pathname === "/simulation" ? 1 : 0}>
             
           </StyledActiveIndicator>
         </NavButton>
@@ -147,14 +147,14 @@ export default function Layout() {
 
         <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
           <StyledIcon src={quiz} />
-          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
+          <StyledActiveIndicator $active={location.pathname === "/quiz" ? 1 : 0}>
             
           </StyledActiveIndicator>
         </NavButton>
 
         <NavButton to="/prize" active={location.pathname === "/prize" ? 1 : 0}>
           <StyledIcon src={prize} />
-          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
+          <StyledActiveIndicator $active={location.pathname === "/prize" ? 1 : 0}>
             
           </StyledActiveIndicator>
         </NavButton>
