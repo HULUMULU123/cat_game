@@ -101,14 +101,15 @@ const StyledActiveIndicator = styled.div`
   border-radius: 10px;
   bottom: -130%;
   display:flex;
+  box-shadow: 1px -15px 19px -1px rgba(44,194,169,0.85);
+  -webkit-box-shadow: 1px -15px 19px -1px rgba(44,194,169,0.85);
+  -moz-box-shadow: 1px -15px 19px -1px rgba(44,194,169,0.85);
 `
 const StyledLight = styled.div`
   margin: 0 auto;
   height:2px;
   width: 100%;
-  box-shadow: 1px -76px 51px -1px rgba(44,194,169,0.75);
--webkit-box-shadow: 1px -76px 51px -1px rgba(44,194,169,0.75);
--moz-box-shadow: 1px -76px 51px -1px rgba(44,194,169,0.75);
+  
 `
 export default function Layout() {
   const location = useLocation();
@@ -123,7 +124,7 @@ export default function Layout() {
         <NavButton to="/tasks" $active={location.pathname === "/tasks" ? 1 : 0}>
           <StyledIcon src={tasks} />
           <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
-            <StyledLight></StyledLight>
+            
           </StyledActiveIndicator>
         </NavButton>
         <NavButton
@@ -131,6 +132,9 @@ export default function Layout() {
           active={location.pathname === "/simulation" ? 1 : 0}
         >
           <StyledIcon src={logo} />
+          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
+            
+          </StyledActiveIndicator>
         </NavButton>
 
         <NavButton
@@ -143,10 +147,16 @@ export default function Layout() {
 
         <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
           <StyledIcon src={quiz} />
+          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
+            
+          </StyledActiveIndicator>
         </NavButton>
 
         <NavButton to="/prize" active={location.pathname === "/prize" ? 1 : 0}>
           <StyledIcon src={prize} />
+          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
+            
+          </StyledActiveIndicator>
         </NavButton>
       </BottomNav>
     </>
