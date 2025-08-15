@@ -55,6 +55,7 @@ const BottomNav = styled.nav`
 `;
 
 const NavButton = styled(Link)`
+  position:relative;
   background: ${({ $main, $active }) => {
     if ($main && $active) return "white";
     if ($main) return "#2CC2A9";
@@ -90,6 +91,15 @@ const StyledIcon = styled.img`
   }};
 `;
 
+const StyledActiveIndicator = styled.div`
+  opacity: ${({$active}) => ($active ? "1" : '0')};
+  position: absolute;
+  width:100%;
+  height:100%;
+  background: #2cc2a9;
+  border-radius: 10px;
+  bottom: -50%;
+`
 
 export default function Layout() {
   const location = useLocation();
@@ -101,8 +111,9 @@ export default function Layout() {
       </LayoutWrapper>
 
       <BottomNav>
-        <NavButton to="/tasks" active={location.pathname === "/tasks" ? 1 : 0}>
+        <NavButton to="/tasks" $active={location.pathname === "/tasks" ? 1 : 0}>
           <StyledIcon src={tasks} />
+          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}></StyledActiveIndicator>
         </NavButton>
         <NavButton
           to="/simulation"
