@@ -4,7 +4,7 @@ const StyledContentWrapper = styled.div`
 width: 95%;
 background-color: rgba(217,217,217,0.6);
 border-radius: 7px;
-padding: 10px 0;
+padding: 20px 0 10px 0;
 margin: 0 auto;
 `
 
@@ -20,7 +20,7 @@ margin: 0 auto;
 const StyledInfoName = styled.span`
 font-size:22px;
 font-weight:700;
-margin-bottom:18px;
+margin-bottom:15px;
 color: #E1FFFB;
 `
 
