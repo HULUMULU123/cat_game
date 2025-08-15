@@ -4,22 +4,31 @@ const StyledContentWrapper = styled.div`
 width: 95%;
 background-color: rgba(217,217,217,0.6);
 border-radius: 7px;
+padding: 10px 0;
+margin: 0 auto;
 `
 
 const StyledWrapper = styled.div`
 width:90%;
 display:flex;
-flex-direction:row;
+flex-direction:column;
 align-items: center;
 font-family: 'Conthrax', sans-serif;
+margin: 0 auto;
 `
 
 const StyledInfoName = styled.span`
 font-size:22px;
-font-weight:700;`
+font-weight:700;
+margin-bottom:18px;
+color: #E1FFFB;
+`
 
 const StyledInfoTime = styled.span`
-font-size:12px;`
+font-size:12px;
+margin-bottom: 8px;
+color: #E1FFFB;
+`
 
 const StyledInfoLine = styled.span`
 display:block;
