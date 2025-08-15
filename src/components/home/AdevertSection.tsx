@@ -20,7 +20,6 @@ display: flex;
 flex-direction:column;
 align-items:center;
 width: 58px;
-height: 30px;
 background: #4fc5bf;
   background: linear-gradient(
     0deg,
@@ -63,7 +62,7 @@ export default function AdevertSection() {
             </StyledButton>
             </StyledColumn>
         <StyledColumn>
-            <StyledButton>
+            <StyledButton style={{width:'78px', padding:'5px 12px'}}>
                 <StyledButtonImg src={ozon} style={{width:'70%'}}/>
                 {/* <StyledButtonSpan></StyledButtonSpan> */}
             </StyledButton>
