@@ -4,8 +4,8 @@ import gift from '../../assets/icons/gift.svg'
 const StyledActionWrapper = styled.div`
 position: absolute;
 left: 50%;
-transform: translateY(-50%);
-bottom:50px;
+transform: translateX(-50%);
+bottom:90px;
 padding: 7px 40px;
 background: #fff;
 box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
@@ -25,7 +25,8 @@ const StyledActionContentWrapper = styled.div`
 `
 
 const StyledActionTextWrapper = styled.div`
-margin: 0 auto;`
+margin: 0 auto;
+font-family: 'Conthrax', sans-serif;`
 
 const StyledActionName = styled.span`
 display:block;
@@ -37,18 +38,23 @@ const StyledActionTimer = styled.span`
 display:block;
 text-align:center;
 color: #03624C;
-font-size: 28px;`
+font-size: 28px;
+font-weight: 700;`
 
 const StyledGiftWrapper = styled.div`
 position: absolute;
 top: -20px;
-right: -20px;
+right: -30%;
 background: #2CC295;
+border-radius:7px;
+display:flex;
+padding: 7px 15px;
 
 `
 
 const StyledGiftImg = styled.img`
-width: 60%;`
+width: 100%;
+margin: 0 auto;`
 export default function MainAction() {
   return (
     <StyledActionWrapper>
