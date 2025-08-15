@@ -52,6 +52,7 @@ const BottomNav = styled.nav`
   /* Размытие заднего фона */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
 `;
 
 const NavButton = styled(Link)`
@@ -94,13 +95,19 @@ const StyledIcon = styled.img`
 const StyledActiveIndicator = styled.div`
   opacity: ${({$active}) => ($active ? "1" : '0')};
   position: absolute;
-  width:100%;
+  width:120%;
   height:100%;
   background: #2cc2a9;
   border-radius: 10px;
-  bottom: -50%;
+  bottom: -130%;
+  display:flex;
 `
-
+const StyledLight = styled.div`
+  margin: 0 auto;
+  box-shadow: 1px 3px 55px -1px rgba(44,194,169,0.75);
+-webkit-box-shadow: 1px 3px 55px -1px rgba(44,194,169,0.75);
+-moz-box-shadow: 1px 3px 55px -1px rgba(44,194,169,0.75);
+`
 export default function Layout() {
   const location = useLocation();
 
@@ -113,7 +120,9 @@ export default function Layout() {
       <BottomNav>
         <NavButton to="/tasks" $active={location.pathname === "/tasks" ? 1 : 0}>
           <StyledIcon src={tasks} />
-          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}></StyledActiveIndicator>
+          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
+            <StyledLight></StyledLight>
+          </StyledActiveIndicator>
         </NavButton>
         <NavButton
           to="/simulation"
