@@ -12,6 +12,9 @@ box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
   -webkit-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
   -moz-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
   display:flex;
+width: 50%;
+max-width: 50vh;
+border-radius: 7px;
 
 `
 
@@ -25,10 +28,14 @@ const StyledActionTextWrapper = styled.div`
 margin: 0 auto;`
 
 const StyledActionName = styled.span`
+display:block;
+text-align:center;
 color: #03624C;
 font-size: 12px;`
 
 const StyledActionTimer = styled.span`
+display:block;
+text-align:center;
 color: #03624C;
 font-size: 28px;`
 
