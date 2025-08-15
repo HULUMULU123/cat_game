@@ -9,7 +9,7 @@ padding: 15px 20px;
 
 const StyledCoinWrapper = styled.div`
 display:flex;
-margin:0 auto;
+gap: 10px;
 align-items: center;
 `
 
