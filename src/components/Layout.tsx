@@ -6,7 +6,7 @@ import logo from "../assets/icons/logo.svg";
 import rain from "../assets/icons/rain.svg";
 import quiz from "../assets/icons/quiz.svg";
 import prize from "../assets/icons/prize.svg";
-
+import bg from "../assets/bg_image.png"
 const LayoutWrapper = styled.div`
   /* padding-bottom: 70px; отступ под меню */
   /* ограничение ширины высотой экрана */
@@ -14,7 +14,11 @@ const LayoutWrapper = styled.div`
   min-height: 100vh; /* ограничиваем ширину высотой окна */
   margin: 0 auto; /* центрируем по горизонтали */
   box-sizing: border-box;
-  background-color: #f9f9f9;
+  /* background-color: #f9f9f9; */
+
+  background-image: url("../assets/bg_image.png");
+  backdrop-filter: blur(100px);
+  background-size: 110%;
   position: relative;
 `;
 
