@@ -5,7 +5,7 @@ import dzen from '../../assets/dzen.png'
 const StyledWrapper = styled.div`
     display:flex;
     justify-content:space-between;
-    width: 90%;
+    width: 95%;
     margin: 0 auto;
 `
 
@@ -21,13 +21,30 @@ flex-direction:column;
 align-items:center;
 width: 58px;
 height: 30px;
-background:#000;
+background: #4fc5bf;
+  background: linear-gradient(
+    0deg,
+    rgba(79, 197, 191, 0.2) 15%,
+    rgba(150, 238, 172, 0.08) 100%
+  );
+  box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
+  -webkit-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
+  -moz-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
+  /* Размытие заднего фона */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 `
 
 const StyledButtonImg = styled.img`
 width: 80%;`
 
-const StyledButtonSpan = styled.span``
+const StyledButtonSpan = styled.span`
+color: #fff;
+font-family: 'Roboto', sans-serif;
+font-weight: 200;
+text-align: center;
+margin: 3px auto;
+`
 
 export default function AdevertSection() {
   return (
