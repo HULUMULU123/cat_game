@@ -6,13 +6,13 @@ position: absolute;
 left: 50%;
 transform: translateX(-50%);
 bottom:90px;
-padding: 7px 40px;
+padding: 7px 30px;
 background: #fff;
-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
-  -webkit-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
-  -moz-box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
+box-shadow: 1px 3px 6px 0px rgba(0, 255, 174, 0.3) inset;
+  -webkit-box-shadow: 1px 3px 6px 0px rgba(0, 255, 174, 0.3) inset;
+  -moz-box-shadow: 1px 3px 6px 0px rgba(0, 255, 174, 0.3) inset;
   display:flex;
-width: 50%;
+width: 60%;
 max-width: 50vh;
 border-radius: 7px;
 
@@ -31,13 +31,13 @@ font-family: 'Conthrax', sans-serif;`
 const StyledActionName = styled.span`
 display:block;
 text-align:center;
-color: #03624C;
+color: #1A9480;
 font-size: 12px;`
 
 const StyledActionTimer = styled.span`
 display:block;
 text-align:center;
-color: #03624C;
+color: #1A9480;
 font-size: 28px;
 font-weight: 700;`
 
