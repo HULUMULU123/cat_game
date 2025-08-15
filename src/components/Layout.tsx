@@ -16,7 +16,7 @@ const LayoutWrapper = styled.div`
   box-sizing: border-box;
   /* background-color: #f9f9f9; */
 
-  background-image: url("../assets/bg_image.png");
+  background-image: url(${bg});
   backdrop-filter: blur(100px);
   background-size: 110%;
   position: relative;
