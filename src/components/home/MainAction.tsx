@@ -44,7 +44,7 @@ font-weight: 700;`
 const StyledGiftWrapper = styled.div`
 position: absolute;
 top: -20px;
-right: -30%;
+right: -20%;
 background: #2CC295;
 border-radius:7px;
 display:flex;
