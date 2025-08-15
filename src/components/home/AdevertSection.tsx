@@ -62,7 +62,7 @@ export default function AdevertSection() {
             </StyledButton>
             </StyledColumn>
         <StyledColumn>
-            <StyledButton style={{width:'78px', padding:'5px 0'}}>
+            <StyledButton style={{width:'78px', padding:'10px 0'}}>
                 <StyledButtonImg src={ozon} style={{width:'70%'}}/>
                 {/* <StyledButtonSpan></StyledButtonSpan> */}
             </StyledButton>
