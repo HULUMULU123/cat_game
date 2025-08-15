@@ -7,7 +7,7 @@ import rain  from "../assets/icons/rain.svg";
 import quiz from "../assets/icons/quiz.svg";
 import prize from "../assets/icons/prize.svg";
 import bg from "../assets/bg_image.png"
-import MyIcon from "./tasks/CoinCount";
+import MyIcon from "./icons/MyIcon";
 const LayoutWrapper = styled.div`
   /* padding-bottom: 70px; отступ под меню */
   /* ограничение ширины высотой экрана */

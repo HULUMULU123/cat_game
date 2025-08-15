@@ -1,5 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
+import CoinCount from '../components/tasks/CoinCount'
 
 const StyledWrapper = styled.div`
     height:100vh;
@@ -8,6 +9,8 @@ const StyledWrapper = styled.div`
 `
 export default function Tasks() {
   return (
-    <StyledWrapper>Tasks</StyledWrapper>
+    <StyledWrapper>
+        <CoinCount/>
+    </StyledWrapper>
   )
 }
