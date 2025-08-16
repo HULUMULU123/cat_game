@@ -2,7 +2,7 @@ import styled from "styled-components"
 import arrow from "../../assets/icons/arrow.svg"
 import check from '../../assets/icons/check.svg'
 const StyledListItem = styled.li`
-
+opacity:  ${({ $done }) => ($done ? "0.6" : "1")};
 display:flex;
 padding: 15px 7px;
 justify-content: space-between;
@@ -16,7 +16,7 @@ position:relative;
 
 const StyledWrapper = styled.div`
 filter:  ${({ $done }) => ($done ? "blur(3px)" : "")};
-opacity:  ${({ $done }) => ($done ? "0.5" : "1")};
+
 width: 100%;
 height:100%;
 display:flex;
@@ -74,7 +74,7 @@ const StyledCheck = styled.img`
 `
 export default function TaskItem({name, img, done=false}) {
   return (
-    <StyledListItem >
+    <StyledListItem $done={done}>
       <StyledWrapper $done={done}>
         <StyledListItemContent>
           <StyledListImg src={img} />
