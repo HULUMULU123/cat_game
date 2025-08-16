@@ -11,6 +11,15 @@ background: rgba(255,255,255,0.3);
 align-items: center;
 `
 
+const StyledListItemContent = styled.div`
+display:flex;
+justify-content:space-between;
+margin: auto;
+align-items: center;
+width: 90%;
+
+`
+
 const StyledListImg = styled.img`
 width: 30px;
 `
@@ -33,9 +42,11 @@ background: #E1FFFB;
 export default function TaskItem({name, img}) {
   return (
     <StyledListItem>
+      <StyledListItemContent>
         <StyledListImg src={img} />
         <StyledListName>{name}</StyledListName>
         <StyledListButton>{'->'}</StyledListButton>
+      </StyledListItemContent>
     </StyledListItem>
   )
 }
