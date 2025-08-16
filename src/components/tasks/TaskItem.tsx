@@ -2,8 +2,7 @@ import styled from "styled-components"
 import arrow from "../../assets/icons/arrow.svg"
 import check from '../../assets/icons/check.svg'
 const StyledListItem = styled.li`
-filter:  ${({ $done }) => ($done ? "blur(3px)" : "")};
-opacity:  ${({ $done }) => ($done ? "0.5" : "1")};
+
 display:flex;
 padding: 15px 7px;
 justify-content: space-between;
@@ -14,6 +13,16 @@ background: rgba(255,255,255,0.3);
 align-items: center;
 position:relative;
 `
+
+const StyledWrapper = styled.div`
+filter:  ${({ $done }) => ($done ? "blur(3px)" : "")};
+opacity:  ${({ $done }) => ($done ? "0.5" : "1")};
+width: 100%;
+height:100%;
+display:flex;
+justify-content: space-between;
+margin: 0 auto;
+align-items: center;`
 
 const StyledListItemContent = styled.div`
 display:flex;
@@ -66,11 +75,13 @@ const StyledCheck = styled.img`
 export default function TaskItem({name, img, done=false}) {
   return (
     <StyledListItem $done={done}>
-      <StyledListItemContent>
-        <StyledListImg src={img} />
-        <StyledListName>{name}</StyledListName>
-        <StyledListButton><StyledButtonImg src={arrow}/></StyledListButton>
-      </StyledListItemContent>
+      <StyledWrapper>
+        <StyledListItemContent>
+          <StyledListImg src={img} />
+          <StyledListName>{name}</StyledListName>
+          <StyledListButton><StyledButtonImg src={arrow}/></StyledListButton>
+        </StyledListItemContent>
+      </StyledWrapper>
       <StyledCheck $done={done} src={check}/>
     </StyledListItem>
   )
