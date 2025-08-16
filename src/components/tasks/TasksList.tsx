@@ -38,8 +38,10 @@ export default function TasksList() {
     <StyledContentWrapper>
         <StyledTasksList>
           
-            
-          {Array.from({ length: 50 }).map((_, i) => (
+           {Array.from({ length: 5 }).map((_, i) => (
+            <TaskItem key={i} name='Просмотр рекламного ролика' img={advert} done={true}/>
+          ))} 
+          {Array.from({ length: 30 }).map((_, i) => (
             <TaskItem key={i} name='Просмотр рекламного ролика' img={advert} />
           ))}
         </StyledTasksList>
