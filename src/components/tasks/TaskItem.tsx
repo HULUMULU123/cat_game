@@ -51,7 +51,7 @@ border-radius:7px;
 const StyledButtonImg = styled.img`
 width:18px;
 margin: auto;
-display:  ${({ $done }) => ($done ? "block" : "none")};
+
 `
 
 const StyledCheck = styled.img`
@@ -61,6 +61,7 @@ const StyledCheck = styled.img`
   top:50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display:  ${({ $done }) => ($done ? "block" : "none")};
 `
 export default function TaskItem({name, img, done=false}) {
   return (
