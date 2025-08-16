@@ -28,15 +28,19 @@ scrollbar-width: thin;
 
 const StyledTasksList = styled.ul`
 padding: 0;
+display: flex;
+flex-direction: column;
+gap: 5px;
 `
 export default function TasksList() {
   return (
     <StyledContentWrapper>
         <StyledTasksList>
-            <TaskItem name='Просмотр рекламного ролика' img={advert} />
-            <TaskItem name='Просмотр рекламного ролика' img={advert} />
-            <TaskItem name='Просмотр рекламного ролика' img={advert} />
-            <TaskItem name='Просмотр рекламного ролика' img={advert} />
+          
+            
+          {Array.from({ length: 50 }).map((_, i) => (
+            <TaskItem key={i} name='Просмотр рекламного ролика' img={advert} />
+          ))}
         </StyledTasksList>
     </StyledContentWrapper>
   )
