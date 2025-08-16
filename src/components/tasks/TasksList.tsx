@@ -7,22 +7,23 @@ width: 95%;
 
 overflow-y: scroll;   /* только вертикальный скролл */
 overflow-x: hidden;   /* горизонтального нет */
-padding-right: 5px;   /* отступ от контента */
+padding-right: 3px;   /* отступ от контента */
 box-sizing: content-box;
 
 scrollbar-width: thin;
   scrollbar-color: #E1FFFB #2CC2A9; /* активная | неактивная *//* чтобы padding не "съел" ширину */
+height: 75vh;
 &::-webkit-scrollbar{
-   width: 10px; 
+   width: 4px; 
 }
 &::-webkit-scrollbar-track{
   background: #2CC2A9;  /* неактивная часть */
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 &::-webkit-scrollbar-thumb{
   background: #E1FFFB;  /* активная часть */
-  border-radius: 8px;
+  border-radius: 20px;
 }
 `
 
