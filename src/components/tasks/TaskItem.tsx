@@ -1,5 +1,5 @@
 import styled from "styled-components"
-
+import arrow from "../../assets/icons/arrow.svg"
 const StyledListItem = styled.li`
 display:flex;
 padding: 15px 7px;
@@ -13,7 +13,7 @@ align-items: center;
 
 const StyledListItemContent = styled.div`
 display:flex;
-justify-content:space-between;
+
 margin: auto;
 align-items: center;
 width: 90%;
@@ -22,6 +22,7 @@ width: 90%;
 
 const StyledListImg = styled.img`
 width: 30px;
+margin-right: 15px;
 `
 
 const StyledListName = styled.span`
@@ -29,13 +30,22 @@ font-family:'Conthrax', sans-serif;
 font-size: 11px;
 color: #E1FFFB;
 font-weight: 700;
+width:60%;
 `
 
 const StyledListButton = styled.button`
 width: 15%;
 padding: 7px 0;
 border:none;
-background: #E1FFFB;    
+background: #E1FFFB; 
+margin-left: auto;
+display: flex;  
+ 
+`
+
+const StyledButtonImg = styled.img`
+width:18px;
+margin: auto;
 `
 
 
@@ -45,7 +55,7 @@ export default function TaskItem({name, img}) {
       <StyledListItemContent>
         <StyledListImg src={img} />
         <StyledListName>{name}</StyledListName>
-        <StyledListButton>{'->'}</StyledListButton>
+        <StyledListButton><StyledButtonImg src={arrow}/></StyledListButton>
       </StyledListItemContent>
     </StyledListItem>
   )
