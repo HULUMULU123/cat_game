@@ -7,7 +7,7 @@ width: 95%;
 
 overflow-y: scroll;   /* только вертикальный скролл */
 overflow-x: hidden;   /* горизонтального нет */
-padding-right: 3px;   /* отступ от контента */
+   /* отступ от контента */
 box-sizing: content-box;
 
 scrollbar-width: thin;
