@@ -3,7 +3,7 @@ import coin from '../../assets/coin.png'
 
 const StyledContentWrapper = styled.div`
 display:flex;
-width: 100%;
+width: 90%;
 padding: 15px 20px;
 `
 

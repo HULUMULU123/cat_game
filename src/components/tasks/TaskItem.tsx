@@ -4,7 +4,10 @@ const StyledListItem = styled.li`
 display:flex;
 padding: 15px 7px;
 justify-content: space-between;
-width:100%;
+width:90%;
+margin: 0 auto;
+border-radius: 7px;
+background: rgba(255,255,255,0.5);
 `
 
 const StyledListImg = styled.img`

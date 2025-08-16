@@ -6,7 +6,7 @@ margin: 0 auto;
 width: 95%;`
 
 const StyledTasksList = styled.ul`
-
+padding: 0;
 `
 
 export default function TasksList() {
