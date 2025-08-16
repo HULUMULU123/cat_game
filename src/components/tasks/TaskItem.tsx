@@ -34,12 +34,13 @@ width:60%;
 `
 
 const StyledListButton = styled.button`
-width: 15%;
-padding: 7px 0;
+width: 20%;
+padding: 10px 0;
 border:none;
-background: #E1FFFB; 
+background: #44EDD1; 
 margin-left: auto;
 display: flex;  
+border-radius:7px;
  
 `
 
