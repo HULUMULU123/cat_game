@@ -74,8 +74,8 @@ const StyledCheck = styled.img`
 `
 export default function TaskItem({name, img, done=false}) {
   return (
-    <StyledListItem $done={done}>
-      <StyledWrapper>
+    <StyledListItem >
+      <StyledWrapper $done={done}>
         <StyledListItemContent>
           <StyledListImg src={img} />
           <StyledListName>{name}</StyledListName>
