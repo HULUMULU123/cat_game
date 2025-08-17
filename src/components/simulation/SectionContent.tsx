@@ -8,6 +8,7 @@ const StyledWrapper = styled.div`
     background: linear-gradient(216deg, rgba(18, 99, 88, 0.6) 0%, rgba(119, 162, 148, 0.4) 100%);
     padding: 15px 0 7px 0;
     margin: 0 auto;
+    margin-top: 10px;
 `
 const StyledContentWrapper = styled.div`
     width: 95%;
@@ -42,7 +43,7 @@ const StyledButton = styled.button`
     background: #126358;
     background: linear-gradient(216deg, rgba(18, 99, 88, 0.6) 0%, rgba(119, 162, 148, 0.4) 100%);
     
-    padding: 50px 7px;
+    padding: 7px 50px;
     border-radius: 7px;
     font-family: 'Conthrax', sans-serif;
     color: #fff;
