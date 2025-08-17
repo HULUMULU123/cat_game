@@ -4,6 +4,7 @@ import CoinCount from '../components/common/CoinCount'
 import SectionInfo from '../components/common/SectionInfo'
 import SectionContent from '../components/simulation/SectionContent'
 import SimulationRoadMap from '../components/simulation/SimulationRoadMap'
+import SimulationTimer from '../components/simulation/SimulationTimer'
 
 const StyledWrapper = styled.div`
     height:100vh;
@@ -17,6 +18,7 @@ export default function Simulation() {
         <SectionInfo InfoName={'СИМУЛЯЦИЯ'} InfoExtra={'0 / 260'}/>
         <SectionContent />
         <SimulationRoadMap/>
+        <SimulationTimer/>
     </StyledWrapper>
   )
 }
