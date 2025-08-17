@@ -26,11 +26,13 @@ const StyledTextP = styled.p`
     text-align: center;
     width:100%;
     color: rgb(168, 211, 205);
+    letter-spacing: 2px;
+    line-height:1.5;
 `
 const StyledTextSpan = styled.span`
     font-family: 'Conthrax', sans-serif;
     font-size: 10px;
-    margin: 10px auto;
+    margin: 20px auto 10px auto;
     color: rgb(134,180,173);
 `
 
@@ -38,9 +40,14 @@ const StyledButton = styled.button`
     display: flex;
     border: none;
     background: #126358;
-    background: radial-gradient(circle, rgba(18, 99, 88, 0.84) 50%, rgba(119, 162, 148, 0) 100%);
-    display: flex;
-    width: 60%;
+    background: linear-gradient(216deg, rgba(18, 99, 88, 0.6) 0%, rgba(119, 162, 148, 0.4) 100%);
+    
+    padding: 50px 7px;
+    border-radius: 7px;
+    font-family: 'Conthrax', sans-serif;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
 `
 export default function SectionContent() {
   return (
