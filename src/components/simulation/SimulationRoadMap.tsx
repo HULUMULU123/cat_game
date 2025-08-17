@@ -5,10 +5,10 @@ const StyledWrapper = styled.div`
 display:flex;
 position: relative;
 width: 95%;
-height: 40px;
+height: 100px;
 `
 const StyledContentWrapper = styled.ul`
-    height:50%;
+    height:70%;
     padding:0;
     width: 90%;
     display:flex;
@@ -30,7 +30,7 @@ const StyledLine = styled.span`
 const StyledGoalItem = styled.li`
     display: flex;
     flex-direction: column;
-    height: 100%;
+    /* height: 100%; */
     justify-content: space-between;
 `
 
@@ -38,12 +38,15 @@ const StyledDoneSpan = styled.span`
     display:block;
 `
 const StyledPointSpan = styled.span`
+    display: block;
     height:10px;
     width: 10px;
     border-radius: 50%;
     background: #85FFF0;
+    margin: 0 auto;
 `
-const StyledGoalSpan = styled.span``
+const StyledGoalSpan = styled.span`
+text-align: right;`
 
 export default function SimulationRoadMap() {
   return (
