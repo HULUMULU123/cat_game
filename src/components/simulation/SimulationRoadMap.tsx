@@ -6,6 +6,7 @@ display:flex;
 position: relative;
 width: 95%;
 height: 100px;
+margin: 0 auto;
 `
 const StyledContentWrapper = styled.ul`
     height:50%;
