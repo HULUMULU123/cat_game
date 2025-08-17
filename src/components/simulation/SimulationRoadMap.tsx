@@ -12,7 +12,7 @@ const StyledContentWrapper = styled.ul`
     padding:0;
     width: 90%;
     display:flex;
-    margin: 0 auto;
+    margin:  auto;
     justify-content: space-between;
 `
 
