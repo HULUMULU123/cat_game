@@ -1,7 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
-import CoinCount from '../components/tasks/CoinCount'
-import TasksInfo from '../components/tasks/TasksInfo'
+import CoinCount from '../components/common/CoinCount'
+import SectionInfo from '../components/common/SectionInfo'
 import TasksList from '../components/tasks/TasksList'
 
 const StyledWrapper = styled.div`
@@ -13,7 +13,7 @@ export default function Tasks() {
   return (
     <StyledWrapper>
         <CoinCount/>
-        <TasksInfo/>
+        <SectionInfo InfoName={'ИНФО - УЗЛЫ'} InfoExtra={'08 : 16 : 24'}/>
         <TasksList/>
     </StyledWrapper>
   )

@@ -37,12 +37,12 @@ height:2px;
 border-radius:10px;
 background: #85FFF0;
 `
-export default function TasksInfo() {
+export default function SectionInfo({InfoName, InfoExtra}) {
   return (
     <StyledContentWrapper>
         <StyledWrapper>
-            <StyledInfoName>ИНФО - УЗЛЫ</StyledInfoName>
-            <StyledInfoTime>08 : 16 : 24</StyledInfoTime>
+            <StyledInfoName>{InfoName}</StyledInfoName>
+            <StyledInfoTime>{InfoExtra}</StyledInfoTime>
             <StyledInfoLine></StyledInfoLine>
         </StyledWrapper>
     </StyledContentWrapper>
