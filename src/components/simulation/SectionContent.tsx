@@ -9,6 +9,7 @@ const StyledWrapper = styled.div`
     padding: 15px 0 7px 0;
     margin: 0 auto;
     margin-top: 10px;
+    backdrop-filter: blur(10px);
 `
 const StyledContentWrapper = styled.div`
     width: 95%;

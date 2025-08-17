@@ -8,7 +8,7 @@ width: 95%;
 height: 100px;
 `
 const StyledContentWrapper = styled.ul`
-    height:70%;
+    height:50%;
     padding:0;
     width: 90%;
     display:flex;
