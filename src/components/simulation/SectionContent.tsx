@@ -5,14 +5,16 @@ const StyledWrapper = styled.div`
     width: 95%;
     border-radius: 7px;
     background: #126358;
-    background: radial-gradient(circle, rgba(18, 99, 88, 0.84) 50%, rgba(119, 162, 148, 0) 100%);
+    background: linear-gradient(216deg, rgba(18, 99, 88, 0.6) 0%, rgba(119, 162, 148, 0.4) 100%);
     padding: 15px 0 7px 0;
+    margin: 0 auto;
 `
 const StyledContentWrapper = styled.div`
     width: 95%;
     display: flex;
     flex-direction:column;
     align-items:center;
+    margin: 0 auto;
 `
 
 const StyledTextP = styled.p`
@@ -29,7 +31,7 @@ const StyledTextSpan = styled.span`
     font-family: 'Conthrax', sans-serif;
     font-size: 10px;
     margin: 10px auto;
-    color: rgb(51,103,92);
+    color: rgb(134,180,173);
 `
 
 const StyledButton = styled.button`
