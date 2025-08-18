@@ -79,13 +79,15 @@ width: 20px;`
 const StyledPrize = styled.div`
 display: flex;
 align-items: center;
-padding: 7px 15px;
+padding: 7px 21px;
 background: #4fc5bf;
   background: linear-gradient(
     0deg,
     rgba(79, 197, 191, 0.2) 15%,
     rgba(150, 238, 172, 0.08) 100%
   );
+  gap: 10px;
+  border-radius: 7px;
 
 `
 
