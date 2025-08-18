@@ -51,6 +51,9 @@ const StyledPointSpan = styled.span`
     margin: 0 auto;
 `
 const StyledGoalSpan = styled.span`
+display: flex;
+align-items: center;
+justify-content:right;
 text-align: right;
 color: rgb(224, 255, 251);`
 

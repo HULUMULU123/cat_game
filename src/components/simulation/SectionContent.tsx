@@ -6,7 +6,7 @@ const StyledWrapper = styled.div`
     width: 95%;
     border-radius: 7px;
     background: #126358;
-    background: linear-gradient(216deg, rgba(18, 99, 88, 0.6) 0%, rgba(119, 162, 148, 0.4) 100%);
+    background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
     padding: 40px 0 20px 0;
     margin: 0 auto;
     margin-top: 10px;
@@ -43,7 +43,7 @@ const StyledButton = styled.button`
     display: flex;
     border: none;
     background: #126358;
-    background: linear-gradient(216deg, rgba(18, 99, 88, 0.6) 0%, rgba(119, 162, 148, 0.4) 100%);
+    background: linear-gradient(216deg, rgba(18, 99, 88, 0.7) 0%, rgba(119, 162, 148, 0.5) 50%);
     
     padding: 7px 50px;
     border-radius: 7px;
@@ -51,7 +51,7 @@ const StyledButton = styled.button`
     color: #fff;
     font-size: 20px;
     font-weight: 600;
-    gap:20px;
+    gap:10px;
 `
 
 const StyledCoinImg = styled.img`
