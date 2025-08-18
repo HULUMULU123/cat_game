@@ -18,20 +18,28 @@ font-size: 12px;
 font-weight: 700;
 font-family: "Conthrax", sans-serif;
 color: rgb(224,255,251);
+width: 70%;
+text-align: center;
 `
 
 const StyledAnswersList = styled.ul`
 padding: 0;
-margin: 0 auto;
+
 display:flex;
 gap: 5px;
 flex-direction: column;
+margin-top: 17px;
+align-items:center;
+`
+const StyledAnwerContent = styled.div`
+    width:80%;
+    display: flex;
 `
 
 const StyledAnswersItem = styled.li`
-width:100%;
+width:95%;
 display: flex;
-padding: 5px 10px;
+
 `
 
 const StyledAnswerNumber = styled.span`
@@ -39,6 +47,9 @@ color: #fff;
 font-size: 20px;
 font-family: 'Conthrax', sans-serif;
 font-weight: 700;
+display: flex;
+width: 20px;
+justify-content: center;
 `
 
 const StyledAnswerText = styled.span`
@@ -53,23 +64,31 @@ export default function QuizPart() {
   return (
     <StyledWrapper>
         <StyledContentWrapper>
-            <StyledQuestionSpan>КТО ТАКОЙ АЛЕКСАНДР МАКЕДОНСКИЙ?</StyledQuestionSpan>
+            <StyledQuestionSpan>КТО ТАКОЙ <br/> АЛЕКСАНДР МАКЕДОНСКИЙ?</StyledQuestionSpan>
             <StyledAnswersList>
                 <StyledAnswersItem>
-                    <StyledAnswerNumber>1</StyledAnswerNumber>
-                    <StyledAnswerText>Основатель Римской Империи</StyledAnswerText>
+                    <StyledAnwerContent>
+                        <StyledAnswerNumber>1</StyledAnswerNumber>
+                        <StyledAnswerText>Основатель Римской Империи</StyledAnswerText>
+                    </StyledAnwerContent>
                 </StyledAnswersItem>
                 <StyledAnswersItem>
-                    <StyledAnswerNumber>2</StyledAnswerNumber>
-                    <StyledAnswerText>Великий полководец и царь</StyledAnswerText>
+                    <StyledAnwerContent>
+                        <StyledAnswerNumber>2</StyledAnswerNumber>
+                        <StyledAnswerText>Великий полководец и царь</StyledAnswerText>
+                    </StyledAnwerContent>
                 </StyledAnswersItem>
                 <StyledAnswersItem>
-                    <StyledAnswerNumber>3</StyledAnswerNumber>
-                    <StyledAnswerText>Учёный из Древней Греции</StyledAnswerText>
+                    <StyledAnwerContent>
+                        <StyledAnswerNumber>3</StyledAnswerNumber>
+                        <StyledAnswerText>Учёный из Древней Греции</StyledAnswerText>
+                    </StyledAnwerContent>
                 </StyledAnswersItem>
                 <StyledAnswersItem>
-                    <StyledAnswerNumber>4</StyledAnswerNumber>
-                    <StyledAnswerText>Мифический герой Спарты</StyledAnswerText>
+                    <StyledAnwerContent>
+                        <StyledAnswerNumber>4</StyledAnswerNumber>
+                        <StyledAnswerText>Мифический герой Спарты</StyledAnswerText>
+                    </StyledAnwerContent>
                 </StyledAnswersItem>
             </StyledAnswersList>
         </StyledContentWrapper>
