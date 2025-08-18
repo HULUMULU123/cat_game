@@ -3,9 +3,7 @@ import styled from 'styled-components'
 
 const StyledWrapper = styled.div`
     display:flex;
-    position: absolute;
-    bottom: 70px;
-    left: 0;
+    width: 100%;
 `
 
 const StyledTimerSpan = styled.span`
