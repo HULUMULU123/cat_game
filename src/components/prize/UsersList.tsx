@@ -1,0 +1,55 @@
+import React from 'react'
+import styled from 'styled-components'
+import UsersItem from './UsersItem'
+
+const StyledWrapper = styled.div`
+    width: 95%;
+    display: flex;
+    margin: 0 auto;
+    flex-direction: column;
+
+`
+
+const StyledContentWrapper = styled.div`
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+`
+
+const StyledHeader = styled.h3`
+font-family: 'Conthrax', sans-serif;
+font-size: 12px;
+color: rgb(224,255,251);
+padding: 0;
+margin: 0;
+font-weight: 500;
+width: 60%; 
+text-align: center;
+`
+
+const StyledList = styled.ul`
+margin-top: 10px;
+display: flex;
+padding: 0;
+margin:0;
+align-items: center;
+gap: 5px;
+width: 100%;
+`
+
+export default function UsersList() {
+  return (
+    <StyledWrapper>
+        <StyledContentWrapper>
+            <StyledHeader>ТОП ИГРОКОВ ТЕКУЩЕГО СБОЯ</StyledHeader>
+            <StyledList>
+            {Array.from({ length: 30 }, (_, i) => (
+                <UsersItem key={i} number={i + 1} />
+            ))}
+            </StyledList>
+        </StyledContentWrapper>
+    </StyledWrapper>
+  )
+}
