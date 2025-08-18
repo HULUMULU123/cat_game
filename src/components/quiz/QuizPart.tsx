@@ -34,12 +34,16 @@ align-items:center;
 const StyledAnwerContent = styled.div`
     width:80%;
     display: flex;
+    margin: 0 auto;
+    align-items: center;
 `
 
 const StyledAnswersItem = styled.li`
-width:95%;
-display: flex;
-
+    width:95%;
+    display: flex;
+    background: #126358;
+    background: linear-gradient(216deg, rgba(18, 99, 88, 0.7) 0%, rgba(119, 162, 148, 0.5) 50%);
+    border-radius: 7px;
 `
 
 const StyledAnswerNumber = styled.span`
