@@ -1,12 +1,13 @@
 import React from 'react'
 import styled from 'styled-components'
+import coin from '../../assets/coin.png'
 
 const StyledWrapper = styled.div`
     width: 95%;
     border-radius: 7px;
     background: #126358;
     background: linear-gradient(216deg, rgba(18, 99, 88, 0.6) 0%, rgba(119, 162, 148, 0.4) 100%);
-    padding: 15px 0 7px 0;
+    padding: 40px 0 20px 0;
     margin: 0 auto;
     margin-top: 10px;
     backdrop-filter: blur(10px);
@@ -50,6 +51,12 @@ const StyledButton = styled.button`
     color: #fff;
     font-size: 20px;
     font-weight: 600;
+    gap:20px;
+`
+
+const StyledCoinImg = styled.img`
+    width: 23px;
+    height:23px;
 `
 export default function SectionContent() {
   return (
@@ -58,7 +65,7 @@ export default function SectionContent() {
             <StyledTextP style={{marginBottom: '5px'}}>“СИМУЛЯЦИЯ” - БЕЗВРЕМЕННЫЙ ТРЕНАЖЁР, ИМИТИРУЮЩИЙ СБОЙ. ЗДЕСЬ ВЫ МОЖЕТЕ ТРЕНИРОВАТЬСЯ В ЛЮБОЕ ВРЕМЯ.</StyledTextP>
             <StyledTextP>ИГРАЙТЕ И ЗАРАБАТЫВАЙТЕ ЦЕННЫЕ ПРИЗЫ !</StyledTextP>
             <StyledTextSpan>ЗАПУСТИТЬ СИМУЛЯЦИЮ</StyledTextSpan>
-            <StyledButton>200</StyledButton>
+            <StyledButton><StyledCoinImg src={coin}/>200</StyledButton>
         </StyledContentWrapper>
     </StyledWrapper>
   )

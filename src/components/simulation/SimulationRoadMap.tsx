@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-
+import coin from '../../assets/coin.png'
 const StyledWrapper = styled.div`
 display:flex;
 position: relative;
@@ -54,6 +54,11 @@ const StyledGoalSpan = styled.span`
 text-align: right;
 color: rgb(224, 255, 251);`
 
+const StyledCoinImg = styled.img`
+    width: 15px;
+    height: 15px;
+    margin-left: 10px;
+`
 export default function SimulationRoadMap() {
   return (
     <StyledWrapper>
@@ -61,17 +66,17 @@ export default function SimulationRoadMap() {
             <StyledGoalItem>
                 <StyledDoneSpan>100 / 260</StyledDoneSpan>
                 <StyledPointSpan></StyledPointSpan>
-                <StyledGoalSpan>100</StyledGoalSpan>
+                <StyledGoalSpan>100 <StyledCoinImg src={coin}/></StyledGoalSpan>
             </StyledGoalItem>
             <StyledGoalItem>
                 <StyledDoneSpan>200 / 260</StyledDoneSpan>
                 <StyledPointSpan></StyledPointSpan>
-                <StyledGoalSpan>500</StyledGoalSpan>
+                <StyledGoalSpan>500 <StyledCoinImg src={coin}/></StyledGoalSpan>
             </StyledGoalItem>
             <StyledGoalItem>
                 <StyledDoneSpan>260 / 260</StyledDoneSpan>
                 <StyledPointSpan></StyledPointSpan>
-                <StyledGoalSpan>1000</StyledGoalSpan>
+                <StyledGoalSpan>1000 <StyledCoinImg src={coin}/></StyledGoalSpan>
             </StyledGoalItem>
         </StyledContentWrapper>
         <StyledLine></StyledLine>
