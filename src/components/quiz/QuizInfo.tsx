@@ -44,7 +44,7 @@ border-radius: 50%;
 background: #fff;
 position: absolute;
 top: 50%;
-left: 50;
+left: 50%;
 transform: translateX(-50%);
 `
 
