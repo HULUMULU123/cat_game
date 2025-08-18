@@ -10,7 +10,7 @@ const StyledWrapper = styled.div`
 export default function Prize() {
   return (
     <StyledWrapper>
-          <CoinCount/>
+          <CoinCount isPrize/>
           <SectionInfo InfoName={'ТУРНИРНАЯ ТАБЛИЦА'} InfoExtra={'25 / 07 / 25'}/>
         </StyledWrapper>
   )

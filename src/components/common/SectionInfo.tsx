@@ -18,10 +18,11 @@ margin: 0 auto;
 `
 
 const StyledInfoName = styled.span`
-font-size:22px;
+font-size:21px;
 font-weight:700;
 margin-bottom:15px;
 color: #E1FFFB;
+text-align: center;
 `
 
 const StyledInfoTime = styled.span`

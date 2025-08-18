@@ -1,10 +1,11 @@
 import styled from 'styled-components'
 import coin from '../../assets/coin.png'
-
+import history from '../../assets/icons/history.svg'
 const StyledContentWrapper = styled.div`
 display:flex;
 width: 90%;
 padding: 15px 20px;
+justify-content: space-between;
 `
 
 const StyledCoinWrapper = styled.div`
@@ -24,13 +25,28 @@ const StyledCoinImg = styled.img`
 width:30px;
 height: 30px;`
 
-export default function CoinCount() {
+const StyledHistoryBtn = styled.button`
+  border: none;
+  background: transparent;
+  width: 26px;
+  height: 26px;
+`
+const StyledHistoryImg = styled.img`
+  width: 100%;
+  height: 100%;
+`
+export default function CoinCount({isPrize = false}) {
   return (
     <StyledContentWrapper>
         <StyledCoinWrapper>
             <StyledCoinImg src={coin}/>
             <StyledCoinCount>500</StyledCoinCount>
         </StyledCoinWrapper>
+        {isPrize ? 
+        <StyledHistoryBtn>
+          <StyledHistoryImg src={history}/>
+          </StyledHistoryBtn>:
+          null}
     </StyledContentWrapper>
   )
 }
