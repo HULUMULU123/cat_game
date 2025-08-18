@@ -7,6 +7,7 @@ background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 14
 width: 100%;
 display: flex;
 padding: 7px 0;
+border-radius: 7px;
 `
 
 const StyledContentWrapper = styled.div`
