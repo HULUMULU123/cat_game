@@ -36,8 +36,9 @@ padding: 0;
 margin:0;
 align-items: center;
 gap: 5px;
-width: 100%;
+width: 95%;
 flex-direction: column;
+padding-right: 5px;
 
 overflow-y: scroll;   /* только вертикальный скролл */
 overflow-x: hidden;   /* горизонтального нет */
