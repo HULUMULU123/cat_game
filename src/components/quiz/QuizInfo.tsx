@@ -71,14 +71,28 @@ const StyledDoneSpan = styled.span`
 font-family: 'Conthrax', sans-serif;
 font-size: 12px;
 font-weight: 700;
-color:${({ $advert }) => ($advert ? "rgb(116,135,131)" : "rgb(46,51,67)")};`
+color:${({ $advert }) => ($advert ? "rgb(46,51,67)"  : "rgb(116,135,131)")};`
 
 const StyledDoneImg = styled.img`
-width: 15px;`
+width: 20px;`
 
-const StyledPrize = styled.div``
+const StyledPrize = styled.div`
+display: flex;
+align-items: center;
+padding: 7px 15px;
+background: #4fc5bf;
+  background: linear-gradient(
+    0deg,
+    rgba(79, 197, 191, 0.2) 15%,
+    rgba(150, 238, 172, 0.08) 100%
+  );
 
-const StyledPrizeSpan = styled.span``
+`
+
+const StyledPrizeSpan = styled.span`
+color:#fff;
+font-family: 'Conthrax', sans-serif;
+font-size: 16px;`
 
 
 
@@ -114,8 +128,8 @@ export default function QuizInfo() {
                         <StyledDoneSpan>5 / 5</StyledDoneSpan>
                         <StyledPoint></StyledPoint>
                         <StyledPrize>
-                            <StyledPrizeSpan></StyledPrizeSpan>
-                            <MyIcon/>
+                            <StyledPrizeSpan>1</StyledPrizeSpan>
+                            <MyIcon fill='#fff' width={25} height={23}/>
                         </StyledPrize>
                     </StyledItem>
                 </StyledList>
