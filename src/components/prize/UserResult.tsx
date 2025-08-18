@@ -7,10 +7,7 @@ width: 100%;
 display: flex;
 padding: 7px 0;
 border-radius: 7px;
-position: absolute;
-bottom: -70px;
-left: 50%;
-transform: translateX(-50%);
+margin: 10px auto;
 color: rgb(224,255,251);
 `
 
