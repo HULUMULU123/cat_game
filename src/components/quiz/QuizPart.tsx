@@ -3,7 +3,7 @@ import styled from 'styled-components'
 
 const StyledWrapper = styled.div`
 width:95%;
-margin-top: 32px;
+margin: 32px auto 0 auto;
 `
 
 const StyledContentWrapper = styled.div`
@@ -36,6 +36,7 @@ const StyledAnwerContent = styled.div`
     display: flex;
     margin: 0 auto;
     align-items: center;
+    gap: 20px
 `
 
 const StyledAnswersItem = styled.li`
@@ -44,6 +45,7 @@ const StyledAnswersItem = styled.li`
     background: #126358;
     background: linear-gradient(216deg, rgba(18, 99, 88, 0.7) 0%, rgba(119, 162, 148, 0.5) 50%);
     border-radius: 7px;
+    padding: 7px 0;
 `
 
 const StyledAnswerNumber = styled.span`
