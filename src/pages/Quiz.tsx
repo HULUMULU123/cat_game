@@ -3,6 +3,7 @@ import CoinCount from '../components/common/CoinCount'
 import SectionInfo from '../components/common/SectionInfo'
 import styled from 'styled-components'
 import QuizPart from '../components/quiz/QuizPart'
+import QuizTimer from '../components/quiz/QuizTimer'
 
 const StyledWrapper = styled.div`
     height:100vh;
@@ -16,6 +17,7 @@ export default function Quiz() {
       <CoinCount/>
       <SectionInfo InfoName={'НЕЙРОФИЛЬТР'} InfoExtra={'4 РАУНД'}/>
       <QuizPart />
+      <QuizTimer />
     </StyledWrapper>
   )
 }
