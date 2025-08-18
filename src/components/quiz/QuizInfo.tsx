@@ -29,8 +29,8 @@ const StyledLine = styled.span`
 display: block; 
 position: absolute;
 left: 0;
-top: 50%;
-transform: translateY(-50%);
+top: 60%;
+/* transform: translateY(-50%); */
 width: 100%;
 height:3px;
 background: #85FFF0;
@@ -38,10 +38,14 @@ border-radius: 10px;
 `
 
 const StyledPoint = styled.span`
-height: 10px;
-width: 10px;
+height: 15px;
+width: 15px;
 border-radius: 50%;
 background: #fff;
+position: absolute;
+top: 50%;
+left: 50;
+transform: translateX(-50%);
 `
 
 const StyledList = styled.ul`
@@ -58,6 +62,9 @@ display:flex;
 flex-direction:column;
 justify-content: space-between;
 height: 50px;
+align-items: center;
+gap: 35px;
+position: relative;
 `
 
 const StyledDoneSpan = styled.span`
