@@ -1,6 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 import UsersItem from './UsersItem'
+import UserResult from './UserResult'
 
 const StyledWrapper = styled.div`
     width: 95%;
@@ -16,6 +17,7 @@ const StyledContentWrapper = styled.div`
     flex-direction: column;
     align-items: center;
     margin-top: 20px;
+    position: relative;
 `
 
 const StyledHeader = styled.h3`
@@ -74,6 +76,7 @@ export default function UsersList() {
                 <UsersItem key={i} number={i + 1} />
             ))}
             </StyledList>
+            <UserResult/>
         </StyledContentWrapper>
     </StyledWrapper>
   )

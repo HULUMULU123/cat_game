@@ -14,6 +14,6 @@ export default function Prize() {
           <CoinCount isPrize/>
           <SectionInfo InfoName={'ТУРНИРНАЯ ТАБЛИЦА'} InfoExtra={'25 / 07 / 25'}/>
           <UsersList/>
-        </StyledWrapper>
+      </StyledWrapper>
   )
 }
