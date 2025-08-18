@@ -36,7 +36,7 @@ const StyledAnwerContent = styled.div`
     display: flex;
     margin: 0 auto;
     align-items: center;
-    gap: 20px
+    gap: 20px;
 `
 
 const StyledAnswersItem = styled.li`

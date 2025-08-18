@@ -17,6 +17,7 @@ margin: 0 auto;
 `
 
 const StyledRoadWrapper = styled.div`
+margin: 0 auto;
 width:80%;
 display: flex;
 `
@@ -36,6 +37,7 @@ border-radius: 10px;
 const StyledPoint = styled.span``
 
 const StyledList = styled.ul`
+padding: 0;
 display:flex;
 width: 100%;
 justify-content: space-between;
