@@ -27,18 +27,20 @@ margin: 0;
 font-weight: 500;
 width: 60%; 
 text-align: center;
+
 `
 
 const StyledList = styled.ul`
-margin-top: 10px;
+
 display: flex;
 padding: 0;
 margin:0;
+margin-top: 10px;
 align-items: center;
 gap: 5px;
 width: 95%;
 flex-direction: column;
-padding-right: 5px;
+
 
 overflow-y: scroll;   /* только вертикальный скролл */
 overflow-x: hidden;   /* горизонтального нет */
@@ -47,7 +49,7 @@ box-sizing: content-box;
 
 scrollbar-width: thin;
   scrollbar-color: #E1FFFB #2CC2A9; /* активная | неактивная *//* чтобы padding не "съел" ширину */
-height: 65vh;
+height: 60vh;
 &::-webkit-scrollbar{
    width: 4px; 
 }
