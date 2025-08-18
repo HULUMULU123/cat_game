@@ -49,7 +49,7 @@ box-sizing: content-box;
 
 scrollbar-width: thin;
   scrollbar-color: #E1FFFB #2CC2A9; /* активная | неактивная *//* чтобы padding не "съел" ширину */
-height: 60vh;
+height: 40vh;
 &::-webkit-scrollbar{
    width: 4px; 
 }
