@@ -28,8 +28,8 @@ height: 30px;`
 const StyledHistoryBtn = styled.button`
   border: none;
   background: transparent;
-  width: 26px;
-  height: 26px;
+  width: 35px;
+  height: 35px;
 `
 const StyledHistoryImg = styled.img`
   width: 100%;
