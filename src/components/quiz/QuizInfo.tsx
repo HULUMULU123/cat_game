@@ -41,7 +41,7 @@ const StyledPoint = styled.span`
 height: 15px;
 width: 15px;
 border-radius: 50%;
-background: #fff;
+background:${({ $advert }) => ($advert ? "#40FFDF" : "#fff")};
 position: absolute;
 top: 50%;
 left: 50%;
@@ -68,7 +68,10 @@ position: relative;
 `
 
 const StyledDoneSpan = styled.span`
-color:#fff;`
+font-family: 'Conthrax', sans-serif;
+font-size: 12px;
+font-weight: 700;
+color:${({ $advert }) => ($advert ? "rgb(116,135,131)" : "rgb(46,51,67)")};`
 
 const StyledDoneImg = styled.img`
 width: 15px;`
@@ -93,8 +96,8 @@ export default function QuizInfo() {
                         <StyledDoneImg src={check}/>
                     </StyledItem>
                     <StyledItem>
-                        <StyledDoneSpan>2 / 5</StyledDoneSpan>
-                        <StyledPoint></StyledPoint>
+                        <StyledDoneSpan $advert>2 / 5</StyledDoneSpan>
+                        <StyledPoint $advert></StyledPoint>
                         <StyledDoneImg src={advert} />
                     </StyledItem>
                     <StyledItem>
