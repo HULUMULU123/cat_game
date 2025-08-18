@@ -70,7 +70,7 @@ export default function UsersList() {
         <StyledContentWrapper>
             <StyledHeader>ТОП ИГРОКОВ ТЕКУЩЕГО СБОЯ</StyledHeader>
             <StyledList>
-            {Array.from({ length: 30 }, (_, i) => (
+            {Array.from({ length: 100 }, (_, i) => (
                 <UsersItem key={i} number={i + 1} />
             ))}
             </StyledList>
