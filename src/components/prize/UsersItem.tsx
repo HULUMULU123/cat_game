@@ -6,6 +6,7 @@ background: #126358;
 background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
 width: 100%;
 display: flex;
+padding: 7px 0;
 `
 
 const StyledContentWrapper = styled.div`
@@ -35,7 +36,7 @@ align-items: center;
 const StyledUserImg = styled.img`
 width: 25px;
 height: 25px;
-border: 50%;
+border-radius: 50%;
 `
 
 const StyledUserSpan = styled.span`
@@ -49,10 +50,13 @@ gap: 14px;
 `
 
 const StyledUserTime = styled.span`
+color: rgb(141, 169, 163);
+font-family: 'Roboto', sans-serif;
 font-weight: 100;
 font-size: 11px;`
 
 const StyledUserScore = styled.span`
+color: rgb(141, 169, 163);
 font-weight: 700;
 font-size: 11px;
 `

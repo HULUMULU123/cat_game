@@ -37,6 +37,7 @@ margin:0;
 align-items: center;
 gap: 5px;
 width: 100%;
+flex-direction: column;
 `
 
 export default function UsersList() {
