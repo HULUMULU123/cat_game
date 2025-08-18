@@ -3,21 +3,29 @@ import styled from 'styled-components'
 
 const StyledWrapper = styled.div`
 width:95%;
+margin-top: 32px;
 `
 
 const StyledContentWrapper = styled.div`
 width: 100%;
 display:flex;
+flex-direction:column;
 `
 
 const StyledQuestionSpan = styled.span`
-margin: 0 auto;`
+margin: 0 auto;
+font-size: 12px;
+font-weight: 700;
+font-family: "Conthrax", sans-serif;
+color: rgb(224,255,251);
+`
 
 const StyledAnswersList = styled.ul`
 padding: 0;
 margin: 0 auto;
 display:flex;
 gap: 5px;
+flex-direction: column;
 `
 
 const StyledAnswersItem = styled.li`
