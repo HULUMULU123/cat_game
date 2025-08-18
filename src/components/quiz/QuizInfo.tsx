@@ -2,7 +2,8 @@ import React from 'react'
 import styled from 'styled-components'
 import MyIcon from '../icons/MyIcon'
 import QuizTimer from './QuizTimer'
-
+import check from '../../assets/icons/check.svg'
+import advert from '../../assets/icons/advert.svg'
 const StyledWrapper = styled.div`
 position: relative;
 width: 95%;
@@ -14,12 +15,14 @@ const StyledContentWrapper = styled.div`
 display:flex;
 flex-direction: column;
 margin: 0 auto;
+width: 100%;
 `
 
 const StyledRoadWrapper = styled.div`
 margin: 0 auto;
-width:80%;
+width:100%;
 display: flex;
+position: relative;
 `
 
 const StyledLine = styled.span`
@@ -34,13 +37,20 @@ background: #85FFF0;
 border-radius: 10px;
 `
 
-const StyledPoint = styled.span``
+const StyledPoint = styled.span`
+height: 10px;
+width: 10px;
+border-radius: 50%;
+background: #fff;
+`
 
 const StyledList = styled.ul`
 padding: 0;
 display:flex;
-width: 100%;
+width: 80%;
 justify-content: space-between;
+align-items:center;
+margin: 0 auto;
 `
 
 const StyledItem = styled.li`
@@ -53,7 +63,8 @@ height: 50px;
 const StyledDoneSpan = styled.span`
 color:#fff;`
 
-const StyledDoneImg = styled.img``
+const StyledDoneImg = styled.img`
+width: 15px;`
 
 const StyledPrize = styled.div``
 
@@ -72,17 +83,17 @@ export default function QuizInfo() {
                     <StyledItem>
                         <StyledDoneSpan>1 / 5</StyledDoneSpan>
                         <StyledPoint></StyledPoint>
-                        <StyledDoneImg />
+                        <StyledDoneImg src={check}/>
                     </StyledItem>
                     <StyledItem>
                         <StyledDoneSpan>2 / 5</StyledDoneSpan>
                         <StyledPoint></StyledPoint>
-                        <StyledDoneImg />
+                        <StyledDoneImg src={advert} />
                     </StyledItem>
                     <StyledItem>
                         <StyledDoneSpan>3 / 5</StyledDoneSpan>
                         <StyledPoint></StyledPoint>
-                        <StyledDoneImg />
+                        <StyledDoneImg src={check}/>
                     </StyledItem>
                     <StyledItem>
                         <StyledDoneSpan>4 / 5</StyledDoneSpan>
