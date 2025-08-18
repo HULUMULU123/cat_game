@@ -88,7 +88,8 @@ background: #4fc5bf;
   );
   gap: 10px;
   border-radius: 7px;
-
+  position: absolute;
+  bottom: -35px;
 `
 
 const StyledPrizeSpan = styled.span`
