@@ -43,7 +43,7 @@ export default function Simulation() {
         <SimulationRoadMap/>
         <SimulationTimer/>
     </StyledWrapper>
-    {openModal ? <ModalLayout isOpen={openModal}>
+    {openModal ? <ModalLayout isOpen={openModal} setIsOpen={setOpenModal}>
                         <ModalWindow header='НЕДОСТАТОЧНО CRASH' text='ЗАПУСТИТЬ СИМУЛЯЦИЮ МОЖНО ЗА ПРОСМОТР РЕКЛАМЫ' btnContent={<BtnContent/>} isOpenModal={openModal} setOpenModal={setOpenModal}/>
                       </ModalLayout> : null}
     </>

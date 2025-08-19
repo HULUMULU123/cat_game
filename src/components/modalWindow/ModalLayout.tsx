@@ -7,6 +7,7 @@ const StyledModalLayout = styled.div`
   position: fixed;
   width: 100vw;
   height:100vh;
+  z-index: 1000000;
 
   backdrop-filter: blur(0px);
   background: rgba(0,0,0,0);
@@ -23,7 +24,7 @@ const StyledModalLayout = styled.div`
   }
 `
 
-export default function ModalLayout({children, isOpen}) {
+export default function ModalLayout({children, isOpen, setIsOpen}) {
     const [animate, setAnimate] = useState(false)
 
   useEffect(() => {
@@ -35,6 +36,6 @@ export default function ModalLayout({children, isOpen}) {
     }
   }, [isOpen])
   return (
-    <StyledModalLayout className={animate ? "open" : ""}>{children}</StyledModalLayout>
+    <StyledModalLayout className={animate ? "open" : ""} onClick={()=>setIsOpen(false)}>{children}</StyledModalLayout>
   )
 }
