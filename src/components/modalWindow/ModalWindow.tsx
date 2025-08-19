@@ -2,13 +2,23 @@ import React from 'react'
 import styled from 'styled-components'
 import cancel from '../../assets/icons/cancel.svg'
 const StyledModalWidnow = styled.div`
-margin: auto;
-display: flex;
-position: relative;
-width: 50%;
-padding: 20px 0;
-background: #28B092;
-border-radius: 7px;`
+  margin: auto;
+  display: flex;
+  position: relative;
+  width: 75%;
+  padding: 20px 0;
+  background: #28B092;
+  border-radius: 7px;
+
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.4s ease;
+
+  &.open {
+    transform: translateY(0);
+    opacity: 1;
+  }
+`
 
 const StyledContentWrapper = styled.div`
 margin: auto;
@@ -35,7 +45,7 @@ margin-top: 10px;
 
 const StyledText = styled.p`
 font-family: 'Conthrax', sans-serif;
-font-size: 112px;
+font-size: 12px;
 color: var(--color-white-text);
 text-align: center;
 font-weight: 500;
@@ -55,11 +65,14 @@ border-radius: 7px;`
 
 const StyledCloseBtn = styled.button`
 position: absolute;
-top: 10px;
-right: 10px;
-width: 15px;
-height: 15px;
-display: flex;`
+top: 5px;
+right: 5px;
+width: 22px;
+height: 22px;
+display: flex;
+border: none;
+background: transparent;
+align-items: center;`
 
 const StyledCloseBtnImg = styled.img`
 width: 100%;
@@ -68,9 +81,9 @@ margin: auto;
 `
 
 const StyledMainText = styled.span``
-export default function ModalWindow({header, text, btnContent=null, mainText=null, setOpenModal}) {
+export default function ModalWindow({header, text, btnContent=null, mainText=null, setOpenModal, isOpenModal}) {
   return (
-    <StyledModalWidnow>
+    <StyledModalWidnow className={isOpenModal ? "open" : ""}>
         <StyledCloseBtn onClick={()=>setOpenModal(false)}><StyledCloseBtnImg src={cancel}></StyledCloseBtnImg></StyledCloseBtn>
         <StyledContentWrapper>
             <StyledHeader>{header}</StyledHeader>
