@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 
 const StyledModalLayout = styled.div`
@@ -24,7 +24,17 @@ const StyledModalLayout = styled.div`
 `
 
 export default function ModalLayout({children, isOpen}) {
+    const [animate, setAnimate] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setAnimate(true), 50) // маленькая задержка
+      return () => clearTimeout(timer)
+    } else {
+      setAnimate(false)
+    }
+  }, [isOpen])
   return (
-    <StyledModalLayout className={isOpen ? "open" : ""}>{children}</StyledModalLayout>
+    <StyledModalLayout className={animate ? "open" : ""}>{children}</StyledModalLayout>
   )
 }
