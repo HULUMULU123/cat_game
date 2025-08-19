@@ -99,7 +99,7 @@ export default function ModalWindow({header, text, btnContent=null, mainText=nul
     }
   }, [isOpenModal])
   return (
-    <StyledModalWidnow className={animate ? "open" : ""}>
+    <StyledModalWidnow className={animate ? "open" : ""} onClick={(e) => e.stopPropagation()}>
         <StyledCloseBtn onClick={()=>setOpenModal(false)}><StyledCloseBtnImg src={cancel}></StyledCloseBtnImg></StyledCloseBtn>
         <StyledContentWrapper>
             <StyledHeader>{header}</StyledHeader>
