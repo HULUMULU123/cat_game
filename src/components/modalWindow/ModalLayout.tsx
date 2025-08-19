@@ -18,7 +18,7 @@ const StyledModalLayout = styled.div`
   transition: backdrop-filter 0.4s ease, background 0.4s ease;
 
   &.open {
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
     background: rgba(0,0,0,0.3);
   }
 `

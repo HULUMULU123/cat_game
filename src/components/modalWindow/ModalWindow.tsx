@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import cancel from '../../assets/icons/cancel.svg'
 const StyledModalWidnow = styled.div`
@@ -82,8 +82,18 @@ margin: auto;
 
 const StyledMainText = styled.span``
 export default function ModalWindow({header, text, btnContent=null, mainText=null, setOpenModal, isOpenModal}) {
+    const [animate, setAnimate] = useState(false)
+
+  useEffect(() => {
+    if (isOpenModal) {
+      const timer = setTimeout(() => setAnimate(true), 50) // маленькая задержка
+      return () => clearTimeout(timer)
+    } else {
+      setAnimate(false)
+    }
+  }, [isOpenModal])
   return (
-    <StyledModalWidnow className={isOpenModal ? "open" : ""}>
+    <StyledModalWidnow className={animate ? "open" : ""}>
         <StyledCloseBtn onClick={()=>setOpenModal(false)}><StyledCloseBtnImg src={cancel}></StyledCloseBtnImg></StyledCloseBtn>
         <StyledContentWrapper>
             <StyledHeader>{header}</StyledHeader>
