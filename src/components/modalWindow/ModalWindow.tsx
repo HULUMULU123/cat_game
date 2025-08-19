@@ -36,10 +36,11 @@ font-weight: 700;
 
 const StyledLine = styled.span`
 display: block;
-height: 3px;
+height: 2px;
 width: 100%;
 background: #85FFF0;
 margin-top: 10px;
+border-radius: 10px;
 
 `
 
@@ -58,10 +59,14 @@ const StyledBtnSpan = styled.span`
 
 const StyledBtn = styled.button`
 background: #fff;
-width: 60%;
+width: 40%;
 margin: 0 auto;
 margin-top: 20px;
-border-radius: 7px;`
+border-radius: 7px;
+padding: 5px 0;
+display: flex;
+align-items: center;
+border: none;`
 
 const StyledCloseBtn = styled.button`
 position: absolute;
@@ -72,7 +77,8 @@ height: 22px;
 display: flex;
 border: none;
 background: transparent;
-align-items: center;`
+align-items: center;
+`
 
 const StyledCloseBtnImg = styled.img`
 width: 100%;
