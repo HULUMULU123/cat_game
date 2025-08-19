@@ -58,14 +58,14 @@ const StyledCoinImg = styled.img`
     width: 23px;
     height:23px;
 `
-export default function SectionContent() {
+export default function SectionContent({setOpenModal}) {
   return (
     <StyledWrapper>
         <StyledContentWrapper>
             <StyledTextP style={{marginBottom: '5px'}}>“СИМУЛЯЦИЯ” - БЕЗВРЕМЕННЫЙ ТРЕНАЖЁР, ИМИТИРУЮЩИЙ СБОЙ. ЗДЕСЬ ВЫ МОЖЕТЕ ТРЕНИРОВАТЬСЯ В ЛЮБОЕ ВРЕМЯ.</StyledTextP>
             <StyledTextP>ИГРАЙТЕ И ЗАРАБАТЫВАЙТЕ ЦЕННЫЕ ПРИЗЫ !</StyledTextP>
             <StyledTextSpan>ЗАПУСТИТЬ СИМУЛЯЦИЮ</StyledTextSpan>
-            <StyledButton><StyledCoinImg src={coin}/>200</StyledButton>
+            <StyledButton onClick={()=>setOpenModal(true)}><StyledCoinImg src={coin}/>200</StyledButton>
         </StyledContentWrapper>
     </StyledWrapper>
   )
