@@ -35,16 +35,17 @@ function BtnContent() {
 
 export default function Simulation() {
   const [openModal, setOpenModal] = useState(false)
-  return (
+  return (<>
     <StyledWrapper>
         <CoinCount/>
         <SectionInfo InfoName={'СИМУЛЯЦИЯ'} InfoExtra={'0 / 260'}/>
         <SectionContent setOpenModal={setOpenModal}/>
         <SimulationRoadMap/>
         <SimulationTimer/>
-        {openModal ? <ModalLayout>
+    </StyledWrapper>
+    {openModal ? <ModalLayout>
                         <ModalWindow header='НЕДОСТАТОЧНО CRASH' text='ЗАПУСТИТЬ СИМУЛЯЦИЮ МОЖНО ЗА ПРОСМОТР РЕКЛАМЫ' btnContent={<BtnContent/>}/>
                       </ModalLayout> : null}
-    </StyledWrapper>
+    </>
   )
 }
