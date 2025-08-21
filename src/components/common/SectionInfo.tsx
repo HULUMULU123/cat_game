@@ -38,12 +38,12 @@ height:2px;
 border-radius:10px;
 background: #85FFF0;
 `
-export default function SectionInfo({InfoName, InfoExtra}) {
+export default function SectionInfo({InfoName, InfoExtra=null}) {
   return (
     <StyledContentWrapper>
         <StyledWrapper>
             <StyledInfoName>{InfoName}</StyledInfoName>
-            <StyledInfoTime>{InfoExtra}</StyledInfoTime>
+            {InfoExtra?<StyledInfoTime>{InfoExtra}</StyledInfoTime>:null}
             <StyledInfoLine></StyledInfoLine>
         </StyledWrapper>
     </StyledContentWrapper>

@@ -58,18 +58,18 @@ font-weight: 300;
       color: rgba(255,255,255,1);
     }
 `;
-export default function Header() {
+export default function Header({setInfoType}) {
   return (
     <StyledWrapper>
       <StyledInfo>
-        <StyledButton>
+        <StyledButton onClick={()=>setInfoType('rules')}>
           <StyledIcon src={rules} />
         </StyledButton>
-        <StyledButton>
+        <StyledButton onClick={()=>setInfoType('gift')}>
           <StyledIcon src={gift} />
         </StyledButton>
       </StyledInfo>
-      <StyledUser>
+      <StyledUser onClick={()=>setInfoType('user')}>
         <StyledUserTextWrapper>
           <StyledUserText>Good Evening,</StyledUserText>
           <StyledUserText>Alex!</StyledUserText>
