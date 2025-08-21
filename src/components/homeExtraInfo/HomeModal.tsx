@@ -35,6 +35,7 @@ export default function HomeModal({infoType, isOpen, handleClose}) {
     } else {
       setAnimate(false)
     }
+    console.log(isOpen, infoType)
   }, [isOpen])
   return (
     <StyledModalLayout className={animate ? "open" : ""} onClick={handleClose}>

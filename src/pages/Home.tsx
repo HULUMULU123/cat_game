@@ -18,6 +18,8 @@ export default function Home() {
   const handeOpenPrize = () => {
     setIsModalOpen(true);
     setInfoType('prize');
+
+    console.log(infoType, isModalOpen)
   }
     return (
     <Model>
