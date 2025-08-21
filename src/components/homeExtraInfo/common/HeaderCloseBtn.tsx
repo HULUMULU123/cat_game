@@ -19,10 +19,10 @@ width: 100%;
 height: 100%;`
 
 
-export default function HeaderCloseBtn() {
+export default function HeaderCloseBtn({handleClose}) {
   return (
     <StyledBtnWrapper>
-        <StyledBtn>
+        <StyledBtn onClick={hancleClose}>
             <StyledBtnImg src={cross}/>
         </StyledBtn>
     </StyledBtnWrapper>

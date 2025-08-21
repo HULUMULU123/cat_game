@@ -26,14 +26,14 @@ const StyledCoinImg = styled.img`
 width:30px;
 height: 30px;`
 
-export default function PrizeHeader() {
+export default function PrizeHeader({handleClose}) {
   return (
     <StyledHeader>
         <StyledCoinWrapper>
             <StyledCoinImg src={coin}/>
             <StyledCoinCount>500</StyledCoinCount>
         </StyledCoinWrapper>
-        <HeaderCloseBtn />
+        <HeaderCloseBtn handleClose={handleClose} />
     </StyledHeader>
   )
 }
