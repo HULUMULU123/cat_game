@@ -3,12 +3,15 @@ import styled from 'styled-components'
 import prize_photo from '../../../assets/prize-photo.png'
 
 const StyledPrizeWrapper = styled.div`
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   position: relative;
   width: 100%;
   min-height: 250px;
   border-radius: 7px;
+  background: #126358;
+  background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
 `
 
 const StyledPrizeImg = styled.img`
@@ -27,6 +30,8 @@ const StyledTimerInfo = styled.div`
   justify-content: center;
   border-radius: 7px;
   color: #1A9480;
+  left: 50%;
+  transform: translateX(-50%);
 `
 
 const StyledTextSpan = styled.span`
