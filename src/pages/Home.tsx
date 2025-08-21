@@ -14,12 +14,17 @@ export default function Home() {
     setIsModalOpen(false);
     setInfoType('');
   }
-  return (
+
+  const handeOpenPrize = () => {
+    setIsModalOpen(true);
+    setInfoType('prize');
+  }
+    return (
     <Model>
       <Header setInfoType={setInfoType}/>
       <CrashCount/>
       <AdevertSection />
-      <MainAction/>
+      <MainAction handleOpenPrize={handeOpenPrize}/>
       {isModalOpen ? <HomeModal infoType={infoType} isOpen={isModalOpen} setIsOpen={setIsModalOpen}/> : null}
     </Model>
   );
