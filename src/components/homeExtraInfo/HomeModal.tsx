@@ -15,7 +15,7 @@ const StyledModalLayout = styled.div`
 
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: start;
 
   transition: backdrop-filter 0.4s ease, background 0.4s ease;
 
@@ -39,7 +39,7 @@ export default function HomeModal({infoType, isOpen, handleClose}) {
   }, [isOpen])
   return (
     <StyledModalLayout className={animate ? "open" : ""} onClick={handleClose}>
-      <div onClick={(e) => e.stopPropagation()}>
+      <div style={{display:'flex', justifyContent:'center'}} onClick={(e) => e.stopPropagation()}>
         {infoType == 'prize' ? <PrizeModal handleClose={handleClose}/> : null}
       </div>
     </StyledModalLayout>
