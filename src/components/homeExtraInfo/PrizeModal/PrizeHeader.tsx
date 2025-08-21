@@ -1,6 +1,14 @@
 import React from 'react'
 import styled from 'styled-components'
 import coin from '../../../assets/coin.png'
+import HeaderCloseBtn from '../common/HeaderCloseBtn'
+
+const StyledHeader = styled.div`
+display: flex;
+justify-content: space-between;
+align-items: center;
+`
+
 const StyledCoinWrapper = styled.div`
 display:flex;
 gap: 10px;
@@ -17,11 +25,15 @@ font-weight: 700;
 const StyledCoinImg = styled.img`
 width:30px;
 height: 30px;`
+
 export default function PrizeHeader() {
   return (
-    <StyledCoinWrapper>
-        <StyledCoinImg src={coin}/>
-        <StyledCoinCount>500</StyledCoinCount>
-    </StyledCoinWrapper>
+    <StyledHeader>
+        <StyledCoinWrapper>
+            <StyledCoinImg src={coin}/>
+            <StyledCoinCount>500</StyledCoinCount>
+        </StyledCoinWrapper>
+        <HeaderCloseBtn />
+    </StyledHeader>
   )
 }
