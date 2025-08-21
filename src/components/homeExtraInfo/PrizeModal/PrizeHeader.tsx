@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import coin from '../../assets/coin.png'
+import coin from '../../../assets/coin.png'
 const StyledCoinWrapper = styled.div`
 display:flex;
 gap: 10px;
