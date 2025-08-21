@@ -25,7 +25,7 @@ export default function Home() {
       <CrashCount/>
       <AdevertSection />
       <MainAction handleOpenPrize={handeOpenPrize}/>
-      {isModalOpen ? <HomeModal infoType={infoType} isOpen={isModalOpen} setIsOpen={setIsModalOpen}/> : null}
+      {isModalOpen ? <HomeModal infoType={infoType} isOpen={isModalOpen} handleClose={handleModalClose}/> : null}
     </Model>
   );
 }
