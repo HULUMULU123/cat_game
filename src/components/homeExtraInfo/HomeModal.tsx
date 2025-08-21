@@ -39,7 +39,9 @@ export default function HomeModal({infoType, isOpen, handleClose}) {
   }, [isOpen])
   return (
     <StyledModalLayout className={animate ? "open" : ""} onClick={handleClose}>
-      {infoType == 'prize' ? <PrizeModal handleClose={handleClose}/> : null}
+      <div onClick={(e) => e.stopPropagation()}>
+        {infoType == 'prize' ? <PrizeModal handleClose={handleClose}/> : null}
+      </div>
     </StyledModalLayout>
   )
 }

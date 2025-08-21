@@ -4,7 +4,7 @@ import Header from '../common/Header'
 import SectionInfo from '../../common/SectionInfo'
 
 const StyledWrapper = styled.div`
-  width:90%;
+  width:95%;
 `
 export default function PrizeModal({handleClose}) {
   return (
