@@ -27,7 +27,7 @@ const StyledWrapper = styled.div`
 export default function RewardModal({handleClose}) {
   return (
     <StyledWrapper>
-        <Header infoType='prize' handleClose={handleClose}/>
+        <Header infoType='reward' handleClose={handleClose}/>
     </StyledWrapper>
   )
 }
