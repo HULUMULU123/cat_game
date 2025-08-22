@@ -7,7 +7,7 @@ const StyledList = styled.ul`
     gap: 5px;
     padding:0;
     margin: 0;
-    width: 100%;
+    width: 950%;
 `
 
 

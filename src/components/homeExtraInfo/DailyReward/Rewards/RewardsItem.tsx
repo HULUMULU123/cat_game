@@ -10,12 +10,12 @@ flex-direction: column;
 `
 
 const StyledItemContent = styled.div`
-width: 80%;
+width: 100%;
 margin: auto;
 display: flex;
 flex-direction: column;
 align-items: center;
-gap:5px;
+gap:7px;
 background: #4fc5bf;
   background: linear-gradient(
     0deg,
@@ -23,6 +23,7 @@ background: #4fc5bf;
     rgba(150, 238, 172, 0.08) 100%
   );
 border-radius: 7px;
+padding: 15px 0;
 `
 
 const StyledContentImg = styled.img``

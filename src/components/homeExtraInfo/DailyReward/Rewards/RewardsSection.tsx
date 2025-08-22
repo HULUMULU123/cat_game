@@ -5,11 +5,15 @@ const StyledWrapper = styled.div`
 display: flex;
 flex-direction: column;
 align-items: center;
-gap: 5px;
-margin: 7px 0;
+gap: 10px;
+margin: 10px 0;
 `
 
-const StyledTimeSpan = styled.span``
+const StyledTimeSpan = styled.span`
+font-family: 'Roboto', sans-serif;
+font-size: 10px;
+color: #4E5E57;
+font-weight: 200;`
 
 
 export default function RewardsSection() {
