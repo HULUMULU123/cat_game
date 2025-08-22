@@ -10,7 +10,7 @@ const StyledWrapper = styled.div`
 
   scrollbar-width: thin;
     scrollbar-color: #E1FFFB #2CC2A9; /* активная | неактивная *//* чтобы padding не "съел" ширину */
-  height: 50vh;
+  height: 100vh;
   &::-webkit-scrollbar{
     width: 4px; 
   }
