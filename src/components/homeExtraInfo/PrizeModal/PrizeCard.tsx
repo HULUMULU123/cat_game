@@ -65,7 +65,7 @@ const StyledPrizeName = styled.span`
 const StyledLine = styled.span`
   display: flex;
   width: 100%;
-  height: 2px;
+  height: 1px;
   border-radius: 10px;
   background: #85FFF0;
 `
