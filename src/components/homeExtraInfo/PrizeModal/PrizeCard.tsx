@@ -79,6 +79,7 @@ export default function PirzeCard() {
       </StyledTimerInfo>
     </StyledPrizeWrapper>
     <StyledPrizeName>iPhone 16 PRO</StyledPrizeName>
+    <StyledLine />
     </StyledWrapper>
   )
 }
