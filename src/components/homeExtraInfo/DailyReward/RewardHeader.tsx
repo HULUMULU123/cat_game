@@ -24,8 +24,8 @@ font-weight: 700;
 `
 
 const StyledModalImg = styled.img`
-width:30px;
-height: 30px;`
+width:20px;
+height: 20px;`
 
 export default function RewardHeader({handleClose}) {
   return (

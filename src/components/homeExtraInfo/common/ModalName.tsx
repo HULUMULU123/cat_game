@@ -7,12 +7,14 @@ display: flex;
 align-items: center; 
 justify-content: center;
 background: rgba(217, 217, 217, 0.25);
+padding: 20px 0;
 `
 
 const StyledName = styled.span`
 font-size: 17px;
 font-family: 'Conthrax', sans-serif;
 font-weight: 800;
+color: var(--color-white-text);
 `
 
 export default function ModalName({textName}) {
