@@ -9,6 +9,7 @@ justify-content: center;
 background: rgba(217, 217, 217, 0.25);
 padding: 20px 0;
 border-radius: 7px;
+margin: 0 auto;
 `
 
 const StyledName = styled.span`
