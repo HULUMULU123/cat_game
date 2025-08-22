@@ -58,18 +58,18 @@ font-weight: 300;
       color: rgba(255,255,255,1);
     }
 `;
-export default function Header({setInfoType}) {
+export default function Header({handleOpenModal}) {
   return (
     <StyledWrapper>
       <StyledInfo>
-        <StyledButton onClick={()=>setInfoType('rules')}>
+        <StyledButton onClick={()=>handleOpenModal('rules')}>
           <StyledIcon src={rules} />
         </StyledButton>
-        <StyledButton onClick={()=>setInfoType('reward')}>
+        <StyledButton onClick={()=>handleOpenModal('reward')}>
           <StyledIcon src={gift} />
         </StyledButton>
       </StyledInfo>
-      <StyledUser onClick={()=>setInfoType('user')}>
+      <StyledUser onClick={()=>handleOpenModal('user')}>
         <StyledUserTextWrapper>
           <StyledUserText>Good Evening,</StyledUserText>
           <StyledUserText>Alex!</StyledUserText>

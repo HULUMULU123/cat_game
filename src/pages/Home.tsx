@@ -21,12 +21,16 @@ export default function Home() {
 
     console.log(infoType, isModalOpen)
   }
+  const handleOpenModal = (modalType) => {
+    setIsModalOpen(true);
+    setInfoType(modalType)
+  }
     return (
     <Model>
-      <Header setInfoType={setInfoType}/>
+      <Header handleOpenModal={handleOpenModal}/>
       <CrashCount/>
       <AdevertSection />
-      <MainAction handleOpenPrize={handeOpenPrize}/>
+      <MainAction handleOpenModal={handleOpenModal}/>
       {isModalOpen ? <HomeModal infoType={infoType} isOpen={isModalOpen} handleClose={handleModalClose}/> : null}
     </Model>
   );

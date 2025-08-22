@@ -55,7 +55,7 @@ padding: 7px 15px;
 const StyledGiftImg = styled.img`
 width: 100%;
 margin: 0 auto;`
-export default function MainAction({handleOpenPrize}) {
+export default function MainAction({handleOpenModal}) {
   return (
     <StyledActionWrapper>
         <StyledActionContentWrapper>
@@ -63,7 +63,7 @@ export default function MainAction({handleOpenPrize}) {
                 <StyledActionName>СБОЙ НАЧАЛСЯ :</StyledActionName>
                 <StyledActionTimer>03 : 59 : 58</StyledActionTimer>
             </StyledActionTextWrapper>
-            <StyledGiftWrapper onClick={handleOpenPrize}>
+            <StyledGiftWrapper onClick={()=>handleOpenModal('prize')}>
                 <StyledGiftImg src={gift}/>
             </StyledGiftWrapper>
         </StyledActionContentWrapper>
