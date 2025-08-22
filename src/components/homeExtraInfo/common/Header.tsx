@@ -10,11 +10,12 @@ justify-content: space-between;
 
 
 
-export default function Header({infoType=null}) {
+export default function Header({infoType=null, handleClose}) {
   return (
     <StyledContentWrapper>
-        {infoType=='prize'?<PrizeHeader/>:null}
-        <HeaderCloseBtn />
+        {infoType=='prize'?<PrizeHeader handleClose={handleClose}/>:null}
+        {infoType=='reward'?<PrizeHeader handleClose={handleClose}/>:null}
+        
     </StyledContentWrapper>
   )
 }
