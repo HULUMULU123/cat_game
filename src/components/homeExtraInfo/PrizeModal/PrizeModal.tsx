@@ -5,7 +5,7 @@ import SectionInfo from '../../common/SectionInfo'
 import PirzeCard from './PrizeCard'
 
 const StyledWrapper = styled.div`
-  width:95%;
+  width:100%;
 `
 export default function PrizeModal({handleClose}) {
   return (

@@ -4,6 +4,7 @@ import UsersItem from './UsersItem'
 import UserResult from './UserResult'
 
 const StyledWrapper = styled.div`
+    width: 95%;
     display: flex;
     margin: 0 auto;
     flex-direction: column;
