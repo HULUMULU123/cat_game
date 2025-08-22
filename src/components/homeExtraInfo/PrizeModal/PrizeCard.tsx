@@ -62,7 +62,13 @@ const StyledPrizeName = styled.span`
   font-size: 10px;
   color: rgb(116,145,140);
 `
-
+const StyledLine = styled.span`
+  display: flex;
+  width: 100%;
+  height: 2px;
+  border-radius: 10px;
+  background: #85FFF0;
+`
 export default function PirzeCard() {
   return (<StyledWrapper>
     <StyledPrizeWrapper>
