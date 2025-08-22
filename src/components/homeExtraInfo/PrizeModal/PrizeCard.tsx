@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import prize_photo from '../../../assets/prize-photo.png'
 
 const StyledPrizeWrapper = styled.div`
-  margin-top: 10px;
+  margin-top: 10px auto;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -22,7 +22,7 @@ const StyledPrizeImg = styled.img`
 
 const StyledTimerInfo = styled.div`
   position: absolute;
-  width: 80%;
+  width: 60%;
   background: #fff;
   bottom: 30px;
   display: flex;
@@ -33,6 +33,8 @@ const StyledTimerInfo = styled.div`
   color: #1A9480;
   left: 50%;
   transform: translateX(-50%);
+  font-family: 'Conthrax', sans-serif;
+  padding: 5px 0;
 `
 
 const StyledTextSpan = styled.span`
