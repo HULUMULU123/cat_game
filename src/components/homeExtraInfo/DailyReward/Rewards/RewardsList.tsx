@@ -5,6 +5,9 @@ const StyledList = styled.ul`
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 5px;
+    padding:0;
+    margin: 0;
+    width: 100%;
 `
 
 

@@ -4,6 +4,15 @@ const StyledListItem = styled.li`
 display: flex;
 flex-direction: column;
 align-items: center;
+display: flex;
+flex-direction: column;
+background: #4fc5bf;
+  background: linear-gradient(
+    0deg,
+    rgba(79, 197, 191, 0.2) 15%,
+    rgba(150, 238, 172, 0.08) 100%
+  );
+border-radius: 7px;
 `
 
 const StyledItemContent = styled.div`
