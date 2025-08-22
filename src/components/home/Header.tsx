@@ -65,7 +65,7 @@ export default function Header({setInfoType}) {
         <StyledButton onClick={()=>setInfoType('rules')}>
           <StyledIcon src={rules} />
         </StyledButton>
-        <StyledButton onClick={()=>setInfoType('gift')}>
+        <StyledButton onClick={()=>setInfoType('reward')}>
           <StyledIcon src={gift} />
         </StyledButton>
       </StyledInfo>

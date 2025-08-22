@@ -1,6 +1,8 @@
 import styled from 'styled-components'
 import PrizeHeader from '../PrizeModal/PrizeHeader'
 import HeaderCloseBtn from './HeaderCloseBtn'
+import RewardModal from '../DailyReward/RewardModal'
+import RewardHeader from '../DailyReward/RewadHeader'
 const StyledContentWrapper = styled.div`
 display:flex;
 
@@ -14,6 +16,7 @@ export default function Header({infoType=null, handleClose}) {
   return (
     <StyledContentWrapper>
         {infoType=='prize'?<PrizeHeader handleClose={handleClose}/>:null}
+        {infoType == 'reward' ? <RewardHeader handleClose={handleClose} /> : null}
     </StyledContentWrapper>
   )
 }
