@@ -7,14 +7,13 @@ const StyledWrapper = styled.div`
     height:100vh;
     width:100%;
     backdrop-filter: blur(40px);
-    width: 95%;
 `
 export default function Prize() {
   return (
     <StyledWrapper>
-        <CoinCount isPrize/>
-        <SectionInfo InfoName={'ТУРНИРНАЯ ТАБЛИЦА'} InfoExtra={'25 / 07 / 25'}/>
-        <UsersList/>
-    </StyledWrapper>
+          <CoinCount isPrize/>
+          <SectionInfo InfoName={'ТУРНИРНАЯ ТАБЛИЦА'} InfoExtra={'25 / 07 / 25'}/>
+          <UsersList/>
+      </StyledWrapper>
   )
 }

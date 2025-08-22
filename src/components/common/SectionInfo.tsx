@@ -1,7 +1,7 @@
 import styled from "styled-components"
 
 const StyledContentWrapper = styled.div`
-/* width: 95%; */
+width: 95%;
 background-color: rgba(217,217,217,0.2);
 border-radius: 7px;
 padding: 20px 0 10px 0;

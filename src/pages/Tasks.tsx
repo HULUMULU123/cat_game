@@ -6,7 +6,7 @@ import TasksList from '../components/tasks/TasksList'
 
 const StyledWrapper = styled.div`
     height:100vh;
-    width:95%;
+    width:100%;
     backdrop-filter: blur(40px);
 `
 export default function Tasks() {

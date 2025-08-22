@@ -12,6 +12,7 @@ const StyledPrizeWrapper = styled.div`
   border-radius: 7px;
   background: #126358;
   background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
+  width:95%;
 `
 
 const StyledPrizeImg = styled.img`
