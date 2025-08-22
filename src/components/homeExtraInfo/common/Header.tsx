@@ -2,7 +2,7 @@ import styled from 'styled-components'
 import PrizeHeader from '../PrizeModal/PrizeHeader'
 import HeaderCloseBtn from './HeaderCloseBtn'
 import RewardModal from '../DailyReward/RewardModal'
-import RewardHeader from '../DailyReward/RewadHeader'
+import RewardHeader from '../DailyReward/RewardHeader'
 const StyledContentWrapper = styled.div`
 display:flex;
 
