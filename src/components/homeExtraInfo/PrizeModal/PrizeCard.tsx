@@ -2,8 +2,18 @@ import React from 'react'
 import styled from 'styled-components'
 import prize_photo from '../../../assets/prize-photo.png'
 
+const StyledWrapper = styled.div`
+  width: 95%;
+  display: flex;
+  margin: 15px auto;
+  gap: 7px;
+  flex-direction: column;
+  align-items: center;
+`
+
+
 const StyledPrizeWrapper = styled.div`
-  margin-top: 10px auto;
+
   display: flex;
   flex-direction: column;
   position: relative;
@@ -12,7 +22,6 @@ const StyledPrizeWrapper = styled.div`
   border-radius: 7px;
   background: #126358;
   background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
-  width:95%;
 `
 
 const StyledPrizeImg = styled.img`
@@ -48,8 +57,14 @@ margin: 0 auto;
 font-size: 21px;
 font-weight: 700;`
 
+const StyledPrizeName = styled.span`
+  font-family: 'Conthrax', sans-serif;
+  font-size: 10px;
+  color: rgb(116,145,140);
+`
+
 export default function PirzeCard() {
-  return (
+  return (<StyledWrapper>
     <StyledPrizeWrapper>
       <StyledPrizeImg src={prize_photo}/>
       <StyledTimerInfo>
@@ -57,5 +72,6 @@ export default function PirzeCard() {
         <StyledTimerSpan>02 : 16 : 58</StyledTimerSpan>
       </StyledTimerInfo>
     </StyledPrizeWrapper>
+    </StyledWrapper>
   )
 }
