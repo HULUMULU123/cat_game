@@ -2,12 +2,13 @@ import React from 'react'
 import styled from 'styled-components'
 
 const StyledWrapper = styled.div`
-width: 100%;
+width: 95%;
 display: flex;
 align-items: center; 
 justify-content: center;
 background: rgba(217, 217, 217, 0.25);
 padding: 20px 0;
+border-radius: 7px;
 `
 
 const StyledName = styled.span`
