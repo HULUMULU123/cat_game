@@ -6,7 +6,6 @@ import check from '../../assets/icons/check.svg'
 import advert from '../../assets/icons/advert.svg'
 const StyledWrapper = styled.div`
 position: relative;
-width: 95%;
 display:flex;
 margin: 0 auto;
 `

@@ -10,7 +10,7 @@ import ModalWindow from '../components/modalWindow/ModalWindow'
 import black_advert from '../assets/icons/black_advert.svg'
 const StyledWrapper = styled.div`
     height:100vh;
-    width:100%;
+    width:95%;
     backdrop-filter: blur(40px);
 `
 const StyledBtnContentWrapper = styled.div`
