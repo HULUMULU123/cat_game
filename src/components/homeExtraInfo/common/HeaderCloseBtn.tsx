@@ -10,8 +10,8 @@ const StyledBtn = styled.button`
 margin: auto;
 border: none;
 background: transparent;
-height: 21px;
-width: 21px;
+height: 25px;
+width: 25px;
 `
 
 const StyledBtnImg = styled.img`

@@ -4,9 +4,10 @@ import HeaderCloseBtn from './HeaderCloseBtn'
 import RewardHeader from '../DailyReward/RewardHeader'
 const StyledContentWrapper = styled.div`
 display:flex;
-width: 90%;
+width: 85%;
 padding: 15px 20px;
 justify-content: space-between;
+margin: 0 auto;
 `
 
 
