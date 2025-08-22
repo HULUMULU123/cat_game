@@ -6,6 +6,16 @@ flex-direction: column;
 align-items: center;
 display: flex;
 flex-direction: column;
+
+`
+
+const StyledItemContent = styled.div`
+width: 80%;
+margin: auto;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap:5px;
 background: #4fc5bf;
   background: linear-gradient(
     0deg,
@@ -13,14 +23,6 @@ background: #4fc5bf;
     rgba(150, 238, 172, 0.08) 100%
   );
 border-radius: 7px;
-`
-
-const StyledItemContent = styled.div`
-width: 80%;
-margin: auto;
-display: flex;
-align-items: center;
-gap:5px;
 `
 
 const StyledContentImg = styled.img``
