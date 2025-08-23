@@ -2,12 +2,8 @@ import React from 'react'
 import styled from 'styled-components'
 
 const StyledRulesItem = styled.li`
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
 height: 50px;
-justify-content: space-between;
+
 `
 
 const StyledRuleImg = styled.img`
@@ -19,11 +15,24 @@ font-size: 8px;
 text-align: center;
 color: var(--color-white-text);`
 
+const StyledButton = styled.button`
+  background: transparent;
+  border: none;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  justify-content: space-between;
+`
 export default function RulesItem({icon, text}) {
   return (
     <StyledRulesItem>
-      <StyledRuleImg src={icon} />
-      <StyledRuleText>{text}</StyledRuleText>
+      <StyledButton onClick={()=>console.log('click')}>
+        <StyledRuleImg src={icon} />
+        <StyledRuleText>{text}</StyledRuleText>
+      </StyledButton>
     </StyledRulesItem>
   )
 }
