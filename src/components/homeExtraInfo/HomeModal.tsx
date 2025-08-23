@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import PrizeModal from './PrizeModal/PrizeModal'
 import RewardModal from './DailyReward/Rewards/RewardModal'
 import RulesModal from './Rules/RulesModal'
+import OpenRuleModal from './RuleOpen/OpenRuleModal'
 
 const StyledModalLayout = styled.div`
   top: 0;
@@ -27,7 +28,7 @@ const StyledModalLayout = styled.div`
   }
 `
 
-export default function HomeModal({infoType, isOpen, handleClose}) {
+export default function HomeModal({infoType, isOpen, handleClose, handleRuleClose, ruleCategory, openRuleCategory}) {
     const [animate, setAnimate] = useState(false)
 
   useEffect(() => {
@@ -44,7 +45,8 @@ export default function HomeModal({infoType, isOpen, handleClose}) {
       <div style={{display:'flex', justifyContent:'center', width:'100%'}} onClick={(e) => e.stopPropagation()}>
         {infoType == 'prize' ? <PrizeModal handleClose={handleClose}/> : null}
         {infoType == 'reward' ? <RewardModal handleClose={handleClose} />: null }
-        {infoType == 'rules' ? <RulesModal handleClose={handleClose} />: null }
+        {infoType == 'rules' ? <RulesModal handleClose={handleClose} openRuleCategory={openRuleCategory}/>: null }
+        {infoType == 'rule_category' ? <OpenRuleModal handleClose={handleRuleClose} ruleCategory={ruleCategory}/>: null }
       </div>
     </StyledModalLayout>
   )

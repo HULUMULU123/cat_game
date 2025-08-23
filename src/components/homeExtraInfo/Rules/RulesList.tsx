@@ -48,7 +48,7 @@ const StyledRulesList = styled.ul`
     width: 95%;
 `
 
-export default function RulesList() {
+export default function RulesList({openRuleCategory}) {
   return (
     <StyledWrapper>
         <StyledListHeadingWrapper>
@@ -56,15 +56,15 @@ export default function RulesList() {
             <StyledLine></StyledLine>
         </StyledListHeadingWrapper>
         <StyledRulesList>
-            <RulesItem icon={logo} text="СТАКАН"/>
-            <RulesItem icon={drops} text="СБОЙ"/>
-            <RulesItem icon={logo_cercle} text="CRASH"/>
-            <RulesItem icon={right_text} text="УСЛОВИЯ УЧАСТИЯ"/>
-            <RulesItem icon={gift} text="АНОМАЛИЯ"/>
-            <RulesItem icon={alert} text="ЗАПРЕЩЕННЫЕ ДЕЙСТВИЯ"/>
-            <RulesItem icon={money} text="ПЕРЕДАЧА МАТЕРИАЛЬНОГО АНАЛОГА"/>
-            <RulesItem icon={clock} text="ТУРНИРЫ И ТАЙМЕРЫ" />
-            <RulesItem icon={points} text="ДОПОЛНИТЕЛЬНО" />
+            <RulesItem handleClick={openRuleCategory} icon={logo} text="СТАКАН"/>
+            <RulesItem handleClick={openRuleCategory} icon={drops} text="СБОЙ"/>
+            <RulesItem handleClick={openRuleCategory} icon={logo_cercle} text="CRASH"/>
+            <RulesItem handleClick={openRuleCategory} icon={right_text} text="УСЛОВИЯ УЧАСТИЯ"/>
+            <RulesItem handleClick={openRuleCategory} icon={gift} text="АНОМАЛИЯ"/>
+            <RulesItem handleClick={openRuleCategory} icon={alert} text="ЗАПРЕЩЕННЫЕ ДЕЙСТВИЯ"/>
+            <RulesItem handleClick={openRuleCategory} icon={money} text="ПЕРЕДАЧА МАТЕРИАЛЬНОГО АНАЛОГА"/>
+            <RulesItem handleClick={openRuleCategory} icon={clock} text="ТУРНИРЫ И ТАЙМЕРЫ" />
+            <RulesItem handleClick={openRuleCategory} icon={points} text="ДОПОЛНИТЕЛЬНО" />
         </StyledRulesList>
     </StyledWrapper>
   )

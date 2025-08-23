@@ -3,7 +3,7 @@ import styled from 'styled-components'
 
 const StyledRulesItem = styled.li`
 height: 50px;
-
+list-style:none;
 `
 
 const StyledRuleImg = styled.img`
@@ -26,10 +26,10 @@ const StyledButton = styled.button`
   justify-content: center;
   justify-content: space-between;
 `
-export default function RulesItem({icon, text}) {
+export default function RulesItem({icon, text, handleClick}) {
   return (
     <StyledRulesItem>
-      <StyledButton onClick={()=>console.log('click')}>
+      <StyledButton onClick={()=>handleClick(text.toLowerCase())}>
         <StyledRuleImg src={icon} />
         <StyledRuleText>{text}</StyledRuleText>
       </StyledButton>

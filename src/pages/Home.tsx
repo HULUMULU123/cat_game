@@ -10,16 +10,19 @@ import HomeModal from "../components/homeExtraInfo/HomeModal";
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [infoType, setInfoType] = useState('')
+  const [ruleCategory, setRuleCategory] = useState('')
   const handleModalClose = () => {
     setIsModalOpen(false);
     setInfoType('');
   }
 
-  const handeOpenPrize = () => {
-    setIsModalOpen(true);
-    setInfoType('prize');
-
-    console.log(infoType, isModalOpen)
+  const openRuleCategory = (ruleCat) => {
+    setRuleCategory(ruleCat);
+    setInfoType('rule_category');
+  }
+  const handleRuleCatgoryClose = () => {
+    setRuleCategory('');
+    setInfoType('rules')
   }
   const handleOpenModal = (modalType) => {
     setIsModalOpen(true);
@@ -31,7 +34,7 @@ export default function Home() {
       <CrashCount/>
       <AdevertSection />
       <MainAction handleOpenModal={handleOpenModal}/>
-      {isModalOpen ? <HomeModal infoType={infoType} isOpen={isModalOpen} handleClose={handleModalClose}/> : null}
+      {isModalOpen ? <HomeModal infoType={infoType} isOpen={isModalOpen} handleClose={handleModalClose} ruleCategory={ruleCategory} handleRuleClose={handleRuleCatgoryClose} openRuleCategory={openRuleCategory}/> : null}
     </Model>
   );
 }
