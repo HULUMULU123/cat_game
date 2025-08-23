@@ -1,0 +1,81 @@
+import React from 'react'
+import styled from 'styled-components'
+
+const StyledWrapper = styled.div`
+display: flex;
+flex-direction: column;
+align-items: center;
+width: 95%;
+margin: 20px auto;
+gap: 15px;
+`
+
+const StyledListHeadingWrapper = styled.div`
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 5px;
+width: 90%;
+`
+
+const StyledLine = styled.span`
+display: block;
+width: 100%;
+height: 1px;
+background: #85FFF0;
+border-radius: 10px;`
+
+const StyledHeadingSpan = styled.span`
+color: #fff;
+font-family: 'Conthrax', sans-serif;
+font-size: 12px;`
+
+const StyledRulesWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    width: 95%;
+    font-family: 'Conthrax', sans-serif;
+    color: rgb(158,189,185);
+`
+
+const StyledRulesHeading = styled.h3`
+margin: 0;
+padding: 0;
+font-size: 14px;
+font-weight: 700;`
+
+const StyledRule = styled.p`
+margin: 0;
+padding: 0;
+font-size: 12px;
+font-weight: 500;`
+
+export default function RulesContent({rulesData}) {
+  return (
+    <StyledWrapper>
+      {Object.entries(rulesData).map(([categoryKey, categoryValue]) => (
+        <StyledListHeadingWrapper key={categoryKey}>
+          <StyledHeadingSpan>{categoryKey}</StyledHeadingSpan>
+          <StyledLine />
+
+          {Object.entries(categoryValue).map(([sectionTitle, sectionValue]) => (
+            <StyledRulesWrapper key={sectionTitle}>
+              <StyledRulesHeading>{sectionTitle}</StyledRulesHeading>
+
+              {typeof sectionValue === "object" &&
+                Object.entries(sectionValue).map(([subTitle, rules]) => (
+                  <div key={subTitle}>
+                    <StyledRulesHeading>{subTitle}</StyledRulesHeading>
+                    {rules.map((rule, idx) => (
+                      <StyledRule key={idx}>{rule}</StyledRule>
+                    ))}
+                  </div>
+                ))}
+            </StyledRulesWrapper>
+          ))}
+        </StyledListHeadingWrapper>
+      ))}
+    </StyledWrapper>
+  );
+}
