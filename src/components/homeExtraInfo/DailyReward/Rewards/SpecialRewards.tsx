@@ -7,6 +7,7 @@ flex-direction: column;
 align-items: center;
 width: 50%;
 margin: 30px auto;
+gap: 7px;
 `
 
 const StyledHeaderSpan = styled.span`
@@ -27,7 +28,8 @@ background: #4fc5bf;
 display: flex;
 flex-direction: column;
 align-items: center;
-padding: 40px 0;
+padding: 20px 0;
+gap: 5px;
 `
 
 const StyledContentImg = styled.img`
