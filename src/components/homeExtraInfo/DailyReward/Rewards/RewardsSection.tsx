@@ -12,7 +12,7 @@ margin: 10px 0;
 const StyledTimeSpan = styled.span`
 font-family: 'Roboto', sans-serif;
 font-size: 10px;
-color: #4E5E57;
+color: #353f3a;
 font-weight: 200;`
 
 
