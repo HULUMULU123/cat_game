@@ -5,6 +5,7 @@ import ModalName from '../common/ModalName'
 import RulesContent from './RulesContent'
 
 import file from '../../../assets/data/stakan_rules.json'
+import DarkLayoutIcon from './DarkLayoutIcon'
 const StyledWrapper = styled.div`
   width:100%;
   position: relative;
@@ -18,6 +19,7 @@ export default function OpenRuleModal({handleClose, ruleCategory}) {
         <RulesHeader handleClose={handleClose}/>
         <ModalName textName={ruleCategory.toUpperCase()} />
         <RulesContent rulesData={selectedRules}/>
+        <DarkLayoutIcon/>
     </StyledWrapper>
   )
 }

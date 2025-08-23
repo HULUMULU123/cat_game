@@ -1,6 +1,5 @@
 import React from 'react'
 import styled from 'styled-components'
-import DarkLayoutIcon from './DarkLayoutIcon'
 
 const StyledWrapper = styled.div`
 display: flex;
@@ -106,7 +105,6 @@ export default function RulesContent({ rulesData }) {
             ))}
         </StyledRulesWrapper></>
       ))}
-      <DarkLayoutIcon/>
     </StyledWrapper>
   );
 }
