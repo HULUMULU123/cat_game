@@ -15,12 +15,15 @@ const StyledSmallDate = styled.span`
 color: rgb(158, 185, 181);
 font-size: 12px;`
 
-const StyledBigDiv = styled.span`
+const StyledBigDate = styled.span`
 font-size: 28px;
 color: var(--color-white-text);`
 
 export default function TodayDate() {
   return (
-    <div>TodayDate</div>
+    <StyledWrapperDate>
+        <StyledSmallDate>25 / 07 / 2025</StyledSmallDate>
+        <StyledBigDate>3 / 7</StyledBigDate>
+    </StyledWrapperDate>
   )
 }
