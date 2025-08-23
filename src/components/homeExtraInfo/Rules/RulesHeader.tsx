@@ -8,6 +8,7 @@ display: flex;
 justify-content: space-between;
 align-items: center;
 width: 100%;
+margin-bottom: 10px;
 `
 
 const StyledCoinWrapper = styled.div`
@@ -24,8 +25,8 @@ font-weight: 700;
 `
 
 const StyledModalImg = styled.img`
-width:20px;
-height: 20px;`
+width:25px;
+height: 25px;`
 
 export default function RulesHeader({handleClose}) {
   return (

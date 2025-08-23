@@ -7,14 +7,15 @@ display: flex;
 flex-direction: column;
 align-items: center;
 width: 95%;
-margin: 0 auto;
+margin: 20px auto;
+gap: 15px;
 `
 
 const StyledListHeadingWrapper = styled.div`
 display: flex;
 flex-direction: column;
 align-items: center;
-gap: 10px;
+gap: 5px;
 width: 90%;
 `
 
