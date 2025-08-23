@@ -40,13 +40,15 @@ const StyledRulesWrapper = styled.div`
 `
 
 const StyledRulesHeading = styled.h3`
-margin: 0;
+margin: 20px 0 15px 0;
 padding: 0;
 font-size: 14px;
-font-weight: 700;`
+font-weight: 700;
+
+`
 
 const StyledRule = styled.p`
-margin: 0;
+margin: 5px 0;
 padding: 0;
 font-size: 12px;
 font-weight: 500;`
@@ -56,7 +58,7 @@ export default function RulesContent({ rulesData }) {
     <StyledWrapper>
       {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (<>
         <StyledListHeadingWrapper>
-            <StyledRulesHeading>{sectionTitle}</StyledRulesHeading>
+            <StyledHeadingSpan>{sectionTitle}</StyledHeadingSpan>
             <StyledLine></StyledLine>
         </StyledListHeadingWrapper>
         <StyledRulesWrapper key={sectionTitle}>
