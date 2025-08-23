@@ -51,30 +51,32 @@ padding: 0;
 font-size: 12px;
 font-weight: 500;`
 
-export default function RulesContent({rulesData}) {
+export default function RulesContent({ rulesData }) {
   return (
     <StyledWrapper>
-      {Object.entries(rulesData).map(([categoryKey, categoryValue]) => (
-        <StyledListHeadingWrapper key={categoryKey}>
-          <StyledHeadingSpan>{categoryKey}</StyledHeadingSpan>
-          <StyledLine />
+      {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (
+        <StyledRulesWrapper key={sectionTitle}>
+          <StyledRulesHeading>{sectionTitle}</StyledRulesHeading>
 
-          {Object.entries(categoryValue).map(([sectionTitle, sectionValue]) => (
-            <StyledRulesWrapper key={sectionTitle}>
-              <StyledRulesHeading>{sectionTitle}</StyledRulesHeading>
+          {/* Если это массив правил */}
+          {Array.isArray(sectionValue) &&
+            sectionValue.map((rule, idx) => (
+              <StyledRule key={idx}>{rule}</StyledRule>
+            ))}
 
-              {typeof sectionValue === "object" &&
-                Object.entries(sectionValue).map(([subTitle, rules]) => (
-                  <div key={subTitle}>
-                    <StyledRulesHeading>{subTitle}</StyledRulesHeading>
-                    {rules.map((rule, idx) => (
-                      <StyledRule key={idx}>{rule}</StyledRule>
-                    ))}
-                  </div>
-                ))}
-            </StyledRulesWrapper>
-          ))}
-        </StyledListHeadingWrapper>
+          {/* Если это объект с подразделами */}
+          {!Array.isArray(sectionValue) &&
+            typeof sectionValue === "object" &&
+            Object.entries(sectionValue).map(([subTitle, rules]) => (
+              <div key={subTitle}>
+                <StyledRulesHeading>{subTitle}</StyledRulesHeading>
+                {Array.isArray(rules) &&
+                  rules.map((rule, idx) => (
+                    <StyledRule key={idx}>{rule}</StyledRule>
+                  ))}
+              </div>
+            ))}
+        </StyledRulesWrapper>
       ))}
     </StyledWrapper>
   );
