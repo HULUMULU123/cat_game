@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import rule from '../../../assets/icons/rules.svg'
+import rules from '../../../assets/icons/rules.svg'
 import HeaderCloseBtn from '../common/HeaderCloseBtn'
 
 const StyledHeader = styled.div`
