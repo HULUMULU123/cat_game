@@ -1,10 +1,10 @@
 import React from 'react'
 import styled from 'styled-components'
-import Header from '../common/Header'
-import ModalName from '../common/ModalName'
-import RewardsSection from './Rewards/RewardsSection'
-import SpecialRewards from './Rewards/SpecialRewards'
-import TodayDate from './Rewards/TodayDate'
+import Header from '../../common/Header'
+import ModalName from '../../common/ModalName'
+import RewardsSection from './RewardsSection'
+import SpecialRewards from './SpecialRewards'
+import TodayDate from './TodayDate'
 const StyledWrapper = styled.div`
   width:100%;
   

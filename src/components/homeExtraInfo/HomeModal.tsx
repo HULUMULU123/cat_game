@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import PrizeModal from './PrizeModal/PrizeModal'
-import RewardModal from './DailyReward/RewardModal'
+import RewardModal from './DailyReward/Rewards/RewardModal'
+import RulesModal from './Rules/RulesModal'
 
 const StyledModalLayout = styled.div`
   top: 0;
@@ -43,6 +44,7 @@ export default function HomeModal({infoType, isOpen, handleClose}) {
       <div style={{display:'flex', justifyContent:'center', width:'100%'}} onClick={(e) => e.stopPropagation()}>
         {infoType == 'prize' ? <PrizeModal handleClose={handleClose}/> : null}
         {infoType == 'reward' ? <RewardModal handleClose={handleClose} />: null }
+        {infoType == 'rules' ? <RulesModal handleClose={handleClose} />: null }
       </div>
     </StyledModalLayout>
   )
