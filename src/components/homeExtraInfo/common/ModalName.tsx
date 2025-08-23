@@ -17,6 +17,8 @@ font-size: 17px;
 font-family: 'Conthrax', sans-serif;
 font-weight: 800;
 color: var(--color-white-text);
+text-align: center;
+width: 95%;
 `
 
 export default function ModalName({textName}) {

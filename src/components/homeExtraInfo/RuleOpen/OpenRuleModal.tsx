@@ -10,7 +10,7 @@ export default function OpenRuleModal({handleClose, ruleCategory}) {
   return (
     <StyledWrapper>
         <RulesHeader handleClose={handleClose}/>
-        <ModalName textName={ruleCategory} />
+        <ModalName textName={ruleCategory.toUpperCase()} />
     </StyledWrapper>
   )
 }
