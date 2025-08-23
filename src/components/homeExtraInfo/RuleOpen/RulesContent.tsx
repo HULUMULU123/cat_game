@@ -54,10 +54,12 @@ font-weight: 500;`
 export default function RulesContent({ rulesData }) {
   return (
     <StyledWrapper>
-      {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (
+      {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (<>
+        <StyledListHeadingWrapper>
+            <StyledRulesHeading>{sectionTitle}</StyledRulesHeading>
+            <StyledLine></StyledLine>
+        </StyledListHeadingWrapper>
         <StyledRulesWrapper key={sectionTitle}>
-          <StyledRulesHeading>{sectionTitle}</StyledRulesHeading>
-
           {/* Если это массив правил */}
           {Array.isArray(sectionValue) &&
             sectionValue.map((rule, idx) => (
@@ -76,7 +78,7 @@ export default function RulesContent({ rulesData }) {
                   ))}
               </div>
             ))}
-        </StyledRulesWrapper>
+        </StyledRulesWrapper></>
       ))}
     </StyledWrapper>
   );
