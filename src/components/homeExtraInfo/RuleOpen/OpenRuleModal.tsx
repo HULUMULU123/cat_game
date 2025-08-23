@@ -7,6 +7,8 @@ import RulesContent from './RulesContent'
 import file from '../../../assets/data/stakan_rules.json'
 const StyledWrapper = styled.div`
   width:100%;
+  position: relative;
+  
 `
 export default function OpenRuleModal({handleClose, ruleCategory}) {
     console.log(ruleCategory)

@@ -1,5 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
+import DarkLayoutIcon from './DarkLayoutIcon'
 
 const StyledWrapper = styled.div`
 display: flex;
@@ -8,6 +9,7 @@ align-items: center;
 width: 95%;
 margin: 20px auto;
 gap: 15px;
+position: relative;
 
 overflow-y: scroll;   /* только вертикальный скролл */
 overflow-x: hidden;   /* горизонтального нет */
@@ -104,6 +106,7 @@ export default function RulesContent({ rulesData }) {
             ))}
         </StyledRulesWrapper></>
       ))}
+      <DarkLayoutIcon/>
     </StyledWrapper>
   );
 }
