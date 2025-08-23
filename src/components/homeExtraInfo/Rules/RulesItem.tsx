@@ -7,8 +7,15 @@ flex-direction: column;
 align-items: center;
 justify-content: center;`
 
-export default function RulesItem() {
+const StyledRuleImg = styled.img``
+
+const StyledRuleText = styled.span``
+
+export default function RulesItem({icon, text}) {
   return (
-    <StyledRulesItem>RulesItem</StyledRulesItem>
+    <StyledRulesItem>
+      <StyledRuleImg src={icon} />
+      <StyledRuleText>{text}</StyledRuleText>
+    </StyledRulesItem>
   )
 }
