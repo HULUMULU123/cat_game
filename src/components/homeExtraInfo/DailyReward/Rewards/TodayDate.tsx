@@ -17,7 +17,7 @@ font-size: 12px;`
 
 const StyledBigDiv = styled.span`
 font-size: 28px;
-color: var(--color-white-text)`
+color: var(--color-white-text);`
 
 export default function TodayDate() {
   return (

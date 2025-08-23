@@ -4,6 +4,7 @@ import Header from '../common/Header'
 import ModalName from '../common/ModalName'
 import RewardsSection from './Rewards/RewardsSection'
 import SpecialRewards from './Rewards/SpecialRewards'
+import TodayDate from './Rewards/TodayDate'
 const StyledWrapper = styled.div`
   width:100%;
   overflow-y: scroll;   /* только вертикальный скролл */
@@ -34,6 +35,7 @@ export default function RewardModal({handleClose}) {
         <ModalName textName='ЕЖЕДНЕВНАЯ НАГРАДА'/>
         <RewardsSection/>
         <SpecialRewards/>
+        <TodayDate/>
     </StyledWrapper>
   )
 }
