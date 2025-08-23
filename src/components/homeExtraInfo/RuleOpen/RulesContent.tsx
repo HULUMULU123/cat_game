@@ -34,7 +34,7 @@ const StyledRulesWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: start;
-    width: 95%;
+    width: 90%;
     font-family: 'Conthrax', sans-serif;
     color: rgb(158,189,185);
 `
