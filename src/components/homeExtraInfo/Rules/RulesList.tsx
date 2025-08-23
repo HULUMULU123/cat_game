@@ -42,7 +42,7 @@ font-size: 12px;`
 const StyledRulesList = styled.ul`
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 50px;
     padding:0;
     margin: 0;
     width: 95%;

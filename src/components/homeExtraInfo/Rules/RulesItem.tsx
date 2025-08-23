@@ -6,11 +6,12 @@ display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
-gap: 7px;
+height: 50px;
+justify-content: space-between;
 `
 
 const StyledRuleImg = styled.img`
-width: 44px;`
+width: 30px;`
 
 const StyledRuleText = styled.span`
 font-family: 'Roboto', sans-serif;
