@@ -5,6 +5,8 @@ const StyledWrapper = styled.div`
 display: flex;
 flex-direction: column;
 align-items: center;
+width: 50%;
+margin: 30px auto;
 `
 
 const StyledHeaderSpan = styled.span`
@@ -25,12 +27,12 @@ background: #4fc5bf;
 display: flex;
 flex-direction: column;
 align-items: center;
-padding: 10px 0;
+padding: 40px 0;
 `
 
 const StyledContentImg = styled.img`
-width: 20px;
-height: 20px;`
+width: 30px;
+height: 30px;`
 
 const StyledContentSpan = styled.span`
 font-family: 'Conthrax', sans-serif;
@@ -49,10 +51,10 @@ color: rgb(113,140,135);
 export default function SpecialRewards() {
   return (
     <StyledWrapper>
-      <StyledHeaderSpan></StyledHeaderSpan>
+      <StyledHeaderSpan>SPECIAL PRIZE</StyledHeaderSpan>
         <StyledSpecialWrapper>
           <StyledContentImg src={coin} />
-          <StyledContentSpan></StyledContentSpan>
+          <StyledContentSpan>100</StyledContentSpan>
         </StyledSpecialWrapper>
         <StyledBottomDate>29 / 07</StyledBottomDate>
     </StyledWrapper>
