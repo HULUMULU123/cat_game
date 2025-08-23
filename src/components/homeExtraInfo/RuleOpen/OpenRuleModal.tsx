@@ -9,6 +9,7 @@ import DarkLayoutIcon from './DarkLayoutIcon'
 const StyledWrapper = styled.div`
   width:100%;
   position: relative;
+  height: 100vh;
   
 `
 export default function OpenRuleModal({handleClose, ruleCategory}) {
