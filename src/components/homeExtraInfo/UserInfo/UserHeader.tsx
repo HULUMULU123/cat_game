@@ -7,7 +7,9 @@ const StyledHeader = styled.div`
 display: flex;
 justify-content: space-between;
 align-items: center;
-width: 100%;
+width: 85%;
+padding: 15px 20px;
+margin: 0px auto;
 `
 
 const StyledCoinWrapper = styled.div`
