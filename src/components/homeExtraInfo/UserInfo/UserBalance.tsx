@@ -33,6 +33,8 @@ const StyledCoinContent = styled.div`
   width: 70%;
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 10px;
 `
 
 const StyledCoinImg = styled.img`
@@ -42,6 +44,7 @@ height: 30px;`
 const StyledCoinBalance = styled.span`
 font-size: 30px;
 font-weight: 700;
+color: #fff;
 `
 export default function UserBalance() {
   return (
