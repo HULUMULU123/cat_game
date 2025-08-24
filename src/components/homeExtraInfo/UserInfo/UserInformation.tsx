@@ -10,8 +10,8 @@ margin: 0 auto;
 `
 
 const StyledImgWrapper = styled.div`
-width: 50px;
-height:50px;
+width: 5rem;
+height:5rem;
 overflow: hidden;
 border-radius:50%;
 border: 2px solid #85FFF0;
@@ -25,11 +25,12 @@ height:100%;
 `
 
 const StyledUsernameWrapper = styled.div`
-width: 60%;
+width: 70%;
 background: rgba(255,255,255,0.2);
 display: flex;
 align-items:center;
-border-radius: 7px;`
+border-radius: 7px;
+height: 2.5rem;`
 
 const StyledUsernameSpan = styled.span`
 color:#fff;
