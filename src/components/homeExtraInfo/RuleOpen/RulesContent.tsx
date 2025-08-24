@@ -30,7 +30,7 @@ height: 65vh;
   background: #E1FFFB;  /* активная часть */
   border-radius: 20px;
 }
-height: 80vh;
+height: 75vh;
 `
 
 const StyledListHeadingWrapper = styled.div`

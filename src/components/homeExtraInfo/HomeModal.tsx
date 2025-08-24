@@ -4,6 +4,7 @@ import PrizeModal from './PrizeModal/PrizeModal'
 import RewardModal from './DailyReward/Rewards/RewardModal'
 import RulesModal from './Rules/RulesModal'
 import OpenRuleModal from './RuleOpen/OpenRuleModal'
+import UserInfo from './UserInfo/UserInfo'
 
 const StyledModalLayout = styled.div`
   top: 0;
@@ -47,6 +48,7 @@ export default function HomeModal({infoType, isOpen, handleClose, handleRuleClos
         {infoType == 'reward' ? <RewardModal handleClose={handleClose} />: null }
         {infoType == 'rules' ? <RulesModal handleClose={handleClose} openRuleCategory={openRuleCategory}/>: null }
         {infoType == 'rule_category' ? <OpenRuleModal handleClose={handleRuleClose} ruleCategory={ruleCategory}/>: null }
+        {infoType == 'user' ? <UserInfo handleClose={handleClose} />: null }
       </div>
     </StyledModalLayout>
   )
