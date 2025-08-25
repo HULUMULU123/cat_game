@@ -8,6 +8,7 @@ const StyledWrapper = styled.div`
   align-items:center;
   gap: 5px;
   font-family:'Conthrax', sans-serif;
+  width: 100%;
 `
 
 const StyledBlockHeader = styled.h3`
@@ -27,6 +28,7 @@ const StyledCoinWrapper = styled.div`
   align-items: center;
   justify-content:center;
   border-radius: 7px;
+  padding: 20px 0;
 `
 
 const StyledCoinContent = styled.div`

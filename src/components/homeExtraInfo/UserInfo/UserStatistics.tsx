@@ -1,7 +1,79 @@
 import React from 'react'
+import styled from 'styled-components'
+import coin from '../../../assets/coin.png'
 
-export default function UserStatistics() {
+const StyledWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items:center;
+  gap: 5px;
+  font-family:'Conthrax', sans-serif;
+  width: 100%;
+`
+
+const StyledBlockHeader = styled.h3`
+  margin: 0;
+  padding:0;
+  display: inline;
+  color: var(--color-white-text);
+  font-size: 12px;
+  font-weight:500;
+`
+
+const StyledStatisticsWrapper = styled.div`
+  width: 100%;
+  background: #126358;
+  background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content:center;
+  border-radius: 7px;
+  padding: 20px 0;
+`
+
+const StyledStatisticsContent = styled.div`
+`
+
+const StyledStatisticsSpanWrapper = styled.div``
+
+const StyledStatisticsSpan = styled.span``
+
+const StyledStatistcPoints = styled.span``
+
+const StyledStatisticResultSpan = styled.span``
+
+const StyledFriendsContent = styled.div``
+
+const StyledFriendsRoadMap = styled.div``
+
+const StyledFriendsLine = styled.span``
+
+const StyledFriendsInfo = styled.div``
+
+const StyledFriendsSpan = styled.span``
+
+const StyledFriendsPoint = styled.span``
+
+const StyledFriendsImgWrapper = styled.div``
+
+const StyledFriendsImg = styled.img``
+
+const StyledFriendsImgSpan = styled.span``
+
+
+export default function UserBalance() {
   return (
-    <div>UserStatistics</div>
+    <StyledWrapper>
+      <StyledBlockHeader>СТАТИСТИКА</StyledBlockHeader>
+      <StyledStatisticsWrapper>
+        <StyledStatisticsContent>
+          <StyledStatisticsSpanWrapper>
+            <StyledStatisticsSpan>СБОЕВ ПРОЙДЕНО</StyledStatisticsSpan>
+            <StyledStatistcPoints></StyledStatistcPoints>
+            <StyledStatisticResultSpan>13</StyledStatisticResultSpan>
+          </StyledStatisticsSpanWrapper>
+        </StyledStatisticsContent>
+      </StyledStatisticsWrapper>
+    </StyledWrapper>
   )
 }
