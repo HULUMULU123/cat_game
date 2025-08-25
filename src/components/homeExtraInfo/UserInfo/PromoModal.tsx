@@ -20,7 +20,7 @@ const StyledPromoWrapper = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 7px 15px;
+    padding: 15px 20px;
 `
 
 const StyledPromoForm = styled.form`
@@ -36,7 +36,7 @@ const StyledPromoInput = styled.input`
   appearance: none;
 
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   padding: 7px;
   
 
