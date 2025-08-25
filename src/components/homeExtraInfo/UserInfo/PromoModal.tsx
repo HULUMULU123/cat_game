@@ -33,12 +33,16 @@ const StyledPromoInput = styled.input`
 color: #fff;
 padding:7px;
 border: none;
-border-bottom: 1px dotted #fff;
+border-bottom: 2px dotted #fff;
 background: transparent;
 
 ::placeholder {
     color: rgba(255, 255, 255, 0.6);
     letter-spacing: 1px;
+  }
+  
+:focus {
+    border-bottom: 1px solid #fff;
   }`
 
 const StyledPromoSubmit = styled.button`
