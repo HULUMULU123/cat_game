@@ -30,6 +30,8 @@ const StyledPromoForm = styled.form`
 `
 
 const StyledPromoInput = styled.input`
+    font-family: 'Roboto', sans-serif;
+    font-weight: 800;
   -webkit-appearance: none; /* убираем дефолтные стили iOS */
   appearance: none;
 
