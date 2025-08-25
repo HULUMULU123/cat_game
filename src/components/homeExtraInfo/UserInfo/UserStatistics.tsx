@@ -132,9 +132,11 @@ export default function UserBalance() {
           </StyledStatisticsSpanWrapper>
         </StyledStatisticsContent>
         <StyledFriendsContent>
+          <StyledStatisticsSpanWrapper>
           <StyledStatisticsSpan>ПРИГЛАШЕНО ДРУЗЕЙ</StyledStatisticsSpan>
             <StyledStatistcPoints></StyledStatistcPoints>
             <StyledStatisticResultSpan>22</StyledStatisticResultSpan>
+            </StyledStatisticsSpanWrapper>
             <StyledFriendsRoadMap>
               <StyledFriendsLine></StyledFriendsLine>
 
