@@ -36,7 +36,7 @@ display: flex;
 flex-direction: column;
 align-items: center;
 width:90%;
-gap: 20px;
+gap: 15px;
 `
 
 const StyledStatisticsSpanWrapper = styled.div`
@@ -64,13 +64,39 @@ font-weight: 700;
 color: var(--color-white-text);
 `
 
-const StyledFriendsContent = styled.div``
+const StyledFriendsContent = styled.div`
+display: flex;
+flex-direction: column;
+align-items: center;
+width:90%;
+gap: 15px;`
 
-const StyledFriendsRoadMap = styled.div``
+const StyledFriendsRoadMap = styled.div`
+position: relative;
+width: 100%;`
 
-const StyledFriendsLine = styled.span``
+const StyledFriendsLine = styled.span`
+position: absolute;
+width: 110%;
+top: 50%;
+transform: translateY(-50%);
+left: 0;
+background: #85FFF0;
+border-radius: 10px;
+display: block;
+height: 1px;`
 
-const StyledFriendsInfo = styled.div``
+const StyledFriendsList = styled.ul`
+margin: 0;
+padding: 0;
+display: flex; 
+list-style: none;
+width: 100%;`
+
+const StyledFriendsItem = styled.li`
+display: flex;
+align-items: center;
+`
 
 const StyledFriendsSpan = styled.span``
 
@@ -105,6 +131,16 @@ export default function UserBalance() {
             <StyledStatisticResultSpan>50</StyledStatisticResultSpan>
           </StyledStatisticsSpanWrapper>
         </StyledStatisticsContent>
+        <StyledFriendsContent>
+          <StyledStatisticsSpan>ПРИГЛАШЕНО ДРУЗЕЙ</StyledStatisticsSpan>
+            <StyledStatistcPoints></StyledStatistcPoints>
+            <StyledStatisticResultSpan>22</StyledStatisticResultSpan>
+            <StyledFriendsRoadMap>
+              <StyledFriendsLine></StyledFriendsLine>
+
+
+            </StyledFriendsRoadMap>
+        </StyledFriendsContent>
       </StyledStatisticsWrapper>
     </StyledWrapper>
   )
