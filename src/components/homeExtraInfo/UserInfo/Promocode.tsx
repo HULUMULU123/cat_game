@@ -25,7 +25,7 @@ const StyledInviteBtn = styled.button`
     background: #126358;
     background: linear-gradient(216deg, rgba(18, 99, 88, 0.7) 0%, rgba(119, 162, 148, 0.5) 50%);
     padding: 8px 15px;
-    margin: 15px auto;
+    margin: -20px auto 30px;
     display: flex;
     gap: 20px;
     align-items: center;
