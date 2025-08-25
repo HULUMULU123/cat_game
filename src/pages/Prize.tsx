@@ -18,7 +18,7 @@ export default function Prize() {
           <CoinCount isPrize setIsModalOpen={setIsModalOpen}/>
           <SectionInfo InfoName={'ТУРНИРНАЯ ТАБЛИЦА'} InfoExtra={'25 / 07 / 25'}/>
           <UsersList/>
-          <span>{isModalOpen}</span>
+          
           {isModalOpen ? <PrevResultsModal handleClose={setIsModalOpen}/> : null}
       </StyledWrapper>
   )
