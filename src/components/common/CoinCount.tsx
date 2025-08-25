@@ -35,15 +35,15 @@ const StyledHistoryImg = styled.img`
   width: 100%;
   height: 100%;
 `
-export default function CoinCount({isPrize = false}) {
+export default function CoinCount({isPrize = false, setIsModalOpen=null}) {
   return (
     <StyledContentWrapper>
         <StyledCoinWrapper>
             <StyledCoinImg src={coin}/>
             <StyledCoinCount>500</StyledCoinCount>
         </StyledCoinWrapper>
-        {isPrize ? 
-        <StyledHistoryBtn>
+        {isPrize && setIsModalOpen ? 
+        <StyledHistoryBtn onClick={setIsModalOpen}>
           <StyledHistoryImg src={history}/>
           </StyledHistoryBtn>:
           null}
