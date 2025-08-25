@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-
+import arrow from '../../../assets/icons/arrow.svg'
 const StyledWrapper = styled.div`
 width: 100%;
 display: flex;
@@ -14,11 +14,29 @@ flex-direction: column;
 align-items:center;
 margin: 0 auto;`
 
-const StyledDateSpan = styled.span`
-font-family: 'Conthrax', sans-serif;
-font-size: 14px;
-font-weight: 800;
-color: var(--color-white-text);
+// const StyledDateSpan = styled.span`
+// font-family: 'Conthrax', sans-serif;
+// font-size: 14px;
+// font-weight: 800;
+// color: var(--color-white-text);
+// `
+
+const StyledInviteBtn = styled.button`
+    background: #126358;
+    background: linear-gradient(216deg, rgba(18, 99, 88, 0.7) 0%, rgba(119, 162, 148, 0.5) 50%);
+    padding: 7px 15px;
+    margin: 15px auto;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    color: #fff;
+    font-family: 'Conthrax', sans-serif;
+    font-weight: 800;
+`
+
+const StyledInviteImg = styled.img`
+    width: 25px;
+    height: 25px;
 `
 
 const StyledEnterPropmoWrapper = styled.div`
@@ -44,7 +62,9 @@ export default function Promocode({handleOpenModal}) {
   return (
     <StyledWrapper>
         <StyledContentWrapper>
-            <StyledDateSpan>25 / 07/ 2025</StyledDateSpan>
+            <StyledInviteBtn>
+                <StyledInviteImg src={arrow}/>
+            </StyledInviteBtn>
             <StyledEnterPropmoWrapper>
                 <StyledEnterPromoBtn onClick={()=>handleOpenModal(true)}>
                     ВВЕСТИ ПРОМОКОД |
