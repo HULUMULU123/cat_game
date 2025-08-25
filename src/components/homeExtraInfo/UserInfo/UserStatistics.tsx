@@ -29,6 +29,8 @@ const StyledStatisticsWrapper = styled.div`
   justify-content:center;
   border-radius: 7px;
   padding: 20px 0;
+  flex-direction: column;
+  gap: 60px;
 `
 
 const StyledStatisticsContent = styled.div`
@@ -77,7 +79,7 @@ width: 100%;`
 
 const StyledFriendsLine = styled.span`
 position: absolute;
-width: 110%;
+width: 100%;
 top: 50%;
 transform: translateY(-50%);
 left: 0;
