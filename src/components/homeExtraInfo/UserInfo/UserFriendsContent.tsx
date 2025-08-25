@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import coin from '../../../assets/coin.png'
+
 import FriendItem from './FriendItem'
 const StyledStatisticsContent = styled.div`
 display: flex;

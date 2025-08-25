@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-
+import coin from '../../../assets/coin.png'
 const StyledFriendsItem = styled.li`
 display: flex;
 align-items: center;
