@@ -52,7 +52,7 @@ align-items: center;`
 const StyledFriendsLine = styled.span`
 position: absolute;
 width: 100%;
-top: 45%;
+top: 40%;
 /* transform: translateY(-50%); */
 left: 0;
 background: #85FFF0;

@@ -5,7 +5,7 @@ const StyledFriendsItem = styled.li`
 display: flex;
 align-items: center;
 flex-direction: column;
-gap: 5px;
+gap: 10px;
 font-family: 'Conthrax', sans-serif;
 `
 
@@ -33,7 +33,7 @@ background: #4fc5bf;
   );
 border-radius: 7px;
 align-items: center;
-padding: 15px 7px;`
+padding: 6px 3px;`
 
 const StyledFriendsImg = styled.img`
 width: 20px;
