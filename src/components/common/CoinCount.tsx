@@ -35,18 +35,24 @@ const StyledHistoryImg = styled.img`
   width: 100%;
   height: 100%;
 `
-export default function CoinCount({isPrize = false, setIsModalOpen=null}) {
+interface CoinCountProps {
+  isPrize?: boolean;
+  setIsModalOpen?: (value: boolean) => void;
+}
+
+export default function CoinCount({ isPrize = false, setIsModalOpen }: CoinCountProps) {
   return (
     <StyledContentWrapper>
-        <StyledCoinWrapper>
-            <StyledCoinImg src={coin}/>
-            <StyledCoinCount>500</StyledCoinCount>
-        </StyledCoinWrapper>
-        {isPrize && setIsModalOpen ? 
-        <StyledHistoryBtn onClick={()=>setIsModalOpen(true)}>
-          <StyledHistoryImg src={history}/>
-          </StyledHistoryBtn>:
-          null}
+      <StyledCoinWrapper>
+        <StyledCoinImg src={coin} />
+        <StyledCoinCount>500</StyledCoinCount>
+      </StyledCoinWrapper>
+
+      {isPrize && setIsModalOpen && (
+        <StyledHistoryBtn onClick={() => setIsModalOpen(true)}>
+          <StyledHistoryImg src={history} />
+        </StyledHistoryBtn>
+      )}
     </StyledContentWrapper>
-  )
+  );
 }
