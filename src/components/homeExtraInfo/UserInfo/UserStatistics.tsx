@@ -41,17 +41,27 @@ width:95%;
 const StyledStatisticsSpanWrapper = styled.div`
 width: 100%;
 display: flex;
-align-items: center;
+align-items: end;
 `
 
-const StyledStatisticsSpan = styled.span``
+const StyledStatisticsSpan = styled.span`
+font-family: 'Roboto', sans-serif;
+font-size: 11px;
+font-weight: 200;
+color: var(--color-white-text);
+`
 
 const StyledStatistcPoints = styled.span`
 flex-grow: 1;
-border-bottom: 1px dotted #fff;
+border-bottom: 1px dotted var(--color-white-text);
 margin: 0 8px;`
 
-const StyledStatisticResultSpan = styled.span``
+const StyledStatisticResultSpan = styled.span`
+font-family: 'Conthrax', sans-serif;
+font-size: 20px;
+font-weight: 700;
+color: var(--color-white-text)
+`
 
 const StyledFriendsContent = styled.div``
 
