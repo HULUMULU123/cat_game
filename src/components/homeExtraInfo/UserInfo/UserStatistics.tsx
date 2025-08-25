@@ -32,13 +32,24 @@ const StyledStatisticsWrapper = styled.div`
 `
 
 const StyledStatisticsContent = styled.div`
+display: flex;
+flex-direction: column;
+align-items: center;
+width:95%;
 `
 
-const StyledStatisticsSpanWrapper = styled.div``
+const StyledStatisticsSpanWrapper = styled.div`
+width: 100%;
+display: flex;
+align-items: center;
+`
 
 const StyledStatisticsSpan = styled.span``
 
-const StyledStatistcPoints = styled.span``
+const StyledStatistcPoints = styled.span`
+flex-grow: 1;
+border-bottom: 1px dotted #fff;
+margin: 0 8px;`
 
 const StyledStatisticResultSpan = styled.span``
 
