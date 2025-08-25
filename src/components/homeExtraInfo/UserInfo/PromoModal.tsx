@@ -9,7 +9,9 @@ z-index:9999;
 background: rgba(0,0,0,0.4);
 display: flex;
 align-items: center;
-justify-content: center;`
+justify-content: center;
+height: 100vh;
+width: 100vw;`
 
 const StyledPromoWrapper = styled.div`
     background: #28B092;
@@ -30,7 +32,14 @@ const StyledPromoForm = styled.form`
 const StyledPromoInput = styled.input`
 color: #fff;
 padding:7px;
-border-bottom: 1px dotted #fff;`
+border: none;
+border-bottom: 1px dotted #fff;
+background: transparent;
+
+::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 1px;
+  }`
 
 const StyledPromoSubmit = styled.button`
 background: transparent;
@@ -46,7 +55,7 @@ export default function PromoModal({handleCloseModal}) {
     <StyledLayout onClick={()=>handleCloseModal(false)}>
         <StyledPromoWrapper onClick={(e) => e.stopPropagation()}>
             <StyledPromoForm>
-                <StyledPromoInput/>
+                <StyledPromoInput name='promo' placeholder='ПРОМОКОД'/>
                 <StyledPromoSubmit><StyledSubmitImg src={submit}/></StyledPromoSubmit>
             </StyledPromoForm>
         </StyledPromoWrapper>

@@ -11,13 +11,14 @@ const StyledContentWrapper = styled.div`
 width: 50%;
 display: flex;
 flex-direction: column;
-align-items:center;`
+align-items:center;
+margin: 0 auto;`
 
 const StyledDateSpan = styled.span`
 font-family: 'Conthrax', sans-serif;
 font-size: 14px;
 font-weight: 800;
-color: var(--color-white-text)
+color: var(--color-white-text);
 `
 
 const StyledEnterPropmoWrapper = styled.div`
