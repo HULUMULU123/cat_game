@@ -52,8 +52,8 @@ align-items: center;`
 const StyledFriendsLine = styled.span`
 position: absolute;
 width: 100%;
-top: 50%;
-transform: translateY(-50%);
+top: 45%;
+/* transform: translateY(-50%); */
 left: 0;
 background: #85FFF0;
 border-radius: 10px;
@@ -83,6 +83,10 @@ export default function UserFriendsContent() {
             <StyledFriendsRoadMap>
               <StyledFriendsLine></StyledFriendsLine>
                 <StyledFriendsList>
+                    <FriendItem/>
+                    <FriendItem/>
+                    <FriendItem/>
+                    <FriendItem/>
                     <FriendItem/>
                 </StyledFriendsList>
 

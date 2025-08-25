@@ -17,23 +17,30 @@ color: rgb(129, 171, 164);`
 
 const StyledFriendsPoint = styled.span`
 display: block;
-width: 10px;
-height: 10px;
+width: 20px;
+height: 20px;
 background-color: #fff;
 border-radius: 50%;`
 
 const StyledFriendsImgWrapper = styled.div`
 display: flex; 
 gap: 5px;
-background: #000;
-border-radius: 7px;`
+background: #4fc5bf;
+  background: linear-gradient(
+    0deg,
+    rgba(79, 197, 191, 0.2) 15%,
+    rgba(150, 238, 172, 0.08) 100%
+  );
+border-radius: 7px;
+align-items: center;
+padding: 15px 7px;`
 
 const StyledFriendsImg = styled.img`
 width: 20px;
 height: 20px;`
 
 const StyledFriendsImgSpan = styled.span`
-color: #fff;
+color: var(--color-white-text);
 font-weight: 800;
 font-size: 12px;
 `
