@@ -15,7 +15,7 @@ export default function Prize() {
 
   return (
     <StyledWrapper>
-          <CoinCount isPrize/>
+          <CoinCount isPrize setIsModalOpen={setIsModalOpen}/>
           <SectionInfo InfoName={'ТУРНИРНАЯ ТАБЛИЦА'} InfoExtra={'25 / 07 / 25'}/>
           <UsersList/>
           {isModalOpen ? <PrevResultsModal handleClose={setIsModalOpen}/> : null}
