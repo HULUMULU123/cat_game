@@ -19,6 +19,6 @@ export default function PrevContentHeader() {
     { label: "23 / 05 / 2023", value: "2" },
   ];
   return (
-    <StyledWrapper><CustomSelect options={options} onChange={(value)=>console.log(value)}/>></StyledWrapper>
+    <StyledWrapper><CustomSelect options={options} onChange={(value)=>console.log(value)}/></StyledWrapper>
   )
 }
