@@ -49,7 +49,7 @@ export default function CoinCount({ isPrize = false, setIsModalOpen }: CoinCount
       </StyledCoinWrapper>
 
       {isPrize && setIsModalOpen && (
-        <StyledHistoryBtn onClick={() => setIsModalOpen(true)}>
+        <StyledHistoryBtn onClick={() => {setIsModalOpen(true); console.log('click')}}>
           <StyledHistoryImg src={history} />
         </StyledHistoryBtn>
       )}
