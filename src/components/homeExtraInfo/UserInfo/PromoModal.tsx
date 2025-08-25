@@ -34,9 +34,9 @@ const StyledPromoInput = styled.input`
   appearance: none;
 
   color: #fff;
-  font-size: 16px;
-  padding: 7px 0;
-  width: 200px;
+  font-size: 12px;
+  padding: 7px;
+  
 
   border: none;
   border-bottom: 2px dotted #fff;

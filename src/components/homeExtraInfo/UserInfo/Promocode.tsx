@@ -22,10 +22,12 @@ color: var(--color-white-text);
 `
 
 const StyledEnterPropmoWrapper = styled.div`
-    width: 80%;
+    width: 90%;
     padding: 10px 15px;
     background: #26B291;
     border-radius: 7px;
+    display:flex;
+    justify-content: center;
 `
 
 const StyledEnterPromoBtn = styled.button`
