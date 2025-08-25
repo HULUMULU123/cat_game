@@ -24,19 +24,25 @@ margin: 0 auto;`
 const StyledInviteBtn = styled.button`
     background: #126358;
     background: linear-gradient(216deg, rgba(18, 99, 88, 0.7) 0%, rgba(119, 162, 148, 0.5) 50%);
-    padding: 7px 15px;
+    padding: 8px 15px;
     margin: 15px auto;
     display: flex;
     gap: 20px;
     align-items: center;
-    color: #fff;
-    font-family: 'Conthrax', sans-serif;
-    font-weight: 800;
+    border:none;
+    border-radius: 7px;
+
+    
 `
 
+const StyledInviteSpan = styled.span`
+    color: #fff;
+    font-family: 'Conthrax', sans-serif;
+    font-weight: 800;`
+
 const StyledInviteImg = styled.img`
-    width: 25px;
-    height: 25px;
+    width: 20px;
+    height: 20px;
 `
 
 const StyledEnterPropmoWrapper = styled.div`
@@ -63,6 +69,7 @@ export default function Promocode({handleOpenModal}) {
     <StyledWrapper>
         <StyledContentWrapper>
             <StyledInviteBtn>
+                <StyledInviteSpan>Пригласить друга</StyledInviteSpan>
                 <StyledInviteImg src={arrow}/>
             </StyledInviteBtn>
             <StyledEnterPropmoWrapper>
