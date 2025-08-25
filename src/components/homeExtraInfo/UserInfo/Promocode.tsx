@@ -2,10 +2,10 @@ import React from 'react'
 import styled from 'styled-components'
 
 const StyledWrapper = styled.div`
-margin-top: 40px;
 width: 100%;
 display: flex;
-align-items: center;`
+align-items: center;
+margin: 40px auto;`
 
 const StyledContentWrapper = styled.div`
 width: 50%;
@@ -17,6 +17,7 @@ const StyledDateSpan = styled.span`
 font-family: 'Conthrax', sans-serif;
 font-size: 14px;
 font-weight: 800;
+color: var(--color-white-text)
 `
 
 const StyledEnterPropmoWrapper = styled.div`

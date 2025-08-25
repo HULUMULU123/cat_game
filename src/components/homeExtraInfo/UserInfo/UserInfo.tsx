@@ -27,7 +27,7 @@ height: 65vh;
   background: #E1FFFB;  /* активная часть */
   border-radius: 20px;
 }
-height: 75vh;`
+height: 98vh;`
 
 export default function UserInfo({handleClose}) {
   return (
@@ -35,6 +35,7 @@ export default function UserInfo({handleClose}) {
         <UserHeader handleClose={handleClose}/>
         <UserInformation/>
         <UserContent/>
+        
     </StyledWrapper>
   )
 }
