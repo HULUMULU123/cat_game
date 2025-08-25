@@ -35,7 +35,8 @@ const StyledStatisticsContent = styled.div`
 display: flex;
 flex-direction: column;
 align-items: center;
-width:95%;
+width:90%;
+gap: 20px;
 `
 
 const StyledStatisticsSpanWrapper = styled.div`
@@ -54,13 +55,13 @@ color: var(--color-white-text);
 const StyledStatistcPoints = styled.span`
 flex-grow: 1;
 border-bottom: 1px dotted var(--color-white-text);
-margin: 0 8px;`
+margin: 0 5px;`
 
 const StyledStatisticResultSpan = styled.span`
 font-family: 'Conthrax', sans-serif;
 font-size: 20px;
 font-weight: 700;
-color: var(--color-white-text)
+color: var(--color-white-text);
 `
 
 const StyledFriendsContent = styled.div``
@@ -92,6 +93,16 @@ export default function UserBalance() {
             <StyledStatisticsSpan>СБОЕВ ПРОЙДЕНО</StyledStatisticsSpan>
             <StyledStatistcPoints></StyledStatistcPoints>
             <StyledStatisticResultSpan>13</StyledStatisticResultSpan>
+          </StyledStatisticsSpanWrapper>
+          <StyledStatisticsSpanWrapper>
+            <StyledStatisticsSpan>ВИКТОРИН ПРОЙДЕНО</StyledStatisticsSpan>
+            <StyledStatistcPoints></StyledStatistcPoints>
+            <StyledStatisticResultSpan>32</StyledStatisticResultSpan>
+          </StyledStatisticsSpanWrapper>
+          <StyledStatisticsSpanWrapper>
+            <StyledStatisticsSpan>ИНФО-УЗЛОВ ПРОЙДЕНО</StyledStatisticsSpan>
+            <StyledStatistcPoints></StyledStatistcPoints>
+            <StyledStatisticResultSpan>50</StyledStatisticResultSpan>
           </StyledStatisticsSpanWrapper>
         </StyledStatisticsContent>
       </StyledStatisticsWrapper>
