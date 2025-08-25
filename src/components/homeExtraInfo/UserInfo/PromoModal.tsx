@@ -30,20 +30,30 @@ const StyledPromoForm = styled.form`
 `
 
 const StyledPromoInput = styled.input`
-color: #fff;
-padding:7px;
-border: none;
-border-bottom: 2px dotted #fff;
-background: transparent;
+  -webkit-appearance: none; /* убираем дефолтные стили iOS */
+  appearance: none;
 
-::placeholder {
+  color: #fff;
+  font-size: 16px;
+  padding: 7px 0;
+  width: 200px;
+
+  border: none;
+  border-bottom: 2px dotted #fff;
+  background: transparent;
+  outline: none;
+
+  transition: border-bottom-color 0.2s ease, border-bottom-style 0.2s ease;
+
+  &::placeholder {   /* важно: именно &::placeholder */
     color: rgba(255, 255, 255, 0.6);
     letter-spacing: 1px;
   }
-  
-:focus {
-    border-bottom: 1px solid #fff;
-  }`
+
+  &:focus {
+    border-bottom: 2px solid #fff;
+  }
+`;
 
 const StyledPromoSubmit = styled.button`
 background: transparent;
