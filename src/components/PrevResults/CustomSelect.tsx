@@ -18,6 +18,7 @@ const SelectBox = styled.div`
 `;
 
 const OptionsList = styled.ul<{ open: boolean }>`
+ z-index: 1;
   position: absolute;
   top: calc(100% + 20px); /* отступ 20px */
   left: 0;
@@ -69,7 +70,7 @@ const Backdrop = styled.div<{ open: boolean }>`
   display: ${({ open }) => (open ? "block" : "none")};
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(6px);
   z-index: 1;
 `;
