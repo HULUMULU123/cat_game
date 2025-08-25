@@ -7,6 +7,7 @@ align-items: center;
 flex-direction: column;
 gap: 10px;
 font-family: 'Conthrax', sans-serif;
+z-index: 2;
 `
 
 const StyledFriendsSpan = styled.span`

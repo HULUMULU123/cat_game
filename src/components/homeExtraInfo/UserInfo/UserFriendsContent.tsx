@@ -58,7 +58,8 @@ left: 0;
 background: #85FFF0;
 border-radius: 10px;
 display: block;
-height: 1px;`
+height: 1px;
+z-index: 1;`
 
 const StyledFriendsList = styled.ul`
 margin: 0;
