@@ -101,6 +101,10 @@ const OptionItem = styled.li`
   &:hover {
     background: rgba(0, 0, 0, 0.05);
   }
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-white-text)
 `;
 
 /* Размытие заднего фона */
