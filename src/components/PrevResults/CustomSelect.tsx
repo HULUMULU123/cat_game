@@ -101,7 +101,7 @@ const OptionItem = styled.li<{ selected?: boolean }>`
   ${({ selected }) =>
     selected &&
     css`
-      border-top: 2px solid #fff;
+      border-bottom: 2px solid #fff;
       background: rgba(255, 255, 255, 0.1);
       position: relative;
       z-index: 2;
