@@ -18,7 +18,9 @@ color: var(--color-white-text);
 font-weight: 700;
 margin: 0;
 padding: 0;
-text-align: center;`
+text-align: center;
+gap: 15px;
+`
 
 const StyledLine = styled.span`
 display: block;

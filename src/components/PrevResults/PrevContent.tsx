@@ -7,7 +7,8 @@ display: flex;
 flex-direction: column;
  background: #126358;
   background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
-border-radius: 7px;`
+border-radius: 7px;
+width: 95%;`
 
 const StyledContentWrapper = styled.div`
 width: 90%;
