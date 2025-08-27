@@ -7,13 +7,13 @@ const Wrapper = styled.div`
 `;
 
 const SelectBox = styled.div`
-  padding: 12px 16px;
+  padding: 6px 15px;
   background: #fff;
   border-radius: 8px;
   border: 1px solid #ccc;
   cursor: pointer;
   
-  min-width: 180px;
+  min-width: 160px;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -44,6 +44,28 @@ const OptionsList = styled.ul<{ open: boolean }>`
   list-style: none;
   margin: 0;
   padding: 8px 0;
+  height: 100px;
+
+overflow-y: scroll;   /* только вертикальный скролл */
+overflow-x: hidden;   /* горизонтального нет */
+   /* отступ от контента */
+box-sizing: content-box;
+
+background: #27AE91;
+scrollbar-width: thin;
+  scrollbar-color: #E1FFFB #2CC2A9; /* активная | неактивная *//* чтобы padding не "съел" ширину */
+&::-webkit-scrollbar{
+   width: 4px; 
+}
+&::-webkit-scrollbar-track{
+  background: #2CC2A9;  /* неактивная часть */
+  border-radius: 10px;
+}
+
+&::-webkit-scrollbar-thumb{
+  background: #E1FFFB;  /* активная часть */
+  border-radius: 20px;
+}
 
   box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
 
@@ -73,7 +95,9 @@ const OptionItem = styled.li`
   padding: 10px 16px;
   cursor: pointer;
   transition: background 0.2s;
-
+  display: flex;
+  align-items: center; 
+  justify-content: center;
   &:hover {
     background: rgba(0, 0, 0, 0.05);
   }
