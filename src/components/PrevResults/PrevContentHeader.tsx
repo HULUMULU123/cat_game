@@ -5,12 +5,28 @@ import { CustomSelect } from './CustomSelect'
 const StyledWrapper = styled.div`
     width: 100%;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     margin: 0 auto;
     align-items: center;
 `
 
-const StyledHeader = styled.h3``
+const StyledHeader = styled.h3`
+font-family: 'Conthrax', sans-serif;
+font-size: 22px;
+color: var(--color-white-text);
+font-weight: 700;
+margin: 0;
+padding: 0;
+text-align: center;`
 
+const StyledLine = styled.span`
+display: block;
+width: 100%;
+height: 2px;
+background: #85FFF0;
+
+`
 
 export default function PrevContentHeader() {
     const options = [
@@ -23,6 +39,10 @@ export default function PrevContentHeader() {
     { label: "23 / 01 / 2023", value: "7" },
   ];
   return (
-    <StyledWrapper><CustomSelect options={options} onChange={(value)=>console.log(value)}/></StyledWrapper>
+    <StyledWrapper>
+      <StyledHeader>ИТОГИ СБОЯ</StyledHeader>
+      <CustomSelect options={options} onChange={(value)=>console.log(value)}/>
+      <StyledLine></StyledLine>
+    </StyledWrapper>
   )
 }
