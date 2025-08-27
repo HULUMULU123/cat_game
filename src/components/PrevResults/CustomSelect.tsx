@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styled, { css } from "styled-components";
-
+import drop_down from '../../assets/icons/drop_down.svg'
 const Wrapper = styled.div`
   position: relative;
   display: inline-block;
@@ -12,10 +12,24 @@ const SelectBox = styled.div`
   border-radius: 8px;
   border: 1px solid #ccc;
   cursor: pointer;
-  font-size: 16px;
+  
   min-width: 180px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
+
+const StyledBoxSpan = styled.span`
+  font-size: 16px;
+  color: #2CC2A9;
+  font-weight: 700;
+`
+
+const StyledSelectImg = styled.img`
+  width: 20px;
+  height: 20px;
+`
 
 const OptionsList = styled.ul<{ open: boolean }>`
  z-index: 1;
@@ -100,7 +114,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       <Backdrop open={open} onClick={() => setOpen(false)} />
       <Wrapper>
         <SelectBox onClick={() => setOpen((prev) => !prev)}>
-          {selected ? selected.label : "Выберите опцию"}
+          <StyledBoxSpan>{selected ? selected.label : "Выберите опцию"}</StyledBoxSpan>
+          <StyledSelectImg src={drop_down}/>
         </SelectBox>
         <OptionsList open={open}>
           {options.map((opt) => (
