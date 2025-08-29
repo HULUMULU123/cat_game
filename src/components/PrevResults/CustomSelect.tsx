@@ -31,40 +31,18 @@ const StyledSelectImg = styled.img`
   width: 20px;
   height: 20px;
 `
-
-const OptionsList = styled.ul<{ open: boolean }>`
-  z-index: 1;
+const OptionListWrapper = styled.div<{ open: boolean }>`
+z-index: 1;
   position: absolute;
   top: calc(100% + 20px);
   left: 0;
   right: 0;
-
   background: #27AE91;
   border-radius: 7px;
   margin: 0;
   padding: 8px 0;
   height: 100px;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  box-sizing: content-box;
-
-  scrollbar-width: thin;
-  scrollbar-color: #E1FFFB #2CC2A9; 
-  &::-webkit-scrollbar {
-    width: 4px; 
-  }
-  &::-webkit-scrollbar-track {
-    background: #2CC2A9;  
-    border-radius: 10px;
-    background-clip: content-box;
-    border: solid 6px transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #E1FFFB;  
-    border-radius: 20px;
-  }
-
-  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
+  width: 150px;
 
   ${({ open }) =>
     open
@@ -86,6 +64,38 @@ const OptionsList = styled.ul<{ open: boolean }>`
       transform: translateY(0);
     }
   }
+`
+
+const OptionsList = styled.ul`
+  
+
+  
+  margin: 0;
+  padding: 8px 0;
+  height: 100%;
+  width: 90%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  box-sizing: content-box;
+
+  scrollbar-width: thin;
+  scrollbar-color: #E1FFFB #2CC2A9; 
+  &::-webkit-scrollbar {
+    width: 4px; 
+  }
+  &::-webkit-scrollbar-track {
+    background: #2CC2A9;  
+    border-radius: 10px;
+    
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #E1FFFB;  
+    border-radius: 20px;
+  }
+
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
+
+  
 `;
 
 const OptionItem = styled.li<{ selected?: boolean }>`
@@ -156,7 +166,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           <StyledBoxSpan>{selected ? selected.label : "Выберите опцию"}</StyledBoxSpan>
           <StyledSelectImg src={drop_down}/>
         </SelectBox>
-        <OptionsList open={open}>
+        <OptionListWrapper open={open}>
+        <OptionsList >
           {sortedOptions.map((opt) => (
             <OptionItem
               key={opt.value}
@@ -167,6 +178,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
             </OptionItem>
           ))}
         </OptionsList>
+        </OptionListWrapper>
       </Wrapper>
     </>
   );
