@@ -9,6 +9,7 @@ const StyledWrapper = styled.div`
     align-items: center;
     margin: 0 auto;
     align-items: center;
+    gap: 15px;
 `
 
 const StyledHeader = styled.h3`
@@ -19,7 +20,7 @@ font-weight: 700;
 margin: 0;
 padding: 0;
 text-align: center;
-gap: 15px;
+
 `
 
 const StyledLine = styled.span`
