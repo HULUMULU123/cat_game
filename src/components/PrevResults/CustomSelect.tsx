@@ -41,8 +41,8 @@ z-index: 1;
   border-radius: 7px;
   margin: 0;
   padding: 8px 0;
-  height: 100px;
-  width: 150px;
+  height: 120px;
+  width: 200px;
 
   ${({ open }) =>
     open
@@ -70,8 +70,8 @@ const OptionsList = styled.ul`
   
 
   
-  margin: 0;
-  padding: 8px 0;
+  margin: auto;
+  
   height: 100%;
   width: 90%;
   overflow-y: scroll;
@@ -93,7 +93,7 @@ const OptionsList = styled.ul`
     border-radius: 20px;
   }
 
-  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
+  
 
   
 `;
