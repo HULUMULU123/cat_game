@@ -7,8 +7,9 @@ const StyledItem = styled.li`
   align-items: center;
   justify-content: space-between;
   padding: 6px;
-  width: 90%;
+  width: 95%;
   margin: 0 auto;
+  border-radius:7px;
   background-color: ${({ number }) =>
     number === 1 ? css`background: #1FFFE3;
                         background: linear-gradient(90deg, rgba(31, 255, 227, 1) 0%, rgba(0, 223, 152, 1) 100%);` : 
