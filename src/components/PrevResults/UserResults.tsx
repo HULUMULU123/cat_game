@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import avatar from '../../assets/avatar.jpg'
 const StyledUserItem = styled.li`
 background: #26B291;
-width: 100%;
+width: 95%;
 display: flex;
 padding: 7px 0;
 border-radius: 7px;
