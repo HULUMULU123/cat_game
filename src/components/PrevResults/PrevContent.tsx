@@ -3,6 +3,12 @@ import styled from 'styled-components'
 import PrevContentHeader from './PrevContentHeader'
 import UsersList from './UsersList'
 import UserResults from './UserResults'
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+`
 
 const StyledWrapper = styled.div`
 display: flex;
@@ -22,12 +28,14 @@ flex-direction: column;
 
 export default function PrevContent() {
   return (
+    <Wrapper>
     <StyledWrapper>
       <StyledContentWrapper>
         <PrevContentHeader />
         <UsersList />
-        <UserResults />
       </StyledContentWrapper>
     </StyledWrapper>
+    <UserResults />
+    </Wrapper>
   )
 }
