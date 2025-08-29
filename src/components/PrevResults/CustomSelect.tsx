@@ -71,7 +71,7 @@ const OptionsList = styled.ul`
 
   
   margin: auto;
-  
+  padding: 0;
   height: 100%;
   width: 90%;
   overflow-y: scroll;

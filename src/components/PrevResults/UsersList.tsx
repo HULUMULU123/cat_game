@@ -10,16 +10,32 @@ const StyledList = styled.ul`
     width: 100%;
     padding: 0;
     margin: 10px 0;
+    height: 65vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    box-sizing: content-box;
+
+    scrollbar-width: thin;
+    scrollbar-color: #E1FFFB #2CC2A9; 
+    &::-webkit-scrollbar {
+      width: 4px; 
+    }
+    &::-webkit-scrollbar-track {
+      background: #2CC2A9;  
+      border-radius: 10px;
+      
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #E1FFFB;  
+      border-radius: 20px;
+    }
 `
 export default function UsersList() {
   return (
     <StyledList>
-        <UsersItem number={1}/>
-        <UsersItem number={2}/>
-        <UsersItem number={3}/>
-        <UsersItem number={4}/>
-        <UsersItem number={5}/>
-        <UsersItem number={6}/>
+      {Array.from({ length: 50 }, (_, i) => (
+        <UsersItem key={i + 1} number={i + 1} />
+      ))}
     </StyledList>
   )
 }
