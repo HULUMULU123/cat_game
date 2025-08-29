@@ -10,7 +10,8 @@ const StyledList = styled.ul`
     width: 100%;
     padding: 0;
     margin: 10px 0;
-    height: 65vh;
+    height: 55vh;
+    padding-right: 8px;
     overflow-y: scroll;
     overflow-x: hidden;
     box-sizing: content-box;
