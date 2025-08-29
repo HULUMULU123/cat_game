@@ -145,7 +145,9 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   onChange,
 }) => {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Option | null>(null);
+  const [selected, setSelected] = useState<Option | null>(
+    options.length > 0 ? options[options.length - 1] : null
+  );
 
   const handleSelect = (opt: Option) => {
     setSelected(opt);
@@ -163,7 +165,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       <Backdrop open={open} onClick={() => setOpen(false)} />
       <Wrapper>
         <SelectBox onClick={() => setOpen((prev) => !prev)}>
-          <StyledBoxSpan>{selected ? selected.label : "Выберите опцию"}</StyledBoxSpan>
+          <StyledBoxSpan>{selected ? selected.label : "Выберите дату"}</StyledBoxSpan>
           <StyledSelectImg src={drop_down}/>
         </SelectBox>
         <OptionListWrapper open={open}>
