@@ -56,6 +56,8 @@ const OptionsList = styled.ul<{ open: boolean }>`
   &::-webkit-scrollbar-track {
     background: #2CC2A9;  
     border-radius: 10px;
+    background-clip: content-box;
+    border: solid 6px transparent;
   }
   &::-webkit-scrollbar-thumb {
     background: #E1FFFB;  
