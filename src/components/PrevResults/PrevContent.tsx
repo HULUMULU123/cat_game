@@ -1,6 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 import PrevContentHeader from './PrevContentHeader'
+import UsersList from './UsersList'
 
 const StyledWrapper = styled.div`
 display: flex;
@@ -23,6 +24,7 @@ export default function PrevContent() {
     <StyledWrapper>
       <StyledContentWrapper>
         <PrevContentHeader />
+        <UsersList />
       </StyledContentWrapper>
     </StyledWrapper>
   )
