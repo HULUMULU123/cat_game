@@ -7,6 +7,7 @@ import Tasks from "./pages/Tasks";
 import Quiz from "./pages/Quiz";
 import Simulation from "./pages/Simulation";
 import Prize from "./pages/Prize";
+import Failure from "./pages/Failure";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="quiz/" element={<Quiz/>}/>
           <Route path="simulation/" element={<Simulation/>} />
           <Route path="prize/" element={<Prize/>} />
+          <Route path="failure/" element={<Failure/>} />
         </Route>
       </Routes>
     </BrowserRouter>

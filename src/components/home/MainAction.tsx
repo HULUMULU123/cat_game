@@ -1,7 +1,8 @@
 import styled from "styled-components"
 import gift from '../../assets/icons/gift.svg'
+import { useNavigate} from "react-router-dom"
 
-const StyledActionWrapper = styled.div`
+const StyledActionBtn = styled.button`
 position: absolute;
 left: 50%;
 transform: translateX(-50%);
@@ -15,7 +16,7 @@ box-shadow: 1px 3px 6px 0px rgba(0, 255, 174, 0.3);
 width: 60%;
 max-width: 50vh;
 border-radius: 7px;
-
+border: none;
 `
 
 const StyledActionContentWrapper = styled.div`
@@ -56,8 +57,9 @@ const StyledGiftImg = styled.img`
 width: 100%;
 margin: 0 auto;`
 export default function MainAction({handleOpenModal}) {
+  const navigate = useNavigate()
   return (
-    <StyledActionWrapper>
+    <StyledActionBtn onClick={()=>{navigate('/failure')}}>
         <StyledActionContentWrapper>
             <StyledActionTextWrapper>
                 <StyledActionName>СБОЙ НАЧАЛСЯ :</StyledActionName>
@@ -67,6 +69,6 @@ export default function MainAction({handleOpenModal}) {
                 <StyledGiftImg src={gift}/>
             </StyledGiftWrapper>
         </StyledActionContentWrapper>
-    </StyledActionWrapper>
+    </StyledActionBtn>
   )
 }
