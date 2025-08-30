@@ -13,7 +13,7 @@ box-shadow: 1px 3px 6px 0px rgba(0, 255, 174, 0.3);
   -webkit-box-shadow: 1px 3px 6px 0px rgba(0, 255, 174, 0.3) ;
   -moz-box-shadow: 1px 3px 6px 0px rgba(0, 255, 174, 0.3) ;
   display:flex;
-width: 60%;
+width: 70%;
 max-width: 50vh;
 border-radius: 7px;
 border: none;
