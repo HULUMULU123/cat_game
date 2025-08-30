@@ -65,7 +65,7 @@ export default function MainAction({handleOpenModal}) {
                 <StyledActionName>СБОЙ НАЧАЛСЯ :</StyledActionName>
                 <StyledActionTimer>03 : 59 : 58</StyledActionTimer>
             </StyledActionTextWrapper>
-            <StyledGiftWrapper onClick={()=>handleOpenModal('prize')}>
+            <StyledGiftWrapper onClick={(e) => {e.stopPropagation(); handleOpenModal('prize');}}>
                 <StyledGiftImg src={gift}/>
             </StyledGiftWrapper>
         </StyledActionContentWrapper>
