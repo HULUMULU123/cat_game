@@ -12,17 +12,20 @@ width: 60%;
 const StyledHeadSection = styled.div`
 display: flex;
 align-items: center;
-justify-content: space-between;`
+justify-content: space-between;
+width: 100%;`
 
 const StyledBottomSection = styled.div`
 display: flex;
 align-items: end;
-flex-direction: column;`
+flex-direction: column;
+width: 100%;`
 
 const StyledHeaderSpan = styled.span`
 font-family: 'Conthrax', sans-serif;
 font-size: 22px;
-font-weight: 700;`
+font-weight: 700;
+color: var(--color-white-text);`
 
 const StyledCloseBtn = styled.button`
 border: none;
@@ -44,7 +47,9 @@ margin-bottom: 7px;`
 const StyledTimeSpan = styled.span`
 font-family: 'Conthrax', sans-serif;
 font-size: 12px;
-font-weight: 700;`
+font-weight: 700;
+color: var(--color-white-text);`
+
 export default function HeaderInfo() {
   return (
     <Wrapper>
