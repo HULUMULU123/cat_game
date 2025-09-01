@@ -23,13 +23,13 @@ const Svg = styled.svg`
 
 const CircleBackground = styled.circle`
   fill: none;
-  stroke: #ddd;
+  stroke: url(#timerGradient);
   stroke-width: 12;
 `;
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke: url(#timerGradient); /* Используем градиент */
+  stroke: transparent; /* Используем градиент */
   stroke-width: 12;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
@@ -37,7 +37,7 @@ const CircleProgress = styled.circle`
 
 const CircleInner = styled.circle`
   fill: none;
-  stroke: #324674;
+  stroke: #85FFF0;
   stroke-width: 2;
 `;
 
