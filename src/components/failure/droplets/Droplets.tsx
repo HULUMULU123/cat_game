@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { useSpring, animated, useTransition } from "react-spring";
-import drop1 from '../../../assets/drops/drop1.svg'
-import drop2 from '../../../assets/drops/drop2.svg'
-import drop3 from '../../../assets/drops/drop3.svg'
-import drop4 from '../../../assets/drops/drop3.svg'
-import drop5 from '../../../assets/drops/drop4.svg'
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+import drop1 from '../../../assets/drops/drop1.svg';
+import drop2 from '../../../assets/drops/drop2.svg';
+import drop3 from '../../../assets/drops/drop3.svg';
+import drop4 from '../../../assets/drops/drop3.svg';
+import drop5 from '../../../assets/drops/drop4.svg';
 
 const Wrapper = styled.div`
   position: relative;
@@ -14,36 +14,65 @@ const Wrapper = styled.div`
   overflow: hidden;
 `;
 
-const Droplet = styled(animated.img)`
+const DropletImg = styled.img<{ x: number; y: number; size: number }>`
   position: absolute;
   cursor: pointer;
   user-select: none;
+  left: ${({ x }) => x}px;
+  top: ${({ y }) => y}px;
+  width: ${({ size }) => size}px;
+  height: ${({ size }) => size}px;
+  transition: top ${({ size }) => size / 10}s linear;
 `;
 
-const PopEffect = styled(animated.div)`
+const PopEffect = styled.div<{ x: number; y: number; size: number }>`
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
+  left: ${({ x }) => x}px;
+  top: ${({ y }) => y}px;
+  width: ${({ size }) => size * 2}px;
+  height: ${({ size }) => size * 2}px;
+  margin-left: ${({ size }) => -size}px;
+  margin-top: ${({ size }) => -size}px;
+  background: rgba(0, 223, 152, 0.5);
+  opacity: 0;
+  animation: pop 0.6s forwards;
+  
+  @keyframes pop {
+    from { opacity: 1; transform: scale(0); }
+    to { opacity: 0; transform: scale(1); }
+  }
 `;
 
 const dropletSvgs = [drop1, drop2, drop3, drop4, drop5];
 
 const Droplets = ({ spawnInterval = 800 }) => {
-  const [drops, setDrops] = useState([]);
-  const [pops, setPops] = useState([]);
+  const [drops, setDrops] = useState<any[]>([]);
+  const [pops, setPops] = useState<any[]>([]);
 
   useEffect(() => {
     const spawn = setInterval(() => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = Math.random() * 4000 + 4000; // ms
+      const speed = Math.random() * 4000 + 4000; // время падения в мс
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
-      setDrops((prev) => [
-        ...prev,
-        { id, x, size, speed, svg }
-      ]);
+      const newDrop = { id, x, y: -size, size, speed, svg };
+      setDrops((prev) => [...prev, newDrop]);
+
+      // анимируем падение
+      setTimeout(() => {
+        setDrops((prev) =>
+          prev.map((d) => (d.id === id ? { ...d, y: window.innerHeight + size } : d))
+        );
+      }, 50);
+
+      // удаляем каплю после падения
+      setTimeout(() => {
+        setDrops((prev) => prev.filter((d) => d.id !== id));
+      }, speed);
     }, spawnInterval);
 
     return () => clearInterval(spawn);
@@ -51,56 +80,31 @@ const Droplets = ({ spawnInterval = 800 }) => {
 
   const handlePop = (id, x, y, size) => {
     setDrops((prev) => prev.filter((drop) => drop.id !== id));
-    setPops((prev) => [...prev, { id: `${id}-pop`, x, y, size }]);
+    const popId = `${id}-pop`;
+    setPops((prev) => [...prev, { id: popId, x, y, size }]);
     setTimeout(() => {
-      setPops((prev) => prev.filter((p) => p.id !== `${id}-pop`));
+      setPops((prev) => prev.filter((p) => p.id !== popId));
     }, 600);
   };
 
-  const dropTransitions = useTransition(drops, {
-    keys: (drop) => drop.id,
-    from: (drop) => ({ top: -drop.size, left: drop.x, opacity: 1, transform: `scale(${drop.size / 40})` }),
-    enter: (drop) => ({ top: window.innerHeight + drop.size }),
-    leave: { opacity: 0 },
-    config: (drop) => ({ duration: drop.speed }),
-  });
-
-  const popTransitions = useTransition(pops, {
-    keys: (pop) => pop.id,
-    from: (pop) => ({
-      left: pop.x,
-      top: pop.y,
-      width: 0,
-      height: 0,
-      background: "rgba(0, 223, 152, 0.5)",
-      opacity: 1,
-      marginLeft: 0,
-      marginTop: 0,
-    }),
-    enter: (pop) => ({
-      width: pop.size * 2,
-      height: pop.size * 2,
-      marginLeft: -pop.size,
-      marginTop: -pop.size,
-      opacity: 0,
-    }),
-    leave: {},
-    config: { duration: 600 },
-  });
-
   return (
     <Wrapper>
-      {dropTransitions((style, drop) => (
-        <Droplet
-          key={drop.id}
-          src={drop.svg}
-          style={style}
-          onClick={(e) => handlePop(drop.id, drop.x, e.clientY, drop.size)}
-        />
-      ))}
+      <TransitionGroup>
+        {drops.map((drop) => (
+          <CSSTransition key={drop.id} timeout={drop.speed}>
+            <DropletImg
+              src={drop.svg}
+              x={drop.x}
+              y={drop.y}
+              size={drop.size}
+              onClick={(e) => handlePop(drop.id, drop.x, e.clientY, drop.size)}
+            />
+          </CSSTransition>
+        ))}
+      </TransitionGroup>
 
-      {popTransitions((style, pop) => (
-        <PopEffect key={pop.id} style={style} />
+      {pops.map((pop) => (
+        <PopEffect key={pop.id} x={pop.x} y={pop.y} size={pop.size} />
       ))}
     </Wrapper>
   );
