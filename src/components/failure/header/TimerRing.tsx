@@ -18,18 +18,18 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(-90deg); /* Rotate SVG 90 degrees to start from 12 o'clock and go clockwise */
+  transform: rotate(-90deg); 
 `;
 
 const CircleBackground = styled.circle`
   fill: none;
-  stroke: url(#timerGradient);
+  stroke: transparent;
   stroke-width: 12;
 `;
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke: transparent;
+  stroke:  url(#timerGradient); 
   stroke-width: 12;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
@@ -56,7 +56,7 @@ const TimerRing = ({ duration = 60 }) => {
   }, [timeLeft]);
 
   const elapsed = duration - timeLeft;
-  const progress = ((timeLeft / duration) * circumference); /* Invert progress to decrease circle clockwise */
+  const progress = (elapsed / duration) * circumference;
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -83,7 +83,7 @@ const TimerRing = ({ duration = 60 }) => {
           cy="100"
           r={radius}
           strokeDasharray={circumference}
-          strokeDashoffset={progress} /* Use progress directly to decrease clockwise */
+          strokeDashoffset={progress}
         />
         <CircleInner cx="100" cy="100" r={70} />
       </Svg>
