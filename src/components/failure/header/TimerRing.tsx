@@ -83,7 +83,7 @@ const TimerRing = ({ duration = 60 }) => {
           cy="100"
           r={radius}
           strokeDasharray={circumference}
-          strokeDashoffset={circumference - progress}
+          strokeDashoffset={progress - circumference}
         />
         <CircleInner cx="100" cy="100" r={70} />
       </Svg>
