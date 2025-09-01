@@ -18,7 +18,7 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(90deg); /* старт сверху */
+  transform: rotate(-90deg); /* старт сверху */
 `;
 
 const CircleBackground = styled.circle`
@@ -89,7 +89,7 @@ const TimerRing = ({ duration = 60 }) => {
           cy="100"
           r={radius}
           strokeDasharray={circumference}
-          strokeDashoffset={circumference - offset} 
+          strokeDashoffset={circumference + offset} 
         />
 
         <CircleInner cx="100" cy="100" r={70} />
