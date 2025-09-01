@@ -78,15 +78,15 @@ const TimerRing = ({ duration = 60 }) => {
           </linearGradient>
         </defs>
 
-        <CircleBackground cx="70" cy="100" r={radius} />
+        <CircleBackground cx="100" cy="100" r={radius} />
         <CircleProgress
-          cx="70"
+          cx="100"
           cy="100"
           r={radius}
           strokeDasharray={circumference}
           strokeDashoffset={progress}
         />
-        <CircleInner cx="70" cy="100" r={50} />
+        <CircleInner cx="100" cy="100" r={50} />
       </Svg>
       <TimerText>{formatTime(timeLeft)}</TimerText>
     </Wrapper>
