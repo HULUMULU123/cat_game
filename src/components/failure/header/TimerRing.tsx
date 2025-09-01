@@ -14,7 +14,7 @@ const TimerText = styled.div`
   font-family: 'Conthrax', sans-serif;
   font-weight: 700;
   position: absolute;
-  font-size: 2rem;
+  font-size: 24px;
   color: var(--color-white-text);
 `;
 
@@ -78,15 +78,15 @@ const TimerRing = ({ duration = 60 }) => {
           </linearGradient>
         </defs>
 
-        <CircleBackground cx="100" cy="100" r={radius} />
+        <CircleBackground cx="70" cy="100" r={radius} />
         <CircleProgress
-          cx="100"
+          cx="70"
           cy="100"
           r={radius}
           strokeDasharray={circumference}
           strokeDashoffset={progress}
         />
-        <CircleInner cx="100" cy="100" r={50} />
+        <CircleInner cx="70" cy="100" r={50} />
       </Svg>
       <TimerText>{formatTime(timeLeft)}</TimerText>
     </Wrapper>
