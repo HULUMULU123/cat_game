@@ -56,7 +56,7 @@ const TimerRing = ({ duration = 60 }) => {
   }, [timeLeft]);
 
   const elapsed = duration - timeLeft;
-  const progress = (duration / elapsed ) * circumference;
+  const progress = duration - (elapsed / duration) * circumference;
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
