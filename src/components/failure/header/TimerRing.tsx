@@ -18,7 +18,7 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(90deg); /* чтобы анимация шла по часовой */
+  transform: rotate(-90deg); /* старт сверху */ 
 `;
 
 const CircleBackground = styled.circle`
@@ -55,7 +55,9 @@ const TimerRing = ({ duration = 60 }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const progress = (timeLeft / duration) * circumference;
+  // считаем ПРОШЕДШЕЕ время, чтобы идти по часовой стрелке
+  const elapsed = duration - timeLeft;
+  const progress = (elapsed / duration) * circumference;
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
