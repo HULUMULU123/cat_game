@@ -11,9 +11,10 @@ const Wrapper = styled.div`
 `;
 
 const TimerText = styled.div`
+  font-family: 'Conthrax', sans-serif;
+  font-weight: 700;
   position: absolute;
   font-size: 2rem;
-  font-weight: bold;
   color: var(--color-white-text);
 `;
 
@@ -31,7 +32,7 @@ const CircleProgress = styled.circle`
   fill: none;
   stroke:  url(#timerGradient); 
   stroke-width: 12;
-  stroke-linecap: round;
+  stroke-linecap: butt;
   transition: stroke-dashoffset 1s linear;
 `;
 
@@ -44,7 +45,7 @@ const CircleInner = styled.circle`
 const TimerRing = ({ duration = 60 }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
 
-  const radius = 80;
+  const radius = 60;
   const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
@@ -59,7 +60,7 @@ const TimerRing = ({ duration = 60 }) => {
   const progress = (duration - (elapsed / duration)) * circumference;
 
   const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const m = Math.floor(seconds / 60).toString().padStart(1, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
@@ -85,7 +86,7 @@ const TimerRing = ({ duration = 60 }) => {
           strokeDasharray={circumference}
           strokeDashoffset={progress}
         />
-        <CircleInner cx="100" cy="100" r={70} />
+        <CircleInner cx="100" cy="100" r={50} />
       </Svg>
       <TimerText>{formatTime(timeLeft)}</TimerText>
     </Wrapper>
