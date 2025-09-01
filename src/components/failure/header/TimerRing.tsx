@@ -14,22 +14,22 @@ const TimerText = styled.div`
   position: absolute;
   font-size: 2rem;
   font-weight: bold;
-  color: #333;
+  color: var(--color-white-text);
 `;
 
 const Svg = styled.svg`
-  transform: rotate(-90deg); /* чтобы начиналось сверху и шло по часовой */
+  transform: rotate(-90deg); 
 `;
 
 const CircleBackground = styled.circle`
   fill: none;
-  stroke: #ddd; /* постоянный серый фон-контур */
+  stroke: transparent;
   stroke-width: 12;
 `;
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke: url(#timerGradient); /* градиентное кольцо */
+  stroke:  url(#timerGradient); 
   stroke-width: 12;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
@@ -55,7 +55,8 @@ const TimerRing = ({ duration = 60 }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const progress = (timeLeft / duration) * circumference;
+  const elapsed = duration - timeLeft;
+  const progress = (elapsed / duration) * circumference;
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -67,16 +68,16 @@ const TimerRing = ({ duration = 60 }) => {
     <Wrapper>
       <Svg width="200" height="200">
         <defs>
-          <linearGradient id="timerGradient" gradientTransform="rotate(224)">
+          <linearGradient
+            id="timerGradient"
+            gradientTransform="rotate(224)"
+          >
             <stop offset="0%" stopColor="rgba(31, 255, 227, 0.56)" />
             <stop offset="100%" stopColor="rgba(0, 223, 152, 0.82)" />
           </linearGradient>
         </defs>
 
-        {/* постоянный серый фон-контур */}
         <CircleBackground cx="100" cy="100" r={radius} />
-
-        {/* градиентный прогресс, который исчезает */}
         <CircleProgress
           cx="100"
           cy="100"
@@ -84,8 +85,6 @@ const TimerRing = ({ duration = 60 }) => {
           strokeDasharray={circumference}
           strokeDashoffset={circumference - progress}
         />
-
-        {/* внутреннее кольцо */}
         <CircleInner cx="100" cy="100" r={70} />
       </Svg>
       <TimerText>{formatTime(timeLeft)}</TimerText>
