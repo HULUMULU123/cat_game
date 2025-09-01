@@ -29,7 +29,7 @@ const CircleBackground = styled.circle`
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke: transparent; /* Используем градиент */
+  stroke: transparent;
   stroke-width: 12;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
@@ -77,14 +77,25 @@ const TimerRing = ({ duration = 60 }) => {
           </linearGradient>
         </defs>
 
-        <CircleBackground cx="100" cy="100" r={radius} />
+        {/* Градиентное кольцо */}
+        <CircleBackground
+          cx="100"
+          cy="100"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset="0"
+        />
+
+        {/* Прозрачный прогресс, съедающий градиент */}
         <CircleProgress
           cx="100"
           cy="100"
           r={radius}
           strokeDasharray={circumference}
-          strokeDashoffset={circumference - progress}
+          strokeDashoffset={progress}
         />
+
+        {/* Внутреннее кольцо */}
         <CircleInner cx="100" cy="100" r={70} />
       </Svg>
       <TimerText>{formatTime(timeLeft)}</TimerText>
