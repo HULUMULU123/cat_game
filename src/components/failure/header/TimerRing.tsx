@@ -18,7 +18,7 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(-90deg); /* старт сверху */ 
+  transform: rotate(-90deg); /* старт сверху, движение по часовой */
 `;
 
 const CircleBackground = styled.circle`
@@ -29,7 +29,7 @@ const CircleBackground = styled.circle`
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke: #4caf50;
+  stroke: url(#timerGradient); /* Используем градиент */
   stroke-width: 12;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
@@ -37,7 +37,7 @@ const CircleProgress = styled.circle`
 
 const CircleInner = styled.circle`
   fill: none;
-  stroke: #aaa;
+  stroke: #324674;
   stroke-width: 2;
 `;
 
@@ -55,7 +55,6 @@ const TimerRing = ({ duration = 60 }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // считаем ПРОШЕДШЕЕ время, чтобы идти по часовой стрелке
   const elapsed = duration - timeLeft;
   const progress = (elapsed / duration) * circumference;
 
@@ -68,6 +67,16 @@ const TimerRing = ({ duration = 60 }) => {
   return (
     <Wrapper>
       <Svg width="200" height="200">
+        <defs>
+          <linearGradient
+            id="timerGradient"
+            gradientTransform="rotate(224)"
+          >
+            <stop offset="0%" stopColor="rgba(31, 255, 227, 0.56)" />
+            <stop offset="100%" stopColor="rgba(0, 223, 152, 0.82)" />
+          </linearGradient>
+        </defs>
+
         <CircleBackground cx="100" cy="100" r={radius} />
         <CircleProgress
           cx="100"
