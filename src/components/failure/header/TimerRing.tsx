@@ -6,15 +6,15 @@ const Wrapper = styled.div`
   justify-content: center;
   align-items: center;
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 133px;   /* 200 / 1.5 */
+  height: 133px;  /* 200 / 1.5 */
 `;
 
 const TimerText = styled.div`
   font-family: 'Conthrax', sans-serif;
   font-weight: 700;
   position: absolute;
-  font-size: 24px;
+  font-size: 16px; /* тоже уменьшил пропорционально */
   color: var(--color-white-text);
 `;
 
@@ -25,13 +25,13 @@ const Svg = styled.svg`
 const CircleBackground = styled.circle`
   fill: none;
   stroke: transparent;
-  stroke-width: 12;
+  stroke-width: 8; /* тоже уменьшил */
 `;
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke:  url(#timerGradient); 
-  stroke-width: 12;
+  stroke: url(#timerGradient);
+  stroke-width: 8;
   stroke-linecap: butt;
   transition: stroke-dashoffset 1s linear;
 `;
@@ -45,7 +45,7 @@ const CircleInner = styled.circle`
 const TimerRing = ({ duration = 60 }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
 
-  const radius = 60;
+  const radius = 40; // меньше на 1.5
   const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const TimerRing = ({ duration = 60 }) => {
   }, [timeLeft]);
 
   const elapsed = duration - timeLeft;
-  const progress = (duration - (elapsed / duration)) * circumference;
+  const progress = (duration - elapsed / duration) * circumference;
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(1, "0");
@@ -67,26 +67,23 @@ const TimerRing = ({ duration = 60 }) => {
 
   return (
     <Wrapper>
-      <Svg width="200" height="200">
+      <Svg width="133" height="133">
         <defs>
-          <linearGradient
-            id="timerGradient"
-            gradientTransform="rotate(224)"
-          >
+          <linearGradient id="timerGradient" gradientTransform="rotate(224)">
             <stop offset="0%" stopColor="rgba(31, 255, 227, 0.56)" />
             <stop offset="100%" stopColor="rgba(0, 223, 152, 0.82)" />
           </linearGradient>
         </defs>
 
-        <CircleBackground cx="100" cy="100" r={radius} />
+        <CircleBackground cx="66.5" cy="66.5" r={radius} />
         <CircleProgress
-          cx="100"
-          cy="100"
+          cx="66.5"
+          cy="66.5"
           r={radius}
           strokeDasharray={circumference}
           strokeDashoffset={progress}
         />
-        <CircleInner cx="100" cy="100" r={50} />
+        <CircleInner cx="66.5" cy="66.5" r={30} />
       </Svg>
       <TimerText>{formatTime(timeLeft)}</TimerText>
     </Wrapper>
