@@ -18,7 +18,7 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(-90deg); /* старт сверху */
+  transform: rotate(90deg); /* старт сверху */
 `;
 
 const CircleBackground = styled.circle`
