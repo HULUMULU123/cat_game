@@ -7,7 +7,7 @@ import quiz from "../assets/icons/quiz.svg";
 import prize from "../assets/icons/prize.svg";
 import bg from "../assets/failure_bg.png"
 import MyIcon from "./icons/MyIcon";
-import FailureLayout from "./FailureLayout";
+
 const LayoutWrapper = styled.div`
   /* padding-bottom: 70px; отступ под меню */
   /* ограничение ширины высотой экрана */
@@ -114,7 +114,7 @@ const StyledLight = styled.div`
 export default function FailureLayout() {
   const location = useLocation();
 
-  if (location.pathname === '/failure') return <FailureLayout/>
+  
 
   return (
     <>
