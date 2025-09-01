@@ -18,7 +18,7 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(-90deg); 
+  transform: rotate(-90deg); /* старт сверху */ 
 `;
 
 const CircleBackground = styled.circle`
@@ -29,7 +29,7 @@ const CircleBackground = styled.circle`
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke:  url(#timerGradient); 
+  stroke: url(#timerGradient);
   stroke-width: 12;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
@@ -55,8 +55,8 @@ const TimerRing = ({ duration = 60 }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const elapsed = duration - timeLeft;
-  const progress = (elapsed / duration) * circumference;
+  // Теперь считаем остаток, а не прогресс
+  const offset = (timeLeft / duration) * circumference;
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -68,23 +68,30 @@ const TimerRing = ({ duration = 60 }) => {
     <Wrapper>
       <Svg width="200" height="200">
         <defs>
-          <linearGradient
-            id="timerGradient"
-            gradientTransform="rotate(224)"
-          >
+          <linearGradient id="timerGradient" gradientTransform="rotate(224)">
             <stop offset="0%" stopColor="rgba(31, 255, 227, 0.56)" />
             <stop offset="100%" stopColor="rgba(0, 223, 152, 0.82)" />
           </linearGradient>
         </defs>
 
-        <CircleBackground cx="100" cy="100" r={radius} />
+        {/* весь круг */}
+        <CircleBackground
+          cx="100"
+          cy="100"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset="0"
+        />
+
+        {/* кольцо, которое убывает по часовой стрелке */}
         <CircleProgress
           cx="100"
           cy="100"
           r={radius}
           strokeDasharray={circumference}
-          strokeDashoffset={progress}
+          strokeDashoffset={circumference - offset}
         />
+
         <CircleInner cx="100" cy="100" r={70} />
       </Svg>
       <TimerText>{formatTime(timeLeft)}</TimerText>
