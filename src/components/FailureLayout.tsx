@@ -5,7 +5,7 @@ import tasks from "../assets/icons/tasks.svg";
 import logo from "../assets/icons/logo.svg";
 import quiz from "../assets/icons/quiz.svg";
 import prize from "../assets/icons/prize.svg";
-import bg from "../assets/bg_image.png"
+import bg from "../assets/failure_bg.png"
 import MyIcon from "./icons/MyIcon";
 import FailureLayout from "./FailureLayout";
 const LayoutWrapper = styled.div`
@@ -111,7 +111,7 @@ const StyledLight = styled.div`
   width: 100%;
   
 `
-export default function Layout() {
+export default function FailureLayout() {
   const location = useLocation();
 
   if (location.pathname === '/failure') return <FailureLayout/>
@@ -122,45 +122,7 @@ export default function Layout() {
         <Outlet />
       </LayoutWrapper>
 
-      <BottomNav>
-        <NavButton to="/tasks" $active={location.pathname === "/tasks" ? 1 : 0}>
-          <StyledIcon src={tasks} />
-          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
-        <NavButton
-          to="/simulation"
-          active={location.pathname === "/simulation" ? 1 : 0}
-        >
-          <StyledIcon src={logo} />
-          <StyledActiveIndicator $active={location.pathname === "/simulation" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
-
-        <NavButton
-          to="/"
-          $main={true}
-          $active={location.pathname === "/" ? 1 : 0}
-        >
-          <MyIcon height={40} width={40} fill={location.pathname === "/" ? '#2CC2A9' : "#fff" }/>
-        </NavButton>
-
-        <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
-          <StyledIcon src={quiz} />
-          <StyledActiveIndicator $active={location.pathname === "/quiz" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
-
-        <NavButton to="/prize" active={location.pathname === "/prize" ? 1 : 0}>
-          <StyledIcon src={prize} />
-          <StyledActiveIndicator $active={location.pathname === "/prize" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
-      </BottomNav>
+      
     </>
   );
 }
