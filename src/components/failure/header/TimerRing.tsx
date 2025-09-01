@@ -18,18 +18,18 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(-90deg); /* старт сверху */ 
+  transform: rotate(-90deg); /* старт сверху */
 `;
 
 const CircleBackground = styled.circle`
   fill: none;
-  stroke: transparent;
+  stroke: url(#timerGradient); /* фон теперь закрашенный */
   stroke-width: 12;
 `;
 
 const CircleProgress = styled.circle`
   fill: none;
-  stroke: url(#timerGradient);
+  stroke: transparent; /* прогресс будет прозрачным */
   stroke-width: 12;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
@@ -55,7 +55,7 @@ const TimerRing = ({ duration = 60 }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // Теперь считаем остаток, а не прогресс
+  // считаем остаток
   const offset = (timeLeft / duration) * circumference;
 
   const formatTime = (seconds) => {
@@ -74,7 +74,7 @@ const TimerRing = ({ duration = 60 }) => {
           </linearGradient>
         </defs>
 
-        {/* весь круг */}
+        {/* градиентный фон */}
         <CircleBackground
           cx="100"
           cy="100"
@@ -83,13 +83,13 @@ const TimerRing = ({ duration = 60 }) => {
           strokeDashoffset="0"
         />
 
-        {/* кольцо, которое убывает по часовой стрелке */}
+        {/* прозрачный прогресс, съедающий фон */}
         <CircleProgress
           cx="100"
           cy="100"
           r={radius}
           strokeDasharray={circumference}
-          strokeDashoffset={circumference - offset}
+          strokeDashoffset={circumference - offset} 
         />
 
         <CircleInner cx="100" cy="100" r={70} />
