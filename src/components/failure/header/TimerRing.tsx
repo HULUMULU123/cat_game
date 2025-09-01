@@ -44,7 +44,7 @@ const CircleInner = styled.circle`
 const TimerRing = ({ duration = 60 }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
 
-  const radius = 90;
+  const radius = 80;
   const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
