@@ -18,7 +18,7 @@ const TimerText = styled.div`
 `;
 
 const Svg = styled.svg`
-  transform: rotate(0deg); /* Больше не поворачиваем */
+  transform: rotate(90deg); /* чтобы анимация шла по часовой */
 `;
 
 const CircleBackground = styled.circle`
