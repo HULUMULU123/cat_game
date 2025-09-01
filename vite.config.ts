@@ -7,7 +7,5 @@ export default defineConfig({
     host: true,
     allowedHosts: true,
   },
-  optimizeDeps: {
-    include: ['framer-motion']
-  }
+  
 });

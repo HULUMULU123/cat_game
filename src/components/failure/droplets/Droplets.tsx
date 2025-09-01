@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
+import { useSpring, animated, useTransition } from "react-spring";
 import drop1 from '../../../assets/drops/drop1.svg'
 import drop2 from '../../../assets/drops/drop2.svg'
 import drop3 from '../../../assets/drops/drop3.svg'
@@ -14,13 +14,13 @@ const Wrapper = styled.div`
   overflow: hidden;
 `;
 
-const Droplet = styled(motion.img)`
+const Droplet = styled(animated.img)`
   position: absolute;
   cursor: pointer;
   user-select: none;
 `;
 
-const PopEffect = styled(motion.div)`
+const PopEffect = styled(animated.div)`
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
@@ -34,10 +34,10 @@ const Droplets = ({ spawnInterval = 800 }) => {
 
   useEffect(() => {
     const spawn = setInterval(() => {
-      const id = Date.now() + Math.random(); // уникальный id
-      const size = Math.random() * 40 + 20; // 20–60px
+      const id = Date.now() + Math.random();
+      const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = Math.random() * 4 + 4; // 4–8s падение
+      const speed = Math.random() * 4000 + 4000; // ms
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [
@@ -51,57 +51,57 @@ const Droplets = ({ spawnInterval = 800 }) => {
 
   const handlePop = (id, x, y, size) => {
     setDrops((prev) => prev.filter((drop) => drop.id !== id));
-    setPops((prev) => [
-      ...prev,
-      { id: `${id}-pop`, x, y, size }
-    ]);
+    setPops((prev) => [...prev, { id: `${id}-pop`, x, y, size }]);
     setTimeout(() => {
       setPops((prev) => prev.filter((p) => p.id !== `${id}-pop`));
     }, 600);
   };
 
+  const dropTransitions = useTransition(drops, {
+    keys: (drop) => drop.id,
+    from: (drop) => ({ top: -drop.size, left: drop.x, opacity: 1, transform: `scale(${drop.size / 40})` }),
+    enter: (drop) => ({ top: window.innerHeight + drop.size }),
+    leave: { opacity: 0 },
+    config: (drop) => ({ duration: drop.speed }),
+  });
+
+  const popTransitions = useTransition(pops, {
+    keys: (pop) => pop.id,
+    from: (pop) => ({
+      left: pop.x,
+      top: pop.y,
+      width: 0,
+      height: 0,
+      background: "rgba(0, 223, 152, 0.5)",
+      opacity: 1,
+      marginLeft: 0,
+      marginTop: 0,
+    }),
+    enter: (pop) => ({
+      width: pop.size * 2,
+      height: pop.size * 2,
+      marginLeft: -pop.size,
+      marginTop: -pop.size,
+      opacity: 0,
+    }),
+    leave: {},
+    config: { duration: 600 },
+  });
+
   return (
     <Wrapper>
-      <AnimatePresence>
-        {drops.map((drop) => (
-          <Droplet
-            key={drop.id}
-            src={drop.svg}
-            initial={{ y: -drop.size, x: drop.x, opacity: 1, scale: drop.size / 40 }}
-            animate={{ y: window.innerHeight + drop.size }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: drop.speed, ease: "linear" }}
-            style={{ width: drop.size, height: drop.size }}
-            onClick={(e) =>
-              handlePop(drop.id, drop.x, e.clientY, drop.size)
-            }
-          />
-        ))}
-      </AnimatePresence>
+      {dropTransitions((style, drop) => (
+        <Droplet
+          key={drop.id}
+          src={drop.svg}
+          style={style}
+          onClick={(e) => handlePop(drop.id, drop.x, e.clientY, drop.size)}
+        />
+      ))}
 
-      <AnimatePresence>
-        {pops.map((pop) => (
-          <PopEffect
-            key={pop.id}
-            initial={{
-              left: pop.x,
-              top: pop.y,
-              width: 0,
-              height: 0,
-              background: "rgba(0, 223, 152, 0.5)",
-              opacity: 1,
-            }}
-            animate={{
-              width: pop.size * 2,
-              height: pop.size * 2,
-              marginLeft: -pop.size,
-              marginTop: -pop.size,
-              opacity: 0,
-            }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          />
-        ))}
-      </AnimatePresence>
+      {popTransitions((style, pop) => (
+        <PopEffect key={pop.id} style={style} />
+      ))}
     </Wrapper>
   );
 };
