@@ -8,7 +8,7 @@ align-items: center;
 width: 100%;
 justify-content: space-around;
 padding: 0;
-margin: 0;`
+margin: 15px;`
 export default function BounusList() {
   return (
     <StyledList>
