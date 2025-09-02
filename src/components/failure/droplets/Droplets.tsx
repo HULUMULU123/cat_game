@@ -47,6 +47,7 @@ const DropletWrapper = styled.div<{
   user-select: none;
   animation: ${({ start, duration }) => fall(start, window.innerHeight + 50)}
     ${({ duration }) => duration}ms ease-in forwards;
+  background: red;
 `;
 
 // сама капля
