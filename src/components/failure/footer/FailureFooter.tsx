@@ -4,7 +4,7 @@ import failure_bottom from '../../../assets/failure_bottom.png'
 import BounusList from './BounusList'
 
 const Wrapper = styled.div`
-  height: 15vh;
+  height: 26vh;
   width: 100%;
   background: rgba(0,0,0,0.8);
   position: relative;
