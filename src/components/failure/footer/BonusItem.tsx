@@ -3,8 +3,8 @@ import styled, { css } from 'styled-components'
 
 const StyledItem = styled.li<{ $active: boolean }>`
   display: flex;
-  width: 40px;
-  height: 20px;
+  width: 90px;
+  height: 40px;
   background: ${({ $active }) => ($active ? '#2CC2A9' : css`background: #1FFFE3;
                                                             background: linear-gradient(359deg, rgba(31, 255, 227, 0.37) 0%,
                                                              rgba(0, 223, 152, 0.45) 100%);`)}; 

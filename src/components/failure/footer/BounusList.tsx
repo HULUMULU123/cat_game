@@ -6,7 +6,9 @@ const StyledList = styled.ul`
 display: flex;
 align-items: center;
 width: 100%;
-justify-content: space-around;`
+justify-content: space-around;
+padding: 0;
+margin: 0;`
 export default function BounusList() {
   return (
     <StyledList>
