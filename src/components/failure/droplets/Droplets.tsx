@@ -22,9 +22,10 @@ const Wrapper = styled.div`
   overflow: hidden;
 `;
 
+// анимация падения с ускорением
 const fall = (start: number, end: number) => keyframes`
-  from { top: ${start}px; }
-  to { top: ${end}px; }
+  from { top: ${start}px; transform: translateY(0); animation-timing-function: ease-in; }
+  to { top: ${end}px; transform: translateY(${end - start}px); }
 `;
 
 const Droplet = styled.img<{
@@ -41,7 +42,7 @@ const Droplet = styled.img<{
   cursor: pointer;
   user-select: none;
   animation: ${({ start, duration }) => fall(start, window.innerHeight + 50)}
-    ${({ duration }) => duration}ms linear forwards;
+    ${({ duration }) => duration}ms ease-in forwards;
 `;
 
 const PopEffect = styled.div<{ x: number; y: number; size: number }>`
@@ -69,7 +70,7 @@ const PopEffect = styled.div<{ x: number; y: number; size: number }>`
 
 const dropletSvgs = [drop1, drop2, drop3, drop4, drop5];
 
-const Droplets = ({ spawnInterval = 200 }) => {
+const Droplets = ({ spawnInterval = 800 }) => {
   const [drops, setDrops] = useState<any[]>([]);
   const [pops, setPops] = useState<any[]>([]);
 
@@ -78,7 +79,7 @@ const Droplets = ({ spawnInterval = 200 }) => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = Math.random() * 400 + 400; // 4–8 секунд падение
+      const speed = (Math.random() * 800 + 800); // 0.8–1.6 секунд (в 5 раз быстрее от изначального 4–8)
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [...prev, { id, x, size, svg, speed, start: -size }]);
@@ -87,7 +88,7 @@ const Droplets = ({ spawnInterval = 200 }) => {
       setTimeout(() => {
         setDrops((prev) => prev.filter((d) => d.id !== id));
       }, speed);
-    }, spawnInterval);
+    }, spawnInterval / 3); // в 3 раза больше капель
 
     return () => clearInterval(spawn);
   }, [spawnInterval]);
