@@ -89,7 +89,7 @@ interface DropModel {
 }
 
 const Droplets = ({
-  spawnInterval = 800,
+  spawnInterval = 500,
   hitboxPadding = 20,
 }: {
   spawnInterval?: number;
