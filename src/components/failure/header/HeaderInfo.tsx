@@ -40,7 +40,7 @@ const StyledCloseImg = styled.img`
 `
 const StyledLine = styled.span`
 display: block;
-width: 90%;
+width: 100%;
 height: 1px;
 background: #85FFF0;
 margin-bottom: 7px;`
