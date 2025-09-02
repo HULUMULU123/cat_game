@@ -28,21 +28,32 @@ const fall = (start: number, end: number) => keyframes`
   to { top: ${end}px; transform: translateY(${end - start}px); }
 `;
 
-const Droplet = styled.img<{
+// контейнер с увеличенным хитбоксом
+const DropletWrapper = styled.div<{
   x: number;
   size: number;
   duration: number;
   start: number;
 }>`
   position: absolute;
-  left: ${({ x }) => x}px;
-  top: ${({ start }) => start}px;
-  width: ${({ size }) => size}px;
-  height: ${({ size }) => size}px;
+  left: ${({ x }) => x - 10}px; /* расширяем хитбокс */
+  top: ${({ start }) => start - 10}px;
+  width: ${({ size }) => size + 20}px;
+  height: ${({ size }) => size + 20}px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   user-select: none;
   animation: ${({ start, duration }) => fall(start, window.innerHeight + 50)}
     ${({ duration }) => duration}ms ease-in forwards;
+`;
+
+// сама капля
+const DropletImg = styled.img<{ size: number }>`
+  width: ${({ size }) => size}px;
+  height: ${({ size }) => size}px;
+  pointer-events: none; /* чтобы клики шли по обертке */
 `;
 
 const PopEffect = styled.div<{ x: number; y: number; size: number }>`
@@ -77,9 +88,9 @@ const Droplets = ({ spawnInterval = 800 }) => {
   useEffect(() => {
     const spawn = setInterval(() => {
       const id = Date.now() + Math.random();
-      const size = Math.random() * 80 + 40;
+      const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = (Math.random() * 1500 + 1500); // 0.8–1.6 секунд (в 5 раз быстрее от изначального 4–8)
+      const speed = Math.random() * 800 + 800; // 0.8–1.6 секунд
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [...prev, { id, x, size, svg, speed, start: -size }]);
@@ -88,7 +99,7 @@ const Droplets = ({ spawnInterval = 800 }) => {
       setTimeout(() => {
         setDrops((prev) => prev.filter((d) => d.id !== id));
       }, speed);
-    }, spawnInterval / 3); // в 3 раза больше капель
+    }, spawnInterval / 3);
 
     return () => clearInterval(spawn);
   }, [spawnInterval]);
@@ -102,7 +113,7 @@ const Droplets = ({ spawnInterval = 800 }) => {
         id: popId,
         x: drop.x + drop.size / 2,
         y: window.scrollY + (drop.ref?.getBoundingClientRect().top ?? 0) + drop.size / 2,
-        size: drop.size,
+        size: drop.size + 20, // эффект под размер хитбокса
       },
     ]);
     setTimeout(() => {
@@ -114,16 +125,17 @@ const Droplets = ({ spawnInterval = 800 }) => {
     <StyledWrapper>
       <Wrapper>
         {drops.map((drop) => (
-          <Droplet
+          <DropletWrapper
             key={drop.id}
-            src={drop.svg}
             x={drop.x}
             size={drop.size}
             duration={drop.speed}
             start={drop.start}
             ref={(el) => (drop.ref = el)}
             onClick={() => handlePop(drop)}
-          />
+          >
+            <DropletImg src={drop.svg} size={drop.size} />
+          </DropletWrapper>
         ))}
         {pops.map((pop) => (
           <PopEffect key={pop.id} x={pop.x} y={pop.y} size={pop.size} />
