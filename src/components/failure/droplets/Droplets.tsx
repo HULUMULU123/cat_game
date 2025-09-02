@@ -88,13 +88,17 @@ interface DropModel {
   distance: number;
 }
 
+interface DropletsProps {
+  spawnInterval?: number;
+  hitboxPadding?: number;
+  onPop?: () => void; // 👈 функция из родителя
+}
+
 const Droplets = ({
   spawnInterval = 500,
   hitboxPadding = 20,
-}: {
-  spawnInterval?: number;
-  hitboxPadding?: number;
-}) => {
+  onPop,
+}: DropletsProps) => {
   const [drops, setDrops] = useState<DropModel[]>([]);
   const [pops, setPops] = useState<any[]>([]);
 
@@ -131,6 +135,9 @@ const Droplets = ({
 
     setDrops((prev) => prev.filter((d) => d.id !== drop.id));
     dropletRefs.current.delete(drop.id);
+
+    // 🔥 вызываем функцию родителя при сбитии
+    if (onPop) onPop();
 
     if (el && wrapper) {
       const rect = el.getBoundingClientRect();

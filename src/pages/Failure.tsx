@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styled from 'styled-components'
 import FailrueHeader from '../components/failure/header/FailrueHeader'
 import Droplets from '../components/failure/droplets/Droplets'
@@ -36,14 +36,15 @@ z-index: 1;
 
 
 export default function Failure() {
+  const [score, setScore] = useState(0);
   return (
     <StyledWrapper>
       <StyledHeaderWrapper>
         <FailrueHeader/>
       </StyledHeaderWrapper>
-      <Droplets/>
+      <Droplets onPop={() => setScore((s) => s + 1)}/>
       <StyledFooterWrapper>
-        <FailureFooter />
+        <FailureFooter score={score} />
       </StyledFooterWrapper>
     </StyledWrapper>
   )

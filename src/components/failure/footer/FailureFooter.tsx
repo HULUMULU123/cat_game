@@ -4,7 +4,7 @@ import failure_bottom from '../../../assets/failure_bottom.png'
 import BounusList from './BounusList'
 
 const Wrapper = styled.div`
-  height: 26vh;
+  height: 30vh;
   width: 100%;
   background: rgba(0,0,0,0.8);
   position: relative;
@@ -57,7 +57,7 @@ const StyledBottomImg = styled.img`
   display: block;
 `
 
-export default function FailureFooter() {
+export default function FailureFooter({score}) {
   return (
     <Wrapper>
       <BounusList />
@@ -65,7 +65,7 @@ export default function FailureFooter() {
         <ImageWrapper>
           <StyledBottomImg src={failure_bottom} />
           <StyledScroreWrapper>
-            <StyledScoreSpan>368</StyledScoreSpan>
+            <StyledScoreSpan>{score}</StyledScoreSpan>
             <StyledScoreInfo>очков заработано</StyledScoreInfo>
           </StyledScroreWrapper>
         </ImageWrapper>
