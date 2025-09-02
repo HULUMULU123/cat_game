@@ -77,9 +77,9 @@ const Droplets = ({ spawnInterval = 800 }) => {
   useEffect(() => {
     const spawn = setInterval(() => {
       const id = Date.now() + Math.random();
-      const size = Math.random() * 40 + 20;
+      const size = Math.random() * 80 + 40;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = (Math.random() * 800 + 800); // 0.8–1.6 секунд (в 5 раз быстрее от изначального 4–8)
+      const speed = (Math.random() * 1500 + 1500); // 0.8–1.6 секунд (в 5 раз быстрее от изначального 4–8)
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [...prev, { id, x, size, svg, speed, start: -size }]);
