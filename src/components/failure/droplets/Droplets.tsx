@@ -103,7 +103,7 @@ interface DropModel {
 
 const Droplets = ({
   spawnInterval = 800, // базовый (до умножения на 1/3 — см. ниже)
-  hitboxPadding = 20, // управляет размером хитбокса
+  hitboxPadding = 10, // управляет размером хитбокса
 }: {
   spawnInterval?: number;
   hitboxPadding?: number;
@@ -120,7 +120,7 @@ const Droplets = ({
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const duration = Math.random() * 2100 + 2100; // 0.8–1.6 сек (в 5 раз быстрее, чем 4–8)
+      const duration = Math.random() * 1800 + 1800; // 0.8–1.6 сек (в 5 раз быстрее, чем 4–8)
       const start = -size; // стартуем чуть выше экрана
       const distance = window.innerHeight + 50 - start; // весь путь вниз
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
