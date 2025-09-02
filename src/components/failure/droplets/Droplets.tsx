@@ -102,8 +102,8 @@ interface DropModel {
 }
 
 const Droplets = ({
-  spawnInterval = 800, // базовый (до умножения на 1/3 — см. ниже)
-  hitboxPadding = 10, // управляет размером хитбокса
+  spawnInterval = 800,
+  hitboxPadding = 20, // увеличенный хитбокс
 }: {
   spawnInterval?: number;
   hitboxPadding?: number;
@@ -114,15 +114,14 @@ const Droplets = ({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const dropletRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-  // спавним в 3 раза чаще и двигаем в 5 раз быстрее, как просили ранее
   useEffect(() => {
     const timer = setInterval(() => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const duration = Math.random() * 1800 + 1800; // 0.8–1.6 сек (в 5 раз быстрее, чем 4–8)
-      const start = -size; // стартуем чуть выше экрана
-      const distance = window.innerHeight + 50 - start; // весь путь вниз
+      const duration = Math.random() * 1800 + 1800;
+      const start = -size;
+      const distance = window.innerHeight + 50 - start;
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [
@@ -130,7 +129,6 @@ const Droplets = ({
         { id, x, size, svg, duration, start, distance },
       ]);
 
-      // удалить каплю по завершению анимации
       setTimeout(() => {
         setDrops((prev) => prev.filter((d) => d.id !== id));
         dropletRefs.current.delete(id);
@@ -144,18 +142,16 @@ const Droplets = ({
     const el = dropletRefs.current.get(drop.id);
     const wrapper = wrapperRef.current;
 
-    // удаляем каплю
     setDrops((prev) => prev.filter((d) => d.id !== drop.id));
     dropletRefs.current.delete(drop.id);
 
-    // считаем центр капли относительно Wrapper (а не окна/скролла)
     if (el && wrapper) {
       const rect = el.getBoundingClientRect();
       const wrapRect = wrapper.getBoundingClientRect();
       const x = rect.left - wrapRect.left + hitboxPadding + drop.size / 2;
       const y = rect.top - wrapRect.top + hitboxPadding + drop.size / 2;
 
-      const popId = drop.id + 0.123; // уникальный id
+      const popId = drop.id + 0.123;
       setPops((prev) => [...prev, { id: popId, x, y, size: drop.size }]);
       setTimeout(() => {
         setPops((prev) => prev.filter((p) => p.id !== popId));
@@ -179,7 +175,10 @@ const Droplets = ({
             start={drop.start}
             pad={hitboxPadding}
             distance={drop.distance}
-            onPointerDown={() => handlePop(drop)}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId); // улучшение отзывчивости
+              handlePop(drop);
+            }}
           >
             <DropletImg src={drop.svg} size={drop.size} draggable={false} />
           </DropletWrapper>
@@ -192,5 +191,3 @@ const Droplets = ({
     </StyledWrapper>
   );
 };
-
-export default Droplets;
