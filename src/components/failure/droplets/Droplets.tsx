@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
-import drop1 from '../../../assets/drops/drop1.svg';
-import drop2 from '../../../assets/drops/drop2.svg';
-import drop3 from '../../../assets/drops/drop3.svg';
-import drop4 from '../../../assets/drops/drop3.svg';
-import drop5 from '../../../assets/drops/drop4.svg';
+import drop1 from "../../../assets/drops/drop1.svg";
+import drop2 from "../../../assets/drops/drop2.svg";
+import drop3 from "../../../assets/drops/drop3.svg";
+import drop4 from "../../../assets/drops/drop3.svg";
+import drop5 from "../../../assets/drops/drop4.svg";
 
 const StyledWrapper = styled.div`
   position: absolute;
@@ -13,8 +13,7 @@ const StyledWrapper = styled.div`
   width: 100%;
   top: 0;
   left: 0;
-
-`
+`;
 
 const Wrapper = styled.div`
   position: relative;
@@ -28,7 +27,12 @@ const fall = (start: number, end: number) => keyframes`
   to { top: ${end}px; }
 `;
 
-const Droplet = styled.img<{ x: number; size: number; duration: number; start: number }>`
+const Droplet = styled.img<{
+  x: number;
+  size: number;
+  duration: number;
+  start: number;
+}>`
   position: absolute;
   left: ${({ x }) => x}px;
   top: ${({ start }) => start}px;
@@ -36,23 +40,30 @@ const Droplet = styled.img<{ x: number; size: number; duration: number; start: n
   height: ${({ size }) => size}px;
   cursor: pointer;
   user-select: none;
-  animation: ${({ start, duration }) => fall(start, window.innerHeight + 50)} ${({ duration }) => duration}ms linear forwards;
+  animation: ${({ start, duration }) => fall(start, window.innerHeight + 50)}
+    ${({ duration }) => duration}ms linear forwards;
 `;
 
 const PopEffect = styled.div<{ x: number; y: number; size: number }>`
   position: absolute;
-  left: ${({ x, size }) => x - size}px;
-  top: ${({ y, size }) => y - size}px;
-  width: ${({ size }) => size * 2}px;
-  height: ${({ size }) => size * 2}px;
+  left: ${({ x, size }) => x - size / 2}px;
+  top: ${({ y, size }) => y - size / 2}px;
+  width: ${({ size }) => size}px;
+  height: ${({ size }) => size}px;
   background: rgba(0, 223, 152, 0.5);
   border-radius: 50%;
   pointer-events: none;
   animation: pop 0.6s forwards;
 
   @keyframes pop {
-    0% { transform: scale(0); opacity: 1; }
-    100% { transform: scale(1); opacity: 0; }
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
   }
 `;
 
@@ -67,7 +78,7 @@ const Droplets = ({ spawnInterval = 800 }) => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = Math.random() * 4000 + 4000; // 4-8 секунд падение
+      const speed = Math.random() * 4000 + 4000; // 4–8 секунд падение
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [...prev, { id, x, size, svg, speed, start: -size }]);
@@ -81,10 +92,18 @@ const Droplets = ({ spawnInterval = 800 }) => {
     return () => clearInterval(spawn);
   }, [spawnInterval]);
 
-  const handlePop = (id, x, y, size) => {
-    setDrops((prev) => prev.filter((d) => d.id !== id));
-    const popId = `${id}-pop`;
-    setPops((prev) => [...prev, { id: popId, x, y, size }]);
+  const handlePop = (drop) => {
+    setDrops((prev) => prev.filter((d) => d.id !== drop.id));
+    const popId = `${drop.id}-pop`;
+    setPops((prev) => [
+      ...prev,
+      {
+        id: popId,
+        x: drop.x + drop.size / 2,
+        y: window.scrollY + (drop.ref?.getBoundingClientRect().top ?? 0) + drop.size / 2,
+        size: drop.size,
+      },
+    ]);
     setTimeout(() => {
       setPops((prev) => prev.filter((p) => p.id !== popId));
     }, 600);
@@ -101,7 +120,8 @@ const Droplets = ({ spawnInterval = 800 }) => {
             size={drop.size}
             duration={drop.speed}
             start={drop.start}
-            onClick={(e) => handlePop(drop.id, drop.x, e.clientY, drop.size)}
+            ref={(el) => (drop.ref = el)}
+            onClick={() => handlePop(drop)}
           />
         ))}
         {pops.map((pop) => (
