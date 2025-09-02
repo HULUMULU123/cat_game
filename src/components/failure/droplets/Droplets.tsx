@@ -6,6 +6,16 @@ import drop3 from '../../../assets/drops/drop3.svg';
 import drop4 from '../../../assets/drops/drop3.svg';
 import drop5 from '../../../assets/drops/drop4.svg';
 
+const StyledWrapper = styled.div`
+  position: absolute;
+  z-index: 0;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+
+`
+
 const Wrapper = styled.div`
   position: relative;
   width: 100vw;
@@ -81,22 +91,24 @@ const Droplets = ({ spawnInterval = 800 }) => {
   };
 
   return (
-    <Wrapper>
-      {drops.map((drop) => (
-        <Droplet
-          key={drop.id}
-          src={drop.svg}
-          x={drop.x}
-          size={drop.size}
-          duration={drop.speed}
-          start={drop.start}
-          onClick={(e) => handlePop(drop.id, drop.x, e.clientY, drop.size)}
-        />
-      ))}
-      {pops.map((pop) => (
-        <PopEffect key={pop.id} x={pop.x} y={pop.y} size={pop.size} />
-      ))}
-    </Wrapper>
+    <StyledWrapper>
+      <Wrapper>
+        {drops.map((drop) => (
+          <Droplet
+            key={drop.id}
+            src={drop.svg}
+            x={drop.x}
+            size={drop.size}
+            duration={drop.speed}
+            start={drop.start}
+            onClick={(e) => handlePop(drop.id, drop.x, e.clientY, drop.size)}
+          />
+        ))}
+        {pops.map((pop) => (
+          <PopEffect key={pop.id} x={pop.x} y={pop.y} size={pop.size} />
+        ))}
+      </Wrapper>
+    </StyledWrapper>
   );
 };
 
