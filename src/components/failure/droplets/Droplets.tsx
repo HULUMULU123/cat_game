@@ -78,7 +78,7 @@ const Droplets = ({ spawnInterval = 800 }) => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = Math.random() * 400 + 400; // 4–8 секунд падение
+      const speed = Math.random() * 40 + 40; // 4–8 секунд падение
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [...prev, { id, x, size, svg, speed, start: -size }]);
