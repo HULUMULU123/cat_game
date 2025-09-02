@@ -5,9 +5,17 @@ const StyledItem = styled.li<{ $active: boolean }>`
   display: flex;
   width: 90px;
   height: 40px;
-  background: ${({ $active }) => ($active ? '#2CC2A9' : css`background: #1FFFE3;
-                                                            background: linear-gradient(359deg, rgba(31, 255, 227, 0.37) 0%,
-                                                             rgba(0, 223, 152, 0.45) 100%);`)}; 
+  background: ${({ $active }) =>
+    $active
+      ? '#2CC2A9'
+      : css`
+          background: #1fffe3;
+          background: linear-gradient(
+            359deg,
+            rgba(31, 255, 227, 0.37) 0%,
+            rgba(0, 223, 152, 0.45) 100%
+          );
+        `};
   align-items: center;
   justify-content: center;
   position: relative;
@@ -25,11 +33,16 @@ const StyledItemAmount = styled.span`
   color: #2CC2A9;
   font-size: 10px;
   font-weight: 700;
-  padding: 5px;
+  min-width: 20px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   position: absolute;
   top: -10px;
   right: -10px;
+  background: #fff;
 `
 
 interface BonusItemProps {
@@ -44,4 +57,3 @@ export default function BonusItem({ amount }: BonusItemProps) {
     </StyledItem>
   )
 }
-
