@@ -1,6 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 import cross from '../../../assets/icons/cancel.svg'
+import { useNavigate } from 'react-router-dom'
 const Wrapper = styled.div`
 display: flex;
 flex-direction: column;
@@ -51,12 +52,13 @@ font-weight: 700;
 color: var(--color-white-text);`
 
 export default function HeaderInfo() {
+    const navigate = useNavigate()
   return (
     <Wrapper>
         <StyledHeadSection>
             <StyledHeaderSpan>СБОЙ ///</StyledHeaderSpan>
             <StyledCloseBtn>
-                <StyledCloseImg src={cross} />
+                <StyledCloseImg src={cross} onClick={()=>navigate('/')}/>
             </StyledCloseBtn>
         </StyledHeadSection>
         <StyledBottomSection>
