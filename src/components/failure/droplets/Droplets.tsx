@@ -36,8 +36,8 @@ const DropletWrapper = styled.div<{
   start: number;
 }>`
   position: absolute;
-  left: ${({ x }) => x - 10}px; /* расширяем хитбокс */
-  top: ${({ start }) => start - 10}px;
+  left: ${({ x }) => x - 15}px; /* расширяем хитбокс */
+  top: ${({ start }) => start - 15}px;
   width: ${({ size }) => size + 30}px;
   height: ${({ size }) => size + 30}px;
   display: flex;
