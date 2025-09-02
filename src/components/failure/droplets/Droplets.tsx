@@ -36,25 +36,27 @@ const DropletWrapper = styled.div<{
   start: number;
 }>`
   position: absolute;
-  left: ${({ x }) => x - 15}px; /* расширяем хитбокс */
-  top: ${({ start }) => start - 15}px;
-  width: ${({ size }) => size + 30}px;
-  height: ${({ size }) => size + 30}px;
+  left: ${({ x }) => x - 20}px; /* расширенный хитбокс */
+  top: ${({ start }) => start - 20}px;
+  width: ${({ size }) => size + 40}px;
+  height: ${({ size }) => size + 40}px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  user-select: none;
+  user-select: none;      /* запрет выделения */
+  pointer-events: auto;   /* гарантированно ловит клики */
   animation: ${({ start, duration }) => fall(start, window.innerHeight + 50)}
     ${({ duration }) => duration}ms ease-in forwards;
-  background: red;
 `;
 
 // сама капля
 const DropletImg = styled.img<{ size: number }>`
   width: ${({ size }) => size}px;
   height: ${({ size }) => size}px;
-  pointer-events: none; /* чтобы клики шли по обертке */
+  pointer-events: none;    /* клики проходят сквозь картинку */
+  user-select: none;       /* запрет выделения изображения */
+  -webkit-user-drag: none; /* запрет перетаскивания */
 `;
 
 const PopEffect = styled.div<{ x: number; y: number; size: number }>`
@@ -91,7 +93,7 @@ const Droplets = ({ spawnInterval = 800 }) => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const speed = Math.random() * 2500 + 2500; // 0.8–1.6 секунд
+      const speed = Math.random() * 800 + 800; // 0.8–1.6 секунд
       const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [...prev, { id, x, size, svg, speed, start: -size }]);
@@ -114,7 +116,7 @@ const Droplets = ({ spawnInterval = 800 }) => {
         id: popId,
         x: drop.x + drop.size / 2,
         y: window.scrollY + (drop.ref?.getBoundingClientRect().top ?? 0) + drop.size / 2,
-        size: drop.size + 20, // эффект под размер хитбокса
+        size: drop.size + 40, // эффект под размер хитбокса
       },
     ]);
     setTimeout(() => {
