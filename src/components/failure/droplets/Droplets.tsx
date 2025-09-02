@@ -6,15 +6,6 @@ import drop3 from "../../../assets/drops/drop3.svg";
 import drop4 from "../../../assets/drops/drop3.svg";
 import drop5 from "../../../assets/drops/drop4.svg";
 
-/**
- * Исправления:
- * - надёжный клик с первого раза: используем onPointerDown, hit-test только по обёртке
- * - не анимируем top + transform одновременно; только transform (плавнее и клики стабильно)
- * - аккуратно считаем позицию вспышки через rect относительно Wrapper (без scrollY)
- * - не мутируем объекты в state для ref; используем Map(id -> HTMLElement)
- * - выключаем выделение/перетаскивание/хайлайт на мобильных
- */
-
 const StyledWrapper = styled.div`
   position: absolute;
   inset: 0;
@@ -28,13 +19,11 @@ const Wrapper = styled.div`
   overflow: hidden;
 `;
 
-// Падение с ускорением (ease-in) на дистанцию distance
 const fall = (distance: number) => keyframes`
   from { transform: translateY(0); }
   to { transform: translateY(${distance}px); }
 `;
 
-// Контейнер с увеличенным хитбоксом. Параметр pad — дополнительный паддинг хитбокса.
 const DropletWrapper = styled.div<{
   x: number;
   size: number;
@@ -54,15 +43,13 @@ const DropletWrapper = styled.div<{
   cursor: pointer;
   user-select: none;
   pointer-events: auto;
-  touch-action: none; /* без скроллов-жестов поверх */
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
   will-change: transform;
   animation: ${({ distance }) => fall(distance)}
     ${({ duration }) => duration}ms ease-in forwards;
-    background: red;
 `;
 
-// Капля как картинка — клики через неё не ловим, чтобы всё шло в обёртку
 const DropletImg = styled.img<{ size: number }>`
   width: ${({ size }) => size}px;
   height: ${({ size }) => size}px;
@@ -97,13 +84,13 @@ interface DropModel {
   size: number;
   svg: string;
   duration: number;
-  start: number; // начальный top (обычно -size)
-  distance: number; // сколько пройти по Y трансформом
+  start: number;
+  distance: number;
 }
 
 const Droplets = ({
   spawnInterval = 800,
-  hitboxPadding = 20, // увеличенный хитбокс
+  hitboxPadding = 20,
 }: {
   spawnInterval?: number;
   hitboxPadding?: number;
@@ -176,7 +163,7 @@ const Droplets = ({
             pad={hitboxPadding}
             distance={drop.distance}
             onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId); // улучшение отзывчивости
+              e.currentTarget.setPointerCapture(e.pointerId);
               handlePop(drop);
             }}
           >
@@ -191,3 +178,5 @@ const Droplets = ({
     </StyledWrapper>
   );
 };
+
+export default Droplets;
