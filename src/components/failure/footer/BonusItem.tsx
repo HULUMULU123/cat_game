@@ -12,8 +12,8 @@ const StyledItem = styled.li<{ $active: boolean }>`
           background: #1fffe3;
           background: linear-gradient(
             359deg,
-            rgba(31, 255, 227, 0.37) 0%,
-            rgba(0, 223, 152, 0.45) 100%
+            rgba(31, 255, 227, 0.17) 0%,
+            rgba(0, 223, 152, 0.25) 100%
           );
         `};
   align-items: center;
