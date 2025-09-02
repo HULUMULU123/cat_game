@@ -38,8 +38,8 @@ const DropletWrapper = styled.div<{
   position: absolute;
   left: ${({ x }) => x - 10}px; /* расширяем хитбокс */
   top: ${({ start }) => start - 10}px;
-  width: ${({ size }) => size + 20}px;
-  height: ${({ size }) => size + 20}px;
+  width: ${({ size }) => size + 30}px;
+  height: ${({ size }) => size + 30}px;
   display: flex;
   align-items: center;
   justify-content: center;
