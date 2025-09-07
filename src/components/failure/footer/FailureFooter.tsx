@@ -10,6 +10,19 @@ const Wrapper = styled.div`
   position: relative;
 `
 
+const LightLine = styled.div`
+  display: block;
+  width: 100%;
+  height: 2px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgb(133,255,196);
+  box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.6);
+  -webkit-box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.6);
+  -moz-box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.6);
+`
+
 const BottomWrapper = styled.div`
   width: 100%;
   bottom: 0;
@@ -60,6 +73,7 @@ const StyledBottomImg = styled.img`
 export default function FailureFooter({score}) {
   return (
     <Wrapper>
+      <LightLine></LightLine>
       <BounusList />
       <BottomWrapper>
         <ImageWrapper>
