@@ -18,9 +18,9 @@ const LightLine = styled.div`
   top: 0;
   left: 0;
   background: rgb(133,255,196);
-  box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.6);
-  -webkit-box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.6);
-  -moz-box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.6);
+  box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.7);
+  -webkit-box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.7);
+  -moz-box-shadow: 0px -9px 18px 6px rgba(133,255,196,0.7);
 `
 
 const BottomWrapper = styled.div`

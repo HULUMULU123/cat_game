@@ -120,14 +120,34 @@ const Droplets = ({
         { id, x, size, svg, duration, start, distance },
       ]);
 
-      setTimeout(() => {
+      // удаляем каплю либо по окончанию анимации, либо когда она ушла за экран
+      const removeDrop = () => {
         setDrops((prev) => prev.filter((d) => d.id !== id));
         dropletRefs.current.delete(id);
-      }, duration);
+      };
+
+      // таймер на duration
+      const animationTimeout = setTimeout(removeDrop, duration);
+
+      // fallback: если по какой-то причине капля ушла ниже окна раньше
+      const checkVisibility = () => {
+        const el = dropletRefs.current.get(id);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top > window.innerHeight) {
+          clearTimeout(animationTimeout);
+          removeDrop();
+        } else {
+          requestAnimationFrame(checkVisibility);
+        }
+      };
+      requestAnimationFrame(checkVisibility);
+
     }, Math.max(10, spawnInterval / 3));
 
     return () => clearInterval(timer);
   }, [spawnInterval]);
+
 
   const handlePop = (drop: DropModel) => {
     const el = dropletRefs.current.get(drop.id);
