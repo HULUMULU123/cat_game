@@ -36,7 +36,7 @@ useGLTF.preload("/models/stakan_room.glb");
 const Model: React.FC<ModelProps> = ({ children }) => {
   return (
     <ModelWrapper>
-      <Canvas shadows camera={{ position: [0, 2, 10], fov: 50 }}>
+      <Canvas shadows camera={{ position: [0, 2, 30], fov: 50 }}>
         {/* Основное мягкое освещение */}
         <ambientLight intensity={0.3} />
 
@@ -54,6 +54,18 @@ const Model: React.FC<ModelProps> = ({ children }) => {
 
         {/* Контровой свет */}
         <pointLight position={[0, 5, -5]} intensity={0.6} />
+
+        {/* Зелёное свечение */}
+        <pointLight
+          position={[0, 2, 0]}
+          intensity={2}
+          distance={5}
+          color="lime"
+        />
+        <mesh position={[0, 2, 0]}>
+          <sphereGeometry args={[0.2, 32, 32]} />
+          <meshBasicMaterial color="lime" transparent opacity={0.4} />
+        </mesh>
 
         {/* Модель */}
         <Suspense
@@ -80,14 +92,14 @@ const Model: React.FC<ModelProps> = ({ children }) => {
         {/* Постобработка */}
         <EffectComposer>
           <Bloom
-            intensity={0.6} // сила свечения
-            luminanceThreshold={0.3} // яркость от которой начинается свечение
-            luminanceSmoothing={0.9} // плавность перехода
+            intensity={0.8}
+            luminanceThreshold={0.2}
+            luminanceSmoothing={0.9}
           />
         </EffectComposer>
 
         {/* Управление камерой */}
-        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1} />
+        <OrbitControls enableZoom={true} target={[0, 1, 0]} />
       </Canvas>
 
       {/* Контент поверх канваса */}
