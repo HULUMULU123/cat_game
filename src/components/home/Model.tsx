@@ -50,7 +50,10 @@ const Model: React.FC<ModelProps> = ({ children }) => {
         />
 
         {/* Заполняющий свет */}
-        <directionalLight position={[-5, 3, -5]} intensity={0.5} />
+        <directionalLight
+          position={[5.6763, -1.5236, 0.13696]}
+          intensity={0.5}
+        />
 
         {/* Контровой свет */}
         <pointLight position={[0, 5, -5]} intensity={0.6} />
@@ -99,7 +102,10 @@ const Model: React.FC<ModelProps> = ({ children }) => {
         </EffectComposer>
 
         {/* Управление камерой */}
-        <OrbitControls enableZoom={true} target={[0, 1, 0]} />
+        <OrbitControls
+          enableZoom={true}
+          target={[-2.55328, 7.46053, -0.722721]}
+        />
       </Canvas>
 
       {/* Контент поверх канваса */}
