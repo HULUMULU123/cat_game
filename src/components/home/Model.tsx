@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import styled from "styled-components";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Html } from "@react-three/drei";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
 
 interface ModelProps {
   children?: React.ReactNode;
@@ -37,31 +37,28 @@ const Model: React.FC<ModelProps> = ({ children }) => {
   return (
     <ModelWrapper>
       <Canvas shadows camera={{ position: [7, -2, 8], fov: 50 }}>
-        {/* Основное мягкое освещение */}
-        <ambientLight intensity={0.3} />
+        {/* Фон и туман под зеленый закат */}
+        <color attach="background" args={["#002200"]} />
+        <fog attach="fog" args={["#002200", 10, 40]} />
 
-        {/* Ключевой свет */}
+        {/* Мягкий зелёный общий свет */}
+        <ambientLight intensity={0.4} color="#228822" />
+
+        {/* Ключевой свет (как закат) */}
         <directionalLight
           position={[5, 5, 5]}
-          intensity={1.2}
+          intensity={1.5}
+          color="#66ff66"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
         />
 
-        {/* Заполняющий свет */}
-        <directionalLight position={[-5, 3, -5]} intensity={0.5} />
+        {/* Дополнительный заполняющий свет */}
+        <pointLight position={[0, -1, 0]} intensity={1.2} color="#00ff99" distance={15} />
+        <pointLight position={[0, 2, 0]} intensity={2} distance={5} color="lime" />
 
-        {/* Контровой свет */}
-        <pointLight position={[0, 5, -5]} intensity={0.6} />
-
-        {/* Зелёное свечение */}
-        <pointLight
-          position={[0, 2, 0]}
-          intensity={2}
-          distance={5}
-          color="lime"
-        />
+        {/* Визуализация зелёного источника */}
         <mesh position={[0, 2, 0]}>
           <sphereGeometry args={[0.2, 32, 32]} />
           <meshBasicMaterial color="lime" transparent opacity={0.4} />
@@ -91,11 +88,8 @@ const Model: React.FC<ModelProps> = ({ children }) => {
 
         {/* Постобработка */}
         <EffectComposer>
-          <Bloom
-            intensity={0.8}
-            luminanceThreshold={0.2}
-            luminanceSmoothing={0.9}
-          />
+          <Bloom intensity={1.2} luminanceThreshold={0.2} luminanceSmoothing={0.9} />
+          <HueSaturation hue={0.3} saturation={0.5} />
         </EffectComposer>
 
         {/* Управление камерой */}
