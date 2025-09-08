@@ -1,29 +1,52 @@
-import React from "react";
+import React, { Suspense } from "react";
 import styled from "styled-components";
-import bg_image from "../../assets/bg_image.png";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
+
 interface ModelProps {
-  // URL картинки для фона
-  children?: React.ReactNode; // чтобы можно было вставить внутрь контент
+  children?: React.ReactNode;
 }
 
-const ModelWrapper = styled.div<{ backgroundImage: string }>`
+// Обертка, чтобы модель занимала весь экран
+const ModelWrapper = styled.div`
   position: relative;
-
-  height: 100vh; /* на весь экран по высоте */
-  background-image: url(${(props) => props.backgroundImage});
-  background-size: 110%;
-  /* растянуть, сохраняя пропорции */
-  background-position: center; /* центрировать */
-  background-repeat: no-repeat;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
 `;
 
+// Контент поверх 3D
 const Content = styled.div`
-  z-index: 1; /* поверх фона */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1; /* поверх canvas */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
+
+// Компонент модели
+function GLTFModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  return <primitive object={scene} scale={1.5} />;
+}
 
 const Model: React.FC<ModelProps> = ({ children }) => {
   return (
-    <ModelWrapper backgroundImage={bg_image}>
+    <ModelWrapper>
+      <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[5, 5, 5]} intensity={1} />
+        <Suspense fallback={null}>
+          <GLTFModel url="../../assets/models/stakan_room.glb" />
+          <Environment preset="sunset" />
+        </Suspense>
+        <OrbitControls enableZoom={false} />
+      </Canvas>
+
       <Content>{children}</Content>
     </ModelWrapper>
   );
