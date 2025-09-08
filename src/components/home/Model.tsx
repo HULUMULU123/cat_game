@@ -23,24 +23,38 @@ const Content = styled.div`
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
   flex-direction: column;
 `;
 
 function GLTFModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
-  return <primitive object={scene} scale={1.5} />;
+  return <primitive object={scene} scale={1.5} castShadow receiveShadow />;
 }
 useGLTF.preload("/models/stakan_room.glb");
 
 const Model: React.FC<ModelProps> = ({ children }) => {
   return (
     <ModelWrapper>
-      <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
+      <Canvas shadows camera={{ position: [0, 2, 10], fov: 50 }}>
+        {/* Основное мягкое освещение */}
+        <ambientLight intensity={0.3} />
 
-        {/* fallback теперь внутри 3D через Html */}
+        {/* Ключевой свет */}
+        <directionalLight
+          position={[5, 5, 5]}
+          intensity={1.2}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+        />
+
+        {/* Заполняющий свет */}
+        <directionalLight position={[-5, 3, -5]} intensity={0.5} />
+
+        {/* Контровой свет */}
+        <pointLight position={[0, 5, -5]} intensity={0.6} />
+
+        {/* Модель */}
         <Suspense
           fallback={
             <Html center style={{ color: "white" }}>
@@ -52,7 +66,18 @@ const Model: React.FC<ModelProps> = ({ children }) => {
           <Environment preset="sunset" />
         </Suspense>
 
-        <OrbitControls enableZoom={false} />
+        {/* Плоскость для теней */}
+        <mesh
+          receiveShadow
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -1.5, 0]}
+        >
+          <planeGeometry args={[50, 50]} />
+          <shadowMaterial opacity={0.3} />
+        </mesh>
+
+        {/* Управление камерой */}
+        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1} />
       </Canvas>
 
       {/* Контент поверх канваса */}
