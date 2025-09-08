@@ -33,6 +33,7 @@ function GLTFModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
   return <primitive object={scene} scale={1.5} />;
 }
+useGLTF.preload("/models/stakan_room.glb");
 
 const Model: React.FC<ModelProps> = ({ children }) => {
   return (
@@ -40,8 +41,8 @@ const Model: React.FC<ModelProps> = ({ children }) => {
       <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
-        <Suspense fallback={null}>
-          <GLTFModel url="../../assets/models/stakan_room.glb" />
+        <Suspense fallback={<span style={{ color: "white" }}>Loading...</span>}>
+          <GLTFModel url="/models/stakan_room.glb" />
           <Environment preset="sunset" />
         </Suspense>
         <OrbitControls enableZoom={false} />
