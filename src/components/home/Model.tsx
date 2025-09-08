@@ -36,7 +36,10 @@ useGLTF.preload("/models/stakan_room.glb");
 const Model: React.FC<ModelProps> = ({ children }) => {
   return (
     <ModelWrapper>
-      <Canvas shadows camera={{ position: [0, 2, 30], fov: 50 }}>
+      <Canvas
+        shadows
+        camera={{ position: [5.6763, -1.5236, 0.13696], fov: 50 }}
+      >
         {/* Основное мягкое освещение */}
         <ambientLight intensity={0.3} />
 
@@ -50,10 +53,7 @@ const Model: React.FC<ModelProps> = ({ children }) => {
         />
 
         {/* Заполняющий свет */}
-        <directionalLight
-          position={[5.6763, -1.5236, 0.13696]}
-          intensity={0.5}
-        />
+        <directionalLight position={[-5, 3, -5]} intensity={0.5} />
 
         {/* Контровой свет */}
         <pointLight position={[0, 5, -5]} intensity={0.6} />
