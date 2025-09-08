@@ -1,13 +1,12 @@
 import React, { Suspense } from "react";
 import styled from "styled-components";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
+import { OrbitControls, Environment, useGLTF, Html } from "@react-three/drei";
 
 interface ModelProps {
   children?: React.ReactNode;
 }
 
-// Обертка, чтобы модель занимала весь экран
 const ModelWrapper = styled.div`
   position: relative;
   width: 100%;
@@ -15,20 +14,18 @@ const ModelWrapper = styled.div`
   overflow: hidden;
 `;
 
-// Контент поверх 3D
 const Content = styled.div`
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1; /* поверх canvas */
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 `;
 
-// Компонент модели
 function GLTFModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
   return <primitive object={scene} scale={1.5} />;
@@ -41,13 +38,23 @@ const Model: React.FC<ModelProps> = ({ children }) => {
       <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
-        <Suspense fallback={<span style={{ color: "white" }}>Loading...</span>}>
+
+        {/* fallback теперь внутри 3D через Html */}
+        <Suspense
+          fallback={
+            <Html center style={{ color: "white" }}>
+              Loading...
+            </Html>
+          }
+        >
           <GLTFModel url="/models/stakan_room.glb" />
           <Environment preset="sunset" />
         </Suspense>
+
         <OrbitControls enableZoom={false} />
       </Canvas>
 
+      {/* Контент поверх канваса */}
       <Content>{children}</Content>
     </ModelWrapper>
   );
