@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import styled from "styled-components";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Html } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 
 interface ModelProps {
   children?: React.ReactNode;
@@ -75,6 +76,15 @@ const Model: React.FC<ModelProps> = ({ children }) => {
           <planeGeometry args={[50, 50]} />
           <shadowMaterial opacity={0.3} />
         </mesh>
+
+        {/* Постобработка */}
+        <EffectComposer>
+          <Bloom
+            intensity={0.6} // сила свечения
+            luminanceThreshold={0.3} // яркость от которой начинается свечение
+            luminanceSmoothing={0.9} // плавность перехода
+          />
+        </EffectComposer>
 
         {/* Управление камерой */}
         <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1} />
