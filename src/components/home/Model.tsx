@@ -36,10 +36,7 @@ useGLTF.preload("/models/stakan_room.glb");
 const Model: React.FC<ModelProps> = ({ children }) => {
   return (
     <ModelWrapper>
-      <Canvas
-        shadows
-        camera={{ position: [5.6763, -1.5236, 0.13696], fov: 50 }}
-      >
+      <Canvas shadows camera={{ position: [7, -2, 13], fov: 50 }}>
         {/* Основное мягкое освещение */}
         <ambientLight intensity={0.3} />
 
@@ -102,10 +99,7 @@ const Model: React.FC<ModelProps> = ({ children }) => {
         </EffectComposer>
 
         {/* Управление камерой */}
-        <OrbitControls
-          enableZoom={true}
-          target={[-2.55328, 7.46053, -0.722721]}
-        />
+        <OrbitControls enableZoom={true} target={[-10, 5, -20]} />
       </Canvas>
 
       {/* Контент поверх канваса */}
