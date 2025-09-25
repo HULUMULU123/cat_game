@@ -12,13 +12,13 @@ const modelUrls = [
 
 export default function CatModel() {
   const [currentUrl, setCurrentUrl] = useState(() => {
-    // случайный старт
     return modelUrls[Math.floor(Math.random() * modelUrls.length)];
   });
 
   const gltf = useGLTF(currentUrl);
   const mixer = useRef<THREE.AnimationMixer>();
 
+  // 🟢 Обработка анимации
   useEffect(() => {
     if (!gltf?.scene) return;
 
@@ -28,19 +28,30 @@ export default function CatModel() {
       const clip = gltf.animations[0];
       const action = mixer.current.clipAction(clip);
       action.reset();
-      action.setLoop(THREE.LoopOnce, 1); // проигрываем один раз
-      action.clampWhenFinished = true;   // остановиться в конце
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
       action.play();
 
-      console.log("Playing animation:", clip.name);
-
-      // Когда закончится — выбираем следующую случайную модель
       mixer.current.addEventListener("finished", () => {
         setCurrentUrl(
           modelUrls[Math.floor(Math.random() * modelUrls.length)]
         );
       });
     }
+
+    // 🟢 Исправляем материалы, чтобы не просвечивали
+    gltf.scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        if (mesh.material) {
+          const mat = mesh.material as THREE.Material & { alphaTest?: number };
+          mat.transparent = false;
+          mat.depthWrite = true;
+          mat.side = THREE.FrontSide;
+          mat.alphaTest = 0.5; // для альфа-текстур
+        }
+      }
+    });
   }, [gltf]);
 
   useFrame((_, delta) => {
@@ -53,7 +64,7 @@ export default function CatModel() {
     <primitive
       object={gltf.scene}
       scale={1.2}
-      position={[.5, 3, -.2]}
+      position={[0.2, 3.1, -0.3]}
       rotation={[0, Math.PI, 0]}
       castShadow
       receiveShadow
