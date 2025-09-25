@@ -1,8 +1,10 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useRef, useEffect } from "react";
 import styled from "styled-components";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, useGLTF, Html } from "@react-three/drei";
+import { Environment, useGLTF, Html } from "@react-three/drei";
 import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
+import * as THREE from "three";
+import CatModel from "./CatModel";
 
 interface ModelProps {
   children?: React.ReactNode;
@@ -27,44 +29,73 @@ const Content = styled.div`
   flex-direction: column;
 `;
 
-function GLTFModel({ url }: { url: string }) {
+// Компонент комнаты + кот за стулом
+function RoomWithCat({ url }: { url: string }) {
   const { scene } = useGLTF(url);
-  return <primitive object={scene} scale={1.5} castShadow receiveShadow />;
+  const catRef = useRef<THREE.Group>(null);
+
+  useEffect(() => {
+    if (!scene || !catRef.current) return;
+
+    // ищем объект с "chair" в имени
+    let chair: THREE.Object3D | null = null;
+    scene.traverse((obj) => {
+      console.log(obj.name); // полезно, чтобы узнать доступные имена
+      if (obj.name.toLowerCase().includes("chair")) {
+        chair = obj;
+      }
+    });
+
+    if (chair) {
+      const chairPos = new THREE.Vector3();
+      chair.getWorldPosition(chairPos);
+
+      const dir = new THREE.Vector3();
+      chair.getWorldDirection(dir);
+
+      // позиционируем кота позади стула
+      catRef.current.position.copy(chairPos).add(dir.multiplyScalar(-0.6));
+      catRef.current.position.y += 0.05;
+    } else {
+      console.warn("❌ Стул не найден. Проверь имена в console.log(obj.name)");
+    }
+  }, [scene]);
+
+  return (
+    <>
+      <primitive object={scene} scale={1.5} castShadow receiveShadow />
+      <group ref={catRef}>
+        <CatModel />
+      </group>
+    </>
+  );
 }
 useGLTF.preload("/models/stakan_room.glb");
 
 const Model: React.FC<ModelProps> = ({ children }) => {
   return (
     <ModelWrapper>
-      <Canvas shadows camera={{ position: [7, -2, 8], fov: 50 }}>
-        {/* Фон и туман под зеленый закат */}
+      <Canvas shadows camera={{ position: [6, -2, 4], fov: 50, rotation: [0.1, 0.65, 0] }}>
         <color attach="background" args={["#002200"]} />
         <fog attach="fog" args={["#002200", 10, 40]} />
 
-        {/* Мягкий зелёный общий свет */}
-        <ambientLight intensity={0.4} color="#228822" />
-
-        {/* Ключевой свет (как закат) */}
+        <ambientLight intensity={0.6} color="#00ff1d" />
         <directionalLight
           position={[5, 5, 5]}
-          intensity={1.5}
-          color="#66ff66"
+          intensity={1}
+          color="#00ff1d"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
         />
-
-        {/* Дополнительный заполняющий свет */}
-        <pointLight position={[0, -1, 0]} intensity={1.2} color="#00ff99" distance={15} />
+        <pointLight position={[0, -1, 0]} intensity={1.2} color="#00ff1d" distance={15} />
         <pointLight position={[0, 2, 0]} intensity={2} distance={5} color="lime" />
 
-        {/* Визуализация зелёного источника */}
         <mesh position={[0, 2, 0]}>
           <sphereGeometry args={[0.2, 32, 32]} />
           <meshBasicMaterial color="lime" transparent opacity={0.4} />
         </mesh>
 
-        {/* Модель */}
         <Suspense
           fallback={
             <Html center style={{ color: "white" }}>
@@ -72,31 +103,22 @@ const Model: React.FC<ModelProps> = ({ children }) => {
             </Html>
           }
         >
-          <GLTFModel url="/models/stakan_room.glb" />
-          <Environment preset="sunset" />
+          {/* Комната + кот за стулом */}
+          <RoomWithCat url="/models/stakan_room.glb" />
+          <Environment preset="city" background />
         </Suspense>
 
-        {/* Плоскость для теней */}
-        <mesh
-          receiveShadow
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, -1.5, 0]}
-        >
+        <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
           <planeGeometry args={[50, 50]} />
           <shadowMaterial opacity={0.3} />
         </mesh>
 
-        {/* Постобработка */}
         <EffectComposer>
-          <Bloom intensity={1.2} luminanceThreshold={0.2} luminanceSmoothing={0.9} />
+          <Bloom intensity={0.4} luminanceThreshold={0.2} luminanceSmoothing={0.9} />
           <HueSaturation hue={0.3} saturation={0.5} />
         </EffectComposer>
-
-        {/* Управление камерой */}
-        <OrbitControls enableZoom={true} target={[-10, 1, -20]} />
       </Canvas>
 
-      {/* Контент поверх канваса */}
       <Content>{children}</Content>
     </ModelWrapper>
   );
