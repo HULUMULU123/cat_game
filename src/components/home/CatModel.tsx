@@ -63,9 +63,9 @@ export default function CatModel() {
   return (
     <primitive
       object={gltf.scene}
-      scale={1.2}
-      position={[0.2, 3.1, -0.3]}
-      rotation={[0, Math.PI, 0]}
+      scale={1.3}
+      position={[0.2, 3, -0.6]}
+      rotation={[0, Math.PI -.3, 0]}
       castShadow
       receiveShadow
     />
