@@ -31,7 +31,7 @@ const Content = styled.div`
 
 // Компонент комнаты + кот за стулом
 function RoomWithCat({ url, onLoaded }: { url: string, onLoaded?: () => void  }) {
-  // const { scene } = useGLTF(url);
+  const { scene } = useGLTF(url);
   const catRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
