@@ -149,7 +149,7 @@ const Model: React.FC<ModelProps> = ({ children }) => {
   return (
     <ModelWrapper>
       {!isLoaded && <LoaderOverlay>Loading...</LoaderOverlay>}
-      <Canvas shadows camera={{ position: [10, -.5, 5], fov: 50, rotation: [0.0, 0.8, 0] }}>
+      <Canvas shadows camera={{ position: [10, -.5, 5], fov: 50, rotation: [0.0, 0.77, 0] }}>
         <color attach="background" args={["#002200"]} />
         <fog attach="fog" args={["#002200", 10, 40]} />
 
