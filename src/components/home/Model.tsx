@@ -37,27 +37,87 @@ function RoomWithCat({ url }: { url: string }) {
   useEffect(() => {
     if (!scene || !catRef.current) return;
 
-    // ищем объект с "chair" в имени
     let chair: THREE.Object3D | null = null;
+    let screenMesh: THREE.Mesh | null = null;
+    let windowMesh: THREE.Mesh | null = null;
+
     scene.traverse((obj) => {
-      console.log(obj.name); // полезно, чтобы узнать доступные имена
-      if (obj.name.toLowerCase().includes("chair")) {
-        chair = obj;
-      }
+      if (obj.name.toLowerCase().includes("chair")) chair = obj;
+      if (obj.name.toLowerCase().includes("screen") && (obj as THREE.Mesh).isMesh)
+        screenMesh = obj as THREE.Mesh;
+      if (obj.name.toLowerCase().includes("window") && (obj as THREE.Mesh).isMesh)
+        windowMesh = obj as THREE.Mesh;
     });
 
+    // 🪑 Позиционируем кота за стулом
     if (chair) {
-      const chairPos = new THREE.Vector3();
-      chair.getWorldPosition(chairPos);
-
+      const pos = new THREE.Vector3();
+      chair.getWorldPosition(pos);
       const dir = new THREE.Vector3();
       chair.getWorldDirection(dir);
-
-      // позиционируем кота позади стула
-      catRef.current.position.copy(chairPos).add(dir.multiplyScalar(-0.6));
+      catRef.current.position.copy(pos).add(dir.multiplyScalar(-0.6));
       catRef.current.position.y += 0.05;
-    } else {
-      console.warn("❌ Стул не найден. Проверь имена в console.log(obj.name)");
+    }
+
+    // 🖼️ Изображение для "экрана"
+    if (screenMesh) {
+      const loader = new THREE.TextureLoader();
+      loader.load("/textures/screen_image.jpeg", (texture) => {
+        texture.encoding = THREE.sRGBEncoding;
+        texture.flipY = false;
+        screenMesh.material = new THREE.MeshBasicMaterial({
+          map: texture,
+          toneMapped: false,
+        });
+        screenMesh.material.needsUpdate = true;
+      });
+    }
+
+    // 🌧️ Видео дождя в "окно"
+    if (windowMesh) {
+      const video = document.createElement("video");
+      video.src = "/videos/rain.mp4"; // помести видео сюда: public/videos/rain.mp4
+      video.crossOrigin = "anonymous";
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.autoplay = true;
+      video.preload = "auto";
+      video.style.display = "none";
+      video.playbackRate = 0.7; // не показываем элемент в DOM
+      document.body.appendChild(video);
+
+      // Пытаемся запустить
+      const tryPlay = async () => {
+        try {
+          await video.play();
+          console.log("✅ Видео дождя запущено");
+        } catch (err) {
+          console.warn("⚠️ Видео не запущено автоматически:", err);
+        }
+      };
+      tryPlay();
+
+      // Создаём видео-текстуру
+      const videoTexture = new THREE.VideoTexture(video);
+      videoTexture.minFilter = THREE.LinearFilter;
+      videoTexture.magFilter = THREE.LinearFilter;
+      videoTexture.format = THREE.RGBFormat;
+      videoTexture.colorSpace = THREE.SRGBColorSpace;
+      videoTexture.flipY = false;
+      videoTexture.center.set(0.5, 0.5);       // центр вращения — середина текстуры
+      videoTexture.rotation = Math.PI / 2;    // поворот на 90° против часовой стрелки
+      videoTexture.repeat.set(2.5, 2.5);           // при необходимости можно масштабировать
+      videoTexture.offset.set(-0.1, 0); 
+
+      windowMesh.material = new THREE.MeshBasicMaterial({
+        map: videoTexture,
+        toneMapped: false,
+        side: THREE.DoubleSide,
+      });
+      windowMesh.material.needsUpdate = true;
+      
+      
     }
   }, [scene]);
 

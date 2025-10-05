@@ -17,6 +17,9 @@ width: 70%;
 max-width: 50vh;
 border-radius: 7px;
 border: none;
+@media (max-width: 370px) {
+    width: 80%;
+  }
 `
 
 const StyledActionContentWrapper = styled.div`
@@ -33,14 +36,21 @@ const StyledActionName = styled.span`
 display:block;
 text-align:center;
 color: #1A9480;
-font-size: 12px;`
+font-size: 12px;
+@media (max-width: 370px) {
+    font-size: 10px;
+  }`
 
 const StyledActionTimer = styled.span`
 display:block;
 text-align:center;
 color: #1A9480;
 font-size: 28px;
-font-weight: 700;`
+font-weight: 700;
+@media (max-width: 370px) {
+    font-size: 20px;
+  }
+`
 
 const StyledGiftWrapper = styled.div`
 position: absolute;
