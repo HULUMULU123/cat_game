@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useEffect } from "react";
+import React, { Suspense, useRef, useEffect, useState } from "react";
 import styled from "styled-components";
 import { Canvas } from "@react-three/fiber";
 import { Environment, useGLTF, Html } from "@react-three/drei";
@@ -30,13 +30,13 @@ const Content = styled.div`
 `;
 
 // Компонент комнаты + кот за стулом
-function RoomWithCat({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
+function RoomWithCat({ url, onLoaded }: { url: string, onLoaded?: () => void  }) {
+  // const { scene } = useGLTF(url);
   const catRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
     if (!scene || !catRef.current) return;
-
+    onLoaded()
     let chair: THREE.Object3D | null = null;
     let screenMesh: THREE.Mesh | null = null;
     let windowMesh: THREE.Mesh | null = null;
@@ -132,9 +132,23 @@ function RoomWithCat({ url }: { url: string }) {
 }
 useGLTF.preload("/models/stakan_room.glb");
 
+const LoaderOverlay = styled.div`
+  position: absolute;
+  inset: 0; /* top:0; right:0; bottom:0; left:0 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 1.5em;
+  background: rgba(0, 0, 0, 0.3); /* полупрозрачный фон */
+  z-index: 10;
+`;
+
 const Model: React.FC<ModelProps> = ({ children }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
   return (
     <ModelWrapper>
+      {!isLoaded && <LoaderOverlay>Loading...</LoaderOverlay>}
       <Canvas shadows camera={{ position: [6, -2, 4], fov: 50, rotation: [0.1, 0.65, 0] }}>
         <color attach="background" args={["#002200"]} />
         <fog attach="fog" args={["#002200", 10, 40]} />
@@ -156,15 +170,9 @@ const Model: React.FC<ModelProps> = ({ children }) => {
           <meshBasicMaterial color="lime" transparent opacity={0.4} />
         </mesh>
 
-        <Suspense
-          fallback={
-            <Html center style={{ color: "white" }}>
-              Loading...
-            </Html>
-          }
-        >
+        <Suspense fallback={null} onLoaded={() => setIsLoaded(true)}>
           {/* Комната + кот за стулом */}
-          <RoomWithCat url="/models/stakan_room.glb" />
+          <RoomWithCat url="/models/stakan_room.glb" onLoaded={() => setIsLoaded(true)}/>
           <Environment preset="city" background />
         </Suspense>
 
