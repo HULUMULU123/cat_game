@@ -146,10 +146,69 @@ const LoaderOverlay = styled.div`
 
 const Model: React.FC<ModelProps> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  const rainRef = useRef<HTMLAudioElement | null>(null);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+// audio 
+ useEffect(() => {
+    rainRef.current = new Audio("/audio/rain.mp3");
+    musicRef.current = new Audio("/audio/music.mp3");
+
+    if (rainRef.current && musicRef.current) {
+      rainRef.current.loop = true;
+      musicRef.current.loop = true;
+      rainRef.current.volume = 0.7;
+      musicRef.current.volume = 0.7;
+    }
+
+    // Очистка
+    return () => {
+      rainRef.current?.pause();
+      musicRef.current?.pause();
+    };
+  }, []);
+
+  // ▶️ Запуск после клика
+  const handleStartAudio = async () => {
+    try {
+      await rainRef.current?.play();
+      await musicRef.current?.play();
+      setAudioReady(true);
+    } catch (err) {
+      console.warn("Не удалось запустить аудио:", err);
+    }
+  };
   return (
     <ModelWrapper>
       {!isLoaded && <LoaderOverlay>Loading...</LoaderOverlay>}
-      <Canvas shadows camera={{ position: [10, -.5, 5], fov: 50, rotation: [0.0, 0.77, 0] }}>
+      {/* Кнопка включения звука */}
+      {!audioReady && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "200px",
+            right: "30px",
+            zIndex: 10,
+          }}
+        >
+          <button
+            onClick={handleStartAudio}
+            style={{
+              padding: "10px 20px",
+              fontSize: "16px",
+              borderRadius: "8px",
+              background: "rgba(0,255,0,0.2)",
+              border: "1px solid lime",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
+            🔊 Включить звук
+          </button>
+        </div>
+      )}
+
+      <Canvas shadows camera={{ position: [10, .5, 5], fov: 50, rotation: [0.0, 0.77, 0] }}>
         <color attach="background" args={["#002200"]} />
         <fog attach="fog" args={["#002200", 10, 40]} />
 
@@ -173,7 +232,7 @@ const Model: React.FC<ModelProps> = ({ children }) => {
         <Suspense fallback={null} onLoaded={() => setIsLoaded(true)}>
           {/* Комната + кот за стулом */}
           <RoomWithCat url="/models/stakan_room.glb" onLoaded={() => setIsLoaded(true)}/>
-          <Environment preset="city" background />
+          <Environment preset="forest" background />
         </Suspense>
 
         <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
