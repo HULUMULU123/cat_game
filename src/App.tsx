@@ -14,24 +14,24 @@ function App() {
   const webApp = useWebApp();
   
   useEffect(() => {
-    console.log('not webapp')
-    console.log(webApp.initData)
-    if (webApp.initData) {
-      console.log('webapp yees')
-       // Инициализация мини-приложения
-      
-        webApp.disableVerticalSwipes(); // Отключаем свайпы вниз
-      console.log(webApp.initData)
-    }
+  if (!webApp) return; // WebApp пока не готов
 
-    // На случай старых версий Telegram, подстрахуемся стилями:
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
+  webApp.ready(); // говорим Telegram, что приложение готово
 
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
-    };
+  // после ready можно безопасно использовать initData
+  console.log("initData:", webApp.initData);
+
+  if (webApp.disableVerticalSwipes) {
+    webApp.disableVerticalSwipes();
+  }
+
+  document.body.style.overflow = "hidden";
+  document.body.style.touchAction = "none";
+
+  return () => {
+    document.body.style.overflow = "";
+    document.body.style.touchAction = "";
+  };
   }, [webApp]);
 
   return (
