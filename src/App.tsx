@@ -14,11 +14,13 @@ function App() {
   const webApp = useWebApp();
 
   useEffect(() => {
+    console.log('not webapp')
     if (webApp) {
+      console.log('webapp yees')
       webApp.ready(); // Инициализация мини-приложения
-      if (webApp.disableVerticalSwipes) {
+      
         webApp.disableVerticalSwipes(); // Отключаем свайпы вниз
-      }
+      console.log(webApp.initData)
     }
 
     // На случай старых версий Telegram, подстрахуемся стилями:
