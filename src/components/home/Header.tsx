@@ -3,6 +3,7 @@ import styled from "styled-components";
 import gift from "../../assets/icons/gift.svg";
 import rules from "../../assets/icons/rules.svg";
 import avatar from "../../assets/avatar.jpg";
+import useGlobal from "../../hooks/useGlobal";
 const StyledWrapper = styled.div`
   display: flex;
   justify-content: space-between;
@@ -60,6 +61,7 @@ const StyledUserText = styled.span`
   }
 `;
 export default function Header({ handleOpenModal }) {
+  const userData = useGlobal((state) => state.userData);
   return (
     <StyledWrapper>
       <StyledInfo>
@@ -73,10 +75,10 @@ export default function Header({ handleOpenModal }) {
       <StyledUser onClick={() => handleOpenModal("user")}>
         <StyledUserTextWrapper>
           <StyledUserText>Good Evening,</StyledUserText>
-          <StyledUserText>Alex!</StyledUserText>
+          <StyledUserText>{userData?.first_name}!</StyledUserText>
         </StyledUserTextWrapper>
         <StyledUserImgWrapper>
-          <StyledUserImg src={avatar} />
+          <StyledUserImg src={userData?.photo_url} />
         </StyledUserImgWrapper>
       </StyledUser>
     </StyledWrapper>

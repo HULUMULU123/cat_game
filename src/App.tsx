@@ -9,10 +9,11 @@ import Quiz from "./pages/Quiz";
 import Simulation from "./pages/Simulation";
 import Prize from "./pages/Prize";
 import Failure from "./pages/Failure";
+import useGlobal from "./hooks/useGlobal";
 
 function App() {
   const webApp = useWebApp();
-  
+  const setUserFromInitData = useGlobal((state) => state.setUserFromInitData);
   useEffect(() => {
     console.log(webApp, 'testWebapp')
   if (!webApp) return; // WebApp пока не готов
@@ -21,7 +22,7 @@ function App() {
 
   // после ready можно безопасно использовать initData
   console.log("initData:", webApp.initData);
-
+    setUserFromInitData(webApp.initData)
   if (webApp.disableVerticalSwipes) {
     webApp.disableVerticalSwipes();
   }
