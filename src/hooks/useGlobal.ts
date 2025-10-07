@@ -16,10 +16,17 @@ const useGlobal = create<GlobalState>((set) => ({
   userData: null,
 
   // Устанавливаем пользователя из initData Telegram WebApp
-  setUserFromInitData: (initData) => {
-    if (!initData?.user) return;
+  setUserFromInitData: (initData: string) => {
+  if (!initData) return;
+    console.log(initData, 'initdata from function')
+  // Разбираем query string
+  const params = new URLSearchParams(initData);
+  const userString = params.get("user");
+    console.log(userString)
+  if (!userString) return;
 
-    const tgUser = initData.user;
+  try {
+    const tgUser = JSON.parse(decodeURIComponent(userString));
     set({
       userData: {
         first_name: tgUser.first_name || "",
@@ -28,7 +35,10 @@ const useGlobal = create<GlobalState>((set) => ({
         photo_url: tgUser.photo_url || "",
       },
     });
-  },
+  } catch (e) {
+    console.error("Ошибка парсинга user из initData:", e);
+  }
+}
 }));
 
 export default useGlobal;
