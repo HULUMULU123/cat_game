@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useWebApp } from "@vkruglikov/react-telegram-web-app";
 import Header from "./components/home/Header";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
@@ -10,17 +11,36 @@ import Prize from "./pages/Prize";
 import Failure from "./pages/Failure";
 
 function App() {
+  const webApp = useWebApp();
+
+  useEffect(() => {
+    if (webApp) {
+      webApp.ready(); // Инициализация мини-приложения
+      if (webApp.disableVerticalSwipes) {
+        webApp.disableVerticalSwipes(); // Отключаем свайпы вниз
+      }
+    }
+
+    // На случай старых версий Telegram, подстрахуемся стилями:
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [webApp]);
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* Layout-обёртка для всех вложенных маршрутов */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="tasks/" element={<Tasks/>}/>
-          <Route path="quiz/" element={<Quiz/>}/>
-          <Route path="simulation/" element={<Simulation/>} />
-          <Route path="prize/" element={<Prize/>} />
-          <Route path="failure/" element={<Failure/>} />
+          <Route path="tasks/" element={<Tasks />} />
+          <Route path="quiz/" element={<Quiz />} />
+          <Route path="simulation/" element={<Simulation />} />
+          <Route path="prize/" element={<Prize />} />
+          <Route path="failure/" element={<Failure />} />
         </Route>
       </Routes>
     </BrowserRouter>
