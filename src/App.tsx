@@ -14,6 +14,7 @@ function App() {
   const webApp = useWebApp();
   
   useEffect(() => {
+    console.log(webApp, 'testWebapp')
   if (!webApp) return; // WebApp пока не готов
 
   webApp.ready(); // говорим Telegram, что приложение готово
