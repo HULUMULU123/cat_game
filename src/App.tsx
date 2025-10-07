@@ -12,12 +12,13 @@ import Failure from "./pages/Failure";
 
 function App() {
   const webApp = useWebApp();
-
+  
   useEffect(() => {
     console.log('not webapp')
-    if (webApp) {
+    console.log(webApp.initData)
+    if (webApp.initData) {
       console.log('webapp yees')
-      webApp.ready(); // Инициализация мини-приложения
+       // Инициализация мини-приложения
       
         webApp.disableVerticalSwipes(); // Отключаем свайпы вниз
       console.log(webApp.initData)
