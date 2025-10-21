@@ -1,7 +1,7 @@
 import React, { Suspense, useRef, useEffect, useState, useMemo } from "react";
 import styled from "styled-components";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, useGLTF, useProgress } from "@react-three/drei";
+import { Environment, useGLTF, useProgress, Preload } from "@react-three/drei";
 import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
 import * as THREE from "three";
 import CatModel from "./CatModel";
@@ -114,38 +114,51 @@ function FirstFrame({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-/* ------------------------- Иконки громкости (SVG) ------------------------ */
+/* -------------------- Актёр кота: idle + прогрев кадров ------------------ */
 
-const IconSpeakerMute = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-const IconSpeakerLow = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 12c0-1.1-.9-2-2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M14 16c1.1 0 2-.9 2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-const IconSpeakerMid = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 8c1.8 1.2 1.8 6.8 0 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-const IconSpeakerHigh = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 7c2.7 2 2.7 8 0 10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M18.5 5c3.7 3 3.7 12 0 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
+function CatActor({
+  onWarmed,
+  groupRef,
+}: {
+  onWarmed: () => void;
+  groupRef: React.RefObject<THREE.Group>;
+}) {
+  // мягкий idle: лёгкое покачивание, чтобы точно видно движение
+  const frames = useRef(0);
+  const warmed = useRef(false);
+  const t0 = useRef(performance.now());
+
+  useFrame((state) => {
+    const t = (performance.now() - t0.current) / 1000;
+    // лёгкие смещения — у группы, чтобы не лезть внутрь рига
+    if (groupRef.current) {
+      const g = groupRef.current;
+      g.rotation.y = Math.sin(t * 0.9) * 0.06;    // покачивание по Y
+      g.position.y = 0.02 * Math.sin(t * 1.3);   // дыхание
+    }
+
+    frames.current += 1;
+    // после ~24 кадров (~0.4с) считаем, что кот "разогрелся"
+    if (!warmed.current && frames.current >= 24) {
+      warmed.current = true;
+      onWarmed();
+    }
+  });
+
+  return <CatModel />; // сам кот, анимируем обёрткой-группой выше
+}
 
 /* ------------------------- Компонент комнаты ----------------------------- */
 
-function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) {
+function RoomWithCat({
+  url,
+  onLoaded,
+  onCatWarmed,
+}: {
+  url: string;
+  onLoaded?: () => void;
+  onCatWarmed: () => void;
+}) {
   const { scene } = useMemo(() => {
     if (modelCache.has(url)) return modelCache.get(url);
     const model = useGLTF(url);
@@ -256,7 +269,8 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
     <>
       <primitive object={scene} scale={1.5} castShadow receiveShadow />
       <group ref={catRef}>
-        <CatModel />
+        {/* кот начинает «жить» сразу, ещё под лоадером */}
+        <CatActor onWarmed={onCatWarmed} groupRef={catRef} />
       </group>
     </>
   );
@@ -272,6 +286,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
   const [manualHold, setManualHold] = useState(true);       // короткий буфер от мерцаний
   const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
+  const [catWarmed, setCatWarmed] = useState(false);        // кот «разогрелся»
   const { active, progress } = useProgress();
 
   // Условия готовности Canvas (для его появления)
@@ -279,7 +294,10 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const t = setTimeout(() => setManualHold(false), 300);
     return () => clearTimeout(t);
   }, []);
-  const readyCanvas = !active && progress === 100 && firstFrame && !manualHold;
+  const readyCanvasBase = !active && progress === 100 && firstFrame && !manualHold;
+
+  // Показываем Canvas только когда и база готова, и кот разогрет
+  const readyCanvas = readyCanvasBase && catWarmed;
 
   // После того как Canvas стал видим, ещё немного держим лоадер (кроссфейд)
   useEffect(() => {
@@ -334,7 +352,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   return (
     <ModelWrapper>
-      {/* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд без «зелёной» щели */}
+      {/* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд */}
       <CanvasFade $visible={readyCanvas}>
         <Canvas
           shadows
@@ -364,8 +382,13 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           </mesh>
 
           <Suspense fallback={null}>
-            <RoomWithCat url="/models/stakan_room.glb" onLoaded={() => {}} />
-            {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
+            <RoomWithCat
+              url="/models/stakan_room.glb"
+              onLoaded={() => {}}
+              onCatWarmed={() => setCatWarmed(true)}
+            />
+            {/* Подгружаем всё, но фон Environment включаем только после кроссфейда */}
+            <Preload all />
             {!showLoader && <Environment preset="forest" background />}
           </Suspense>
 
@@ -401,3 +424,4 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 };
 
 export default Model;
+
