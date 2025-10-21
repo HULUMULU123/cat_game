@@ -401,7 +401,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {!ready &&
         createPortal(
           <LoaderTopLayer>
-            <StakanLoader wordmarkSrc={wordmark} subtitle="Гружу 3D-сцену…" totalDuration={1000} startAt={50} />
+            <StakanLoader wordmarkSrc={wordmark} subtitle="Гружу 3D-сцену…"  totalDuration={10000}/>
           </LoaderTopLayer>,
           document.body
         )}
