@@ -5,9 +5,11 @@ import CrashCount from "../components/home/CrashCount";
 import AdevertSection from "../components/home/AdevertSection";
 import MainAction from "../components/home/MainAction";
 import HomeModal from "../components/homeExtraInfo/HomeModal";
+import usePageReady from "../hooks/usePageReady";
 
 
 export default function Home() {
+  usePageReady();
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [infoType, setInfoType] = useState('')
   const [ruleCategory, setRuleCategory] = useState('')

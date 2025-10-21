@@ -1,3 +1,4 @@
+// hooks/useGlobal.ts
 import { create } from "zustand";
 
 type UserData = {
@@ -9,36 +10,45 @@ type UserData = {
 
 type GlobalState = {
   userData: UserData | null;
-  setUserFromInitData: (initData: any) => void;
+  setUserFromInitData: (initData: string | undefined | null) => void;
+
+  // загрузка
+  isLoading: boolean;
+  startLoading: () => void;
+  stopLoading: () => void;
 };
 
 const useGlobal = create<GlobalState>((set) => ({
   userData: null,
 
-  // Устанавливаем пользователя из initData Telegram WebApp
-  setUserFromInitData: (initData: string) => {
-  if (!initData) return;
-    console.log(initData, 'initdata from function')
-  // Разбираем query string
-  const params = new URLSearchParams(initData);
-  const userString = params.get("user");
-    console.log(userString)
-  if (!userString) return;
+  setUserFromInitData: (initData) => {
+    if (!initData) return;
 
-  try {
-    const tgUser = JSON.parse(decodeURIComponent(userString));
-    set({
-      userData: {
-        first_name: tgUser.first_name || "",
-        last_name: tgUser.last_name || "",
-        username: tgUser.username || "",
-        photo_url: tgUser.photo_url ? tgUser.photo_url.replace(/\\\//g, "/") : "",
-      },
-    });
-  } catch (e) {
-    console.error("Ошибка парсинга user из initData:", e);
-  }
-}
+    try {
+      const params = new URLSearchParams(initData);
+      const userString = params.get("user");
+      if (!userString) return;
+
+      const tgUser = JSON.parse(decodeURIComponent(userString));
+      set({
+        userData: {
+          first_name: tgUser.first_name || "",
+          last_name: tgUser.last_name || "",
+          username: tgUser.username || "",
+          photo_url: tgUser.photo_url
+            ? String(tgUser.photo_url).replace(/\\\//g, "/")
+            : "",
+        },
+      });
+    } catch (e) {
+      console.error("Ошибка парсинга user из initData:", e);
+    }
+  },
+
+  // загрузка по умолчанию включена (покажем лоадер до init)
+  isLoading: true,
+  startLoading: () => set({ isLoading: true }),
+  stopLoading:  () => set({ isLoading: false }),
 }));
 
 export default useGlobal;

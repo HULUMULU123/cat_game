@@ -1,55 +1,91 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { useWebApp } from "@vkruglikov/react-telegram-web-app";
-import Header from "./components/home/Header";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Home from "./pages/Home";
-import Layout from "./components/Layout";
-import Tasks from "./pages/Tasks";
-import Quiz from "./pages/Quiz";
-import Simulation from "./pages/Simulation";
-import Prize from "./pages/Prize";
-import Failure from "./pages/Failure";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import useGlobal from "./hooks/useGlobal";
+import Layout from "./components/Layout";
 
-function App() {
-  const webApp = useWebApp();
-  const setUserFromInitData = useGlobal((state) => state.setUserFromInitData);
+// ленивые страницы (чтобы показывать лоадер пока грузятся чанки)
+const Home = lazy(() => import("./pages/Home"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const Quiz = lazy(() => import("./pages/Quiz"));
+const Simulation = lazy(() => import("./pages/Simulation"));
+const Prize = lazy(() => import("./pages/Prize"));
+const Failure = lazy(() => import("./pages/Failure"));
+
+// ваш лоадер на styled-components
+import StakanLoader from "./components/loader/StakanLoader";
+import wordmark from "./assets/coin1.png"
+
+// маленький хелпер — включает лоадер при смене пути
+function RouteLoadingGate() {
+  const location = useLocation();
+  const startLoading = useGlobal((s) => s.startLoading);
+
   useEffect(() => {
-    console.log(webApp, 'testWebapp')
-  if (!webApp) return; // WebApp пока не готов
+    startLoading(); // включаем перед монтажом новой страницы
+  }, [location.pathname, startLoading]);
 
-  webApp.ready(); // говорим Telegram, что приложение готово
+  return null;
+}
 
-  // после ready можно безопасно использовать initData
-  console.log("initData:", webApp.initData);
-    setUserFromInitData(webApp.initData)
-  if (webApp.disableVerticalSwipes) {
-    webApp.disableVerticalSwipes();
-  }
+function AppInner() {
+  const webApp = useWebApp();
+  const setUserFromInitData = useGlobal((s) => s.setUserFromInitData);
+  const { isLoading, stopLoading } = useGlobal();
 
-  document.body.style.overflow = "hidden";
-  document.body.style.touchAction = "none";
+  // Инициализация Telegram WebApp + выключаем первичный лоадер
+  useEffect(() => {
+    if (!webApp) return;
 
-  return () => {
-    document.body.style.overflow = "";
-    document.body.style.touchAction = "";
-  };
-  }, [webApp]);
+    webApp.ready();
+    setUserFromInitData(webApp.initData);
+
+    if (webApp.disableVerticalSwipes) {
+      webApp.disableVerticalSwipes();
+    }
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    // даём кадр на отрисовку — и гасим лоадер
+    const t = setTimeout(() => stopLoading(), 300);
+    return () => {
+      clearTimeout(t);
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [webApp, setUserFromInitData, stopLoading]);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="tasks/" element={<Tasks />} />
-          <Route path="quiz/" element={<Quiz />} />
-          <Route path="simulation/" element={<Simulation />} />
-          <Route path="prize/" element={<Prize />} />
-          <Route path="failure/" element={<Failure />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <>
+      {isLoading && (
+        <StakanLoader
+          wordmarkSrc={wordmark}
+          subtitle="Грею лапки на клавиатуре…"
+        />
+      )}
+
+      <RouteLoadingGate />
+      <Suspense fallback={<StakanLoader wordmarkSrc={wordmark} subtitle="Гружу страницу…" />}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="tasks/" element={<Tasks />} />
+            <Route path="quiz/" element={<Quiz />} />
+            <Route path="simulation/" element={<Simulation />} />
+            <Route path="prize/" element={<Prize />} />
+            <Route path="failure/" element={<Failure />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppInner />
+    </BrowserRouter>
+  );
+}
