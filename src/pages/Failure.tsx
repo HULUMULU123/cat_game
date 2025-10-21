@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
@@ -8,6 +8,8 @@ import FailureFooter from "../components/failure/footer/FailureFooter";
 import StakanLoader from "../components/loader/StakanLoader";
 import { createPortal } from "react-dom";
 import wordmark from "../assets/coin1.png";
+
+/* ====================== Стили ====================== */
 
 const StyledWrapper = styled.div`
   display: flex;
@@ -52,42 +54,129 @@ const LoaderTopLayer = styled.div<{ $visible: boolean }>`
   inset: 0;
   z-index: 2147483647;
   opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 420ms ease; /* лоадер уходит чуть позже контента */
+  transition: opacity 420ms ease; /* уходит чуть позже контента */
   pointer-events: ${(p) => (p.$visible ? "auto" : "none")};
 `;
 
-/* ====================== Основной компонент ====================== */
+/* ====================== Хелперы ожидания ====================== */
+
+const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+async function waitImages(container: HTMLElement) {
+  const imgs = Array.from(container.querySelectorAll("img")) as HTMLImageElement[];
+  const pending = imgs.filter((i) => !i.complete);
+  if (pending.length === 0) return;
+  await Promise.race([
+    Promise.all(
+      pending.map(
+        (img) =>
+          new Promise<void>((res) => {
+            const done = () => res();
+            img.addEventListener("load", done, { once: true });
+            img.addEventListener("error", done, { once: true });
+          })
+      )
+    ),
+    // страховка: если какая-то картинка «висит»
+    sleep(2500),
+  ]);
+}
+
+async function waitVideosMeta(container: HTMLElement) {
+  const vids = Array.from(container.querySelectorAll("video")) as HTMLVideoElement[];
+  const pending = vids.filter((v) => v.readyState < 2); // metadata+enough to play
+  if (pending.length === 0) return;
+  await Promise.race([
+    Promise.all(
+      pending.map(
+        (v) =>
+          new Promise<void>((res) => {
+            const done = () => res();
+            v.addEventListener("loadeddata", done, { once: true });
+            v.addEventListener("canplaythrough", done, { once: true });
+            v.addEventListener("error", done, { once: true });
+          })
+      )
+    ),
+    sleep(2500),
+  ]);
+}
+
+async function waitFonts() {
+  // Font Loading API (может не быть в старых WebView — поэтому с try/catch)
+  try {
+    // @ts-ignore
+    if (document.fonts && document.fonts.ready) {
+      // @ts-ignore
+      await Promise.race([document.fonts.ready, sleep(1500)]);
+    }
+  } catch {}
+}
+
+/**
+ * Главный «стабилизатор»: ждём window.load (если нужно),
+ * ассеты внутри контейнера, пару кадров и короткий буфер.
+ */
+async function ensureStableReady(container: HTMLElement) {
+  if (document.readyState !== "complete") {
+    await new Promise<void>((res) => window.addEventListener("load", () => res(), { once: true }));
+  }
+  await waitFonts();
+  await waitImages(container);
+  await waitVideosMeta(container);
+  await nextFrame();
+  await nextFrame();
+  await sleep(120); // маленький буфер
+}
+
+/* ====================== Страница ====================== */
 
 export default function Failure() {
   const [score, setScore] = useState(0);
 
   // Состояния покадрового сценария загрузки
-  const [pageReady, setPageReady] = useState(false);        // window 'load' произошёл
-  const [contentVisible, setContentVisible] = useState(false); // включаем фейд-ин контента
-  const [loaderVisible, setLoaderVisible] = useState(true); // анимация скрытия лоадера
-  const [startHeaderTimer, setStartHeaderTimer] = useState(false); // триггер старта таймера в хедере
+  const [contentVisible, setContentVisible] = useState(false); // фейд-ин контента
+  const [loaderVisible, setLoaderVisible] = useState(true);    // кроссфейд лоадера
+  const [startHeaderTimer, setStartHeaderTimer] = useState(false); // старт таймера в хедере
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onLoad = () => setPageReady(true);
-    if (document.readyState === "complete") onLoad();
-    else window.addEventListener("load", onLoad, { once: true });
-    return () => window.removeEventListener("load", onLoad);
-  }, []);
+    let alive = true;
 
-  useEffect(() => {
-    if (!pageReady) return;
-    // 1) небольшая задержка перед показом контента
-    const t1 = setTimeout(() => setContentVisible(true), 150);
-    // 2) ещё чуть-чуть — и начинаем убирать лоадер кроссфейдом
-    const t2 = setTimeout(() => setLoaderVisible(false), 350);
-    // 3) запускаем таймер в хедере уже ПОСЛЕ кроссфейда лоадера
-    const t3 = setTimeout(() => setStartHeaderTimer(true), 600);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+    const run = async () => {
+      const root = wrapperRef.current || document.body;
+
+      // страховка: максимально 5 сек на любые «зависшие» ресурсы
+      const watchdog = sleep(5000).then(() => {
+        if (alive) console.warn("[Failure] Ready watchdog fired -> forcing show");
+      });
+
+      await Promise.race([ensureStableReady(root), watchdog]);
+
+      if (!alive) return;
+
+      // 1) показываем контент
+      setContentVisible(true);
+
+      // 2) небольшой сдвиг, чтобы контент успел отрисоваться под лоадером
+      await sleep(220);
+
+      // 3) скрываем лоадер
+      setLoaderVisible(false);
+
+      // 4) ещё немного — и запускаем таймер в хедере
+      await sleep(180);
+      setStartHeaderTimer(true);
     };
-  }, [pageReady]);
+
+    run();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <>
@@ -97,16 +186,16 @@ export default function Failure() {
           <StakanLoader
             wordmarkSrc={wordmark}
             subtitle="Подготавливаю сцену…"
-            totalDuration={3000}
-            stopAt={96}           // визуально зависаем около 96%, пока страница готовится
+            stopAt={96}
+            totalDuration={4000}
           />
         </LoaderTopLayer>,
         document.body
       )}
 
-      <StyledWrapper className={contentVisible ? "visible" : ""}>
+      <StyledWrapper ref={wrapperRef} className={contentVisible ? "visible" : ""}>
         <StyledHeaderWrapper>
-          {/* Передаём флаг старта таймера. Внутри FailrueHeader проверь и запускай таймер при true */}
+          {/* Хедер начнёт отсчёт только когда дадим флаг */}
           <FailrueHeader startTimer={startHeaderTimer} />
         </StyledHeaderWrapper>
 
@@ -119,4 +208,3 @@ export default function Failure() {
     </>
   );
 }
-
