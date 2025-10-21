@@ -1,7 +1,7 @@
 import React, { Suspense, useRef, useEffect, useState, useMemo } from "react";
 import styled from "styled-components";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, useGLTF, useProgress, Preload } from "@react-three/drei";
+import { Environment, useGLTF, useProgress } from "@react-three/drei";
 import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
 import * as THREE from "three";
 import CatModel from "./CatModel";
@@ -13,13 +13,10 @@ import wordmark from "../../assets/coin1.png";
 
 /* --------------------------- Styled Components --------------------------- */
 
-const LoaderTopLayer = styled.div<{ $visible: boolean }>`
+const LoaderTopLayer = styled.div`
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
-  pointer-events: none;
-  opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 420ms ease; /* лоадер уходит ЧУТЬ позже Canvas */
+  z-index: 2147483647; /* максимально высоко */
 `;
 
 const ModelWrapper = styled.div`
@@ -27,13 +24,6 @@ const ModelWrapper = styled.div`
   width: 100%;
   height: 100vh;
   overflow: hidden;
-`;
-
-const CanvasFade = styled.div<{ $visible: boolean }>`
-  width: 100%;
-  height: 100vh;
-  opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 280ms ease; /* Canvas появляется раньше лоадера */
 `;
 
 const Content = styled.div`
@@ -59,15 +49,25 @@ const SoundFab = styled.button<{ $level: number }>`
   border-radius: 14px;
   border: 1px solid rgba(0, 255, 128, 0.6);
   background: radial-gradient(120% 120% at 50% 30%, rgba(0, 255, 128, 0.22), rgba(0, 0, 0, 0.6));
-  box-shadow: 0 8px 30px rgba(0, 255, 128, 0.25), inset 0 0 12px rgba(0, 255, 128, 0.15);
+  box-shadow:
+    0 8px 30px rgba(0, 255, 128, 0.25),
+    inset 0 0 12px rgba(0, 255, 128, 0.15);
   color: #d1ffe7;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease, opacity 200ms ease;
   backdrop-filter: blur(6px);
 
-  &:hover { transform: translateY(-2px); }
-  &:active { transform: translateY(0); }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 34px rgba(0, 255, 128, 0.35),
+      inset 0 0 16px rgba(0, 255, 128, 0.25);
+  }
+  &:active {
+    transform: translateY(0);
+  }
 
+  /* Подсветка по уровню */
   ${(p) =>
     p.$level === 0
       ? `opacity: 0.85; border-color: rgba(255, 255, 255, 0.25);`
@@ -114,51 +114,38 @@ function FirstFrame({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-/* -------------------- Актёр кота: idle + прогрев кадров ------------------ */
+/* ------------------------- Иконки громкости (SVG) ------------------------ */
 
-function CatActor({
-  onWarmed,
-  groupRef,
-}: {
-  onWarmed: () => void;
-  groupRef: React.RefObject<THREE.Group>;
-}) {
-  // мягкий idle: лёгкое покачивание, чтобы точно видно движение
-  const frames = useRef(0);
-  const warmed = useRef(false);
-  const t0 = useRef(performance.now());
-
-  useFrame((state) => {
-    const t = (performance.now() - t0.current) / 1000;
-    // лёгкие смещения — у группы, чтобы не лезть внутрь рига
-    if (groupRef.current) {
-      const g = groupRef.current;
-      g.rotation.y = Math.sin(t * 0.9) * 0.06;    // покачивание по Y
-      g.position.y = 0.02 * Math.sin(t * 1.3);   // дыхание
-    }
-
-    frames.current += 1;
-    // после ~24 кадров (~0.4с) считаем, что кот "разогрелся"
-    if (!warmed.current && frames.current >= 24) {
-      warmed.current = true;
-      onWarmed();
-    }
-  });
-
-  return <CatModel />; // сам кот, анимируем обёрткой-группой выше
-}
+const IconSpeakerMute = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconSpeakerLow = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 12c0-1.1-.9-2-2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path d="M14 16c1.1 0 2-.9 2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconSpeakerMid = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 8c1.8 1.2 1.8 6.8 0 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconSpeakerHigh = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 7c2.7 2 2.7 8 0 10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path d="M18.5 5c3.7 3 3.7 12 0 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
 
 /* ------------------------- Компонент комнаты ----------------------------- */
 
-function RoomWithCat({
-  url,
-  onLoaded,
-  onCatWarmed,
-}: {
-  url: string;
-  onLoaded?: () => void;
-  onCatWarmed: () => void;
-}) {
+function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) {
   const { scene } = useMemo(() => {
     if (modelCache.has(url)) return modelCache.get(url);
     const model = useGLTF(url);
@@ -182,6 +169,7 @@ function RoomWithCat({
       if (name.includes("window") && (obj as THREE.Mesh).isMesh) windowMesh = obj as THREE.Mesh;
     });
 
+    // позиционирование кота
     if (chair && catRef.current) {
       const pos = new THREE.Vector3();
       const dir = new THREE.Vector3();
@@ -191,8 +179,10 @@ function RoomWithCat({
       catRef.current.position.y += 0.05;
     }
 
+    // ждём ресурсы
     const waiters: Promise<any>[] = [];
 
+    // экран: текстура
     if (screenMesh) {
       const textureURL = "/textures/screen_image.jpeg";
       if (textureCache.has(textureURL)) {
@@ -212,6 +202,7 @@ function RoomWithCat({
       }
     }
 
+    // окно: видео
     if (windowMesh) {
       const videoURL = "/videos/rain.mp4";
       let video = videoCache.get(videoURL);
@@ -245,7 +236,7 @@ function RoomWithCat({
       videoTexture.minFilter = THREE.LinearFilter;
       videoTexture.magFilter = THREE.LinearFilter;
       videoTexture.format = THREE.RGBFormat;
-      (videoTexture as any).colorSpace = THREE.SRGBColorSpace;
+      videoTexture.colorSpace = THREE.SRGBColorSpace;
       videoTexture.flipY = false;
       videoTexture.center.set(0.5, 0.5);
       videoTexture.rotation = Math.PI / 2;
@@ -262,15 +253,16 @@ function RoomWithCat({
       waiters.push(videoReady);
     }
 
-    Promise.all(waiters).then(() => onLoaded?.());
+    Promise.all(waiters).then(() => {
+      onLoaded?.(); // сигналим только когда всё применено
+    });
   }, [scene, onLoaded]);
 
   return (
     <>
       <primitive object={scene} scale={1.5} castShadow receiveShadow />
       <group ref={catRef}>
-        {/* кот начинает «жить» сразу, ещё под лоадером */}
-        <CatActor onWarmed={onCatWarmed} groupRef={catRef} />
+        <CatModel />
       </group>
     </>
   );
@@ -282,63 +274,22 @@ useGLTF.preload("/models/stakan_room.glb");
 
 const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → средн → макс
 
-// --- Icons (keep above Model) ---
-const IconSpeakerMute = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-const IconSpeakerLow = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 12c0-1.1-.9-2-2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M14 16c1.1 0 2-.9 2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-const IconSpeakerMid = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 8c1.8 1.2 1.8 6.8 0 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-const IconSpeakerHigh = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 7c2.7 2 2.7 8 0 10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M18.5 5c3.7 3 3.7 12 0 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-
-
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
-  const [manualHold, setManualHold] = useState(true);       // короткий буфер от мерцаний
-  const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
-  const [catWarmed, setCatWarmed] = useState(false);        // кот «разогрелся»
-  const { active, progress } = useProgress();
+  const [manualHold, setManualHold] = useState(true); // короткий буфер, чтобы убрать мелькание
+  const { active, progress } = useProgress(); // загрузка ассетов drei
 
-  // Условия готовности Canvas (для его появления)
+  // готовность = ассеты загружены + первый кадр отрисован + холд отпущен
   useEffect(() => {
-    const t = setTimeout(() => setManualHold(false), 300);
+    const t = setTimeout(() => setManualHold(false), 400);
     return () => clearTimeout(t);
   }, []);
-  const readyCanvasBase = !active && progress === 100 && firstFrame && !manualHold;
-
-  // Показываем Canvas только когда и база готова, и кот разогрет
-  const readyCanvas = readyCanvasBase && catWarmed;
-
-  // После того как Canvas стал видим, ещё немного держим лоадер (кроссфейд)
-  useEffect(() => {
-    if (!readyCanvas) return;
-    const t = setTimeout(() => setPostReadyHold(false), 260);
-    return () => clearTimeout(t);
-  }, [readyCanvas]);
+  const ready = !active && progress === 100 && firstFrame && !manualHold;
 
   // аудио
   const rainRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
-  const [volumeIndex, setVolumeIndex] = useState(0);
+  const [volumeIndex, setVolumeIndex] = useState(0); // индекс в VOLUME_STEPS
 
   useEffect(() => {
     if (!rainRef.current) rainRef.current = new Audio("/audio/rain.mp3");
@@ -353,44 +304,58 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       rainRef.current?.pause();
       musicRef.current?.pause();
     };
-  }, []);
+  }, []); // инициализация
 
+  // применяем громкость/старт/стоп при смене volumeIndex
   useEffect(() => {
     const vol = VOLUME_STEPS[volumeIndex];
+
     const setVol = (a?: HTMLAudioElement | null) => {
       if (!a) return;
       a.volume = vol;
-      if (vol > 0) a.play().catch(() => {});
-      else { a.pause(); a.currentTime = 0; }
+      if (vol > 0) {
+        a.play().catch(() => {});
+      } else {
+        a.pause();
+        a.currentTime = 0;
+      }
     };
+
     setVol(rainRef.current);
     setVol(musicRef.current);
   }, [volumeIndex]);
 
-  const cycleVolume = () => setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
+  const cycleVolume = () => {
+    setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
+  };
 
+  // выбор иконки/лейбла по уровню
   const currentIcon =
-    volumeIndex === 0 ? <IconSpeakerMute /> :
-    volumeIndex === 1 ? <IconSpeakerLow /> :
-    volumeIndex === 2 ? <IconSpeakerMid /> : <IconSpeakerHigh />;
-  const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
+    volumeIndex === 0 ? (
+      <IconSpeakerMute />
+    ) : volumeIndex === 1 ? (
+      <IconSpeakerLow />
+    ) : volumeIndex === 2 ? (
+      <IconSpeakerMid />
+    ) : (
+      <IconSpeakerHigh />
+    );
 
-  // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на зелёный
-  const canvasBg = readyCanvas && !postReadyHold ? "#002200" : "#000000";
-  const showLoader = !readyCanvas || postReadyHold;
+  const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
   return (
     <ModelWrapper>
-      {/* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд */}
-      <CanvasFade $visible={readyCanvas}>
+      {/* Canvas прячем по opacity до полной готовности, чтобы не мелькал фон */}
+      <div style={{ opacity: ready ? 1 : 0, transition: "opacity 300ms ease" }}>
         <Canvas
           shadows
           camera={{ position: [10, 0.5, 5], fov: 50, rotation: [0, 0.77, 0] }}
           style={{ width: "100%", height: "100vh", display: "block" }}
         >
-          <color attach="background" args={[canvasBg]} />
-          {canvasBg === "#002200" && <fog attach="fog" args={["#002200", 10, 40]} />}
+          <color attach="background" args={["#002200"]} />
+          <fog attach="fog" args={["#002200", 10, 40]} />
 
+          {/* флаг первого кадра */}
           <FirstFrame onReady={() => setFirstFrame(true)} />
 
           <ambientLight intensity={0.6} color="#00ff1d" />
@@ -413,12 +378,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           <Suspense fallback={null}>
             <RoomWithCat
               url="/models/stakan_room.glb"
-              onLoaded={() => {}}
-              onCatWarmed={() => setCatWarmed(true)}
+              onLoaded={() => {
+                // можно оставить пустым: готовность считает useProgress + FirstFrame
+              }}
             />
-            {/* Подгружаем всё, но фон Environment включаем только после кроссфейда */}
-            <Preload all />
-            {!showLoader && <Environment preset="forest" background />}
+            <Environment preset="forest" background />
           </Suspense>
 
           <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
@@ -431,15 +395,16 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <HueSaturation hue={0.3} saturation={0.5} />
           </EffectComposer>
         </Canvas>
-      </CanvasFade>
+      </div>
 
-      {/* Лоадер сверху — уходит ПОСЛЕ появления Canvas */}
-      {createPortal(
-        <LoaderTopLayer $visible={showLoader}>
-          <StakanLoader wordmarkSrc={wordmark} subtitle="Гружу 3D-сцену…" stopAt={96} totalDuration={8000} />
-        </LoaderTopLayer>,
-        document.body
-      )}
+      {/* Загрузочный экран — поверх всего через портал */}
+      {!ready &&
+        createPortal(
+          <LoaderTopLayer>
+            <StakanLoader wordmarkSrc={wordmark} subtitle="Гружу 3D-сцену…"  totalDuration={10000}/>
+          </LoaderTopLayer>,
+          document.body
+        )}
 
       {/* Кнопка громкости */}
       <SoundFab onClick={cycleVolume} aria-label="Volume" title="Volume" $level={volumeIndex}>
@@ -453,4 +418,3 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 };
 
 export default Model;
-
