@@ -7,7 +7,7 @@ import FailureFooter from "../components/failure/footer/FailureFooter";
 /** загрузочный экран */
 import StakanLoader from "../components/loader/StakanLoader";
 import { createPortal } from "react-dom";
-import wordmark from "../assets/coin1.png";
+import wordmark from "../assets/STAKAN.svg";
 
 /* ====================== Стили ====================== */
 

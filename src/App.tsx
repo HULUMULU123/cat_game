@@ -14,7 +14,7 @@ const Failure = lazy(() => import("./pages/Failure"));
 
 // ваш лоадер на styled-components
 import StakanLoader from "./components/loader/StakanLoader";
-import wordmark from "./assets/coin1.png"
+import wordmark from "./assets/STAKAN.svg"
 
 // маленький хелпер — включает лоадер при смене пути
 function RouteLoadingGate() {

@@ -162,7 +162,7 @@ const Emblem = styled.img`
 const Wordmark = styled.img`
   max-width: 90%;
   height: auto;
-  filter: drop-shadow(0 0 22px rgba(255,255,255,0.55));
+  /* filter: drop-shadow(0 0 22px rgba(255,255,255,0.55)); */
 `;
 
 /* Блок с прогрессом по центру */

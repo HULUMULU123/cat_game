@@ -9,7 +9,7 @@ import { createPortal } from "react-dom";
 
 /** загрузочный экран */
 import StakanLoader from "../../components/loader/StakanLoader";
-import wordmark from "../../assets/coin1.png";
+import wordmark from "../../assets/STAKAN.svg";
 
 /* --------------------------- Styled Components --------------------------- */
 
