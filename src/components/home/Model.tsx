@@ -282,6 +282,35 @@ useGLTF.preload("/models/stakan_room.glb");
 
 const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → средн → макс
 
+// --- Icons (keep above Model) ---
+const IconSpeakerMute = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconSpeakerLow = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 12c0-1.1-.9-2-2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path d="M14 16c1.1 0 2-.9 2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconSpeakerMid = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 8c1.8 1.2 1.8 6.8 0 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+const IconSpeakerHigh = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M16 7c2.7 2 2.7 8 0 10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path d="M18.5 5c3.7 3 3.7 12 0 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+
+
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
   const [manualHold, setManualHold] = useState(true);       // короткий буфер от мерцаний
