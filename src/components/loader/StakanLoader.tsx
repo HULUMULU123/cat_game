@@ -26,7 +26,7 @@ export default function StakanLoader({
   autoStart = true,
   progress: controlledProgress,
   stopAt = 92,
-  subtitle = "Грею лапки на клавиатуре…",
+  subtitle = "Хочу молока...",
   onComplete,
 }) {
   if (!wordmarkSrc) {
