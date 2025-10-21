@@ -4,8 +4,9 @@ import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 
-/** наш загрузочный экран */
+/** загрузочный экран */
 import StakanLoader from "../components/loader/StakanLoader";
+import { createPortal } from "react-dom";
 import wordmark from "../assets/coin1.png";
 
 const StyledWrapper = styled.div`
@@ -16,6 +17,11 @@ const StyledWrapper = styled.div`
   height: 100vh;
   width: 100%;
   overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.6s ease; /* плавное проявление контента */
+  &.visible {
+    opacity: 1;
+  }
 `;
 
 const StyledHeaderWrapper = styled.div`
@@ -40,39 +46,68 @@ const StyledFooterWrapper = styled.div`
   z-index: 1;
 `;
 
+/* Лоадер — поверх всего */
+const LoaderTopLayer = styled.div<{ $visible: boolean }>`
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  transition: opacity 420ms ease; /* лоадер уходит чуть позже контента */
+  pointer-events: ${(p) => (p.$visible ? "auto" : "none")};
+`;
+
 /* ====================== Основной компонент ====================== */
 
 export default function Failure() {
   const [score, setScore] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Состояния покадрового сценария загрузки
+  const [pageReady, setPageReady] = useState(false);        // window 'load' произошёл
+  const [contentVisible, setContentVisible] = useState(false); // включаем фейд-ин контента
+  const [loaderVisible, setLoaderVisible] = useState(true); // анимация скрытия лоадера
+  const [startHeaderTimer, setStartHeaderTimer] = useState(false); // триггер старта таймера в хедере
 
   useEffect(() => {
-    // Дожидаемся, когда все ресурсы страницы загрузятся (изображения, css, и т.п.)
-    const handleLoad = () => setIsLoaded(true);
-
-    if (document.readyState === "complete") {
-      handleLoad();
-    } else {
-      window.addEventListener("load", handleLoad);
-    }
-
-    return () => window.removeEventListener("load", handleLoad);
+    const onLoad = () => setPageReady(true);
+    if (document.readyState === "complete") onLoad();
+    else window.addEventListener("load", onLoad, { once: true });
+    return () => window.removeEventListener("load", onLoad);
   }, []);
+
+  useEffect(() => {
+    if (!pageReady) return;
+    // 1) небольшая задержка перед показом контента
+    const t1 = setTimeout(() => setContentVisible(true), 150);
+    // 2) ещё чуть-чуть — и начинаем убирать лоадер кроссфейдом
+    const t2 = setTimeout(() => setLoaderVisible(false), 350);
+    // 3) запускаем таймер в хедере уже ПОСЛЕ кроссфейда лоадера
+    const t3 = setTimeout(() => setStartHeaderTimer(true), 600);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [pageReady]);
 
   return (
     <>
-      {!isLoaded && (
-        <StakanLoader
-          wordmarkSrc={wordmark}
-          subtitle="Подготавливаю сцену..."
-          totalDuration={2500}
-          stopAt={95}
-        />
+      {/* Лоадер поверх всего через портал */}
+      {createPortal(
+        <LoaderTopLayer $visible={loaderVisible}>
+          <StakanLoader
+            wordmarkSrc={wordmark}
+            subtitle="Подготавливаю сцену…"
+            totalDuration={3000}
+            stopAt={96}           // визуально зависаем около 96%, пока страница готовится
+          />
+        </LoaderTopLayer>,
+        document.body
       )}
 
-      <StyledWrapper style={{ opacity: isLoaded ? 1 : 0, transition: "opacity 0.6s ease" }}>
+      <StyledWrapper className={contentVisible ? "visible" : ""}>
         <StyledHeaderWrapper>
-          <FailrueHeader />
+          {/* Передаём флаг старта таймера. Внутри FailrueHeader проверь и запускай таймер при true */}
+          <FailrueHeader startTimer={startHeaderTimer} />
         </StyledHeaderWrapper>
 
         <Droplets onPop={() => setScore((s) => s + 1)} />
@@ -84,3 +119,4 @@ export default function Failure() {
     </>
   );
 }
+

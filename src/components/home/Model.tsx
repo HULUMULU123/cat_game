@@ -13,10 +13,13 @@ import wordmark from "../../assets/coin1.png";
 
 /* --------------------------- Styled Components --------------------------- */
 
-const LoaderTopLayer = styled.div`
+const LoaderTopLayer = styled.div<{ $visible: boolean }>`
   position: fixed;
   inset: 0;
-  z-index: 2147483647; /* максимально высоко */
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  transition: opacity 420ms ease; /* лоадер уходит ЧУТЬ позже Canvas */
 `;
 
 const ModelWrapper = styled.div`
@@ -24,6 +27,13 @@ const ModelWrapper = styled.div`
   width: 100%;
   height: 100vh;
   overflow: hidden;
+`;
+
+const CanvasFade = styled.div<{ $visible: boolean }>`
+  width: 100%;
+  height: 100vh;
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  transition: opacity 280ms ease; /* Canvas появляется раньше лоадера */
 `;
 
 const Content = styled.div`
@@ -49,25 +59,15 @@ const SoundFab = styled.button<{ $level: number }>`
   border-radius: 14px;
   border: 1px solid rgba(0, 255, 128, 0.6);
   background: radial-gradient(120% 120% at 50% 30%, rgba(0, 255, 128, 0.22), rgba(0, 0, 0, 0.6));
-  box-shadow:
-    0 8px 30px rgba(0, 255, 128, 0.25),
-    inset 0 0 12px rgba(0, 255, 128, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 255, 128, 0.25), inset 0 0 12px rgba(0, 255, 128, 0.15);
   color: #d1ffe7;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease, opacity 200ms ease;
   backdrop-filter: blur(6px);
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 12px 34px rgba(0, 255, 128, 0.35),
-      inset 0 0 16px rgba(0, 255, 128, 0.25);
-  }
-  &:active {
-    transform: translateY(0);
-  }
+  &:hover { transform: translateY(-2px); }
+  &:active { transform: translateY(0); }
 
-  /* Подсветка по уровню */
   ${(p) =>
     p.$level === 0
       ? `opacity: 0.85; border-color: rgba(255, 255, 255, 0.25);`
@@ -169,7 +169,6 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
       if (name.includes("window") && (obj as THREE.Mesh).isMesh) windowMesh = obj as THREE.Mesh;
     });
 
-    // позиционирование кота
     if (chair && catRef.current) {
       const pos = new THREE.Vector3();
       const dir = new THREE.Vector3();
@@ -179,10 +178,8 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
       catRef.current.position.y += 0.05;
     }
 
-    // ждём ресурсы
     const waiters: Promise<any>[] = [];
 
-    // экран: текстура
     if (screenMesh) {
       const textureURL = "/textures/screen_image.jpeg";
       if (textureCache.has(textureURL)) {
@@ -202,7 +199,6 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
       }
     }
 
-    // окно: видео
     if (windowMesh) {
       const videoURL = "/videos/rain.mp4";
       let video = videoCache.get(videoURL);
@@ -236,7 +232,7 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
       videoTexture.minFilter = THREE.LinearFilter;
       videoTexture.magFilter = THREE.LinearFilter;
       videoTexture.format = THREE.RGBFormat;
-      videoTexture.colorSpace = THREE.SRGBColorSpace;
+      (videoTexture as any).colorSpace = THREE.SRGBColorSpace;
       videoTexture.flipY = false;
       videoTexture.center.set(0.5, 0.5);
       videoTexture.rotation = Math.PI / 2;
@@ -253,9 +249,7 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
       waiters.push(videoReady);
     }
 
-    Promise.all(waiters).then(() => {
-      onLoaded?.(); // сигналим только когда всё применено
-    });
+    Promise.all(waiters).then(() => onLoaded?.());
   }, [scene, onLoaded]);
 
   return (
@@ -276,20 +270,28 @@ const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → �
 
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
-  const [manualHold, setManualHold] = useState(true); // короткий буфер, чтобы убрать мелькание
-  const { active, progress } = useProgress(); // загрузка ассетов drei
+  const [manualHold, setManualHold] = useState(true);       // короткий буфер от мерцаний
+  const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
+  const { active, progress } = useProgress();
 
-  // готовность = ассеты загружены + первый кадр отрисован + холд отпущен
+  // Условия готовности Canvas (для его появления)
   useEffect(() => {
-    const t = setTimeout(() => setManualHold(false), 400);
+    const t = setTimeout(() => setManualHold(false), 300);
     return () => clearTimeout(t);
   }, []);
-  const ready = !active && progress === 100 && firstFrame && !manualHold;
+  const readyCanvas = !active && progress === 100 && firstFrame && !manualHold;
+
+  // После того как Canvas стал видим, ещё немного держим лоадер (кроссфейд)
+  useEffect(() => {
+    if (!readyCanvas) return;
+    const t = setTimeout(() => setPostReadyHold(false), 260);
+    return () => clearTimeout(t);
+  }, [readyCanvas]);
 
   // аудио
   const rainRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
-  const [volumeIndex, setVolumeIndex] = useState(0); // индекс в VOLUME_STEPS
+  const [volumeIndex, setVolumeIndex] = useState(0);
 
   useEffect(() => {
     if (!rainRef.current) rainRef.current = new Audio("/audio/rain.mp3");
@@ -304,58 +306,44 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       rainRef.current?.pause();
       musicRef.current?.pause();
     };
-  }, []); // инициализация
+  }, []);
 
-  // применяем громкость/старт/стоп при смене volumeIndex
   useEffect(() => {
     const vol = VOLUME_STEPS[volumeIndex];
-
     const setVol = (a?: HTMLAudioElement | null) => {
       if (!a) return;
       a.volume = vol;
-      if (vol > 0) {
-        a.play().catch(() => {});
-      } else {
-        a.pause();
-        a.currentTime = 0;
-      }
+      if (vol > 0) a.play().catch(() => {});
+      else { a.pause(); a.currentTime = 0; }
     };
-
     setVol(rainRef.current);
     setVol(musicRef.current);
   }, [volumeIndex]);
 
-  const cycleVolume = () => {
-    setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
-  };
+  const cycleVolume = () => setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
 
-  // выбор иконки/лейбла по уровню
   const currentIcon =
-    volumeIndex === 0 ? (
-      <IconSpeakerMute />
-    ) : volumeIndex === 1 ? (
-      <IconSpeakerLow />
-    ) : volumeIndex === 2 ? (
-      <IconSpeakerMid />
-    ) : (
-      <IconSpeakerHigh />
-    );
-
+    volumeIndex === 0 ? <IconSpeakerMute /> :
+    volumeIndex === 1 ? <IconSpeakerLow /> :
+    volumeIndex === 2 ? <IconSpeakerMid /> : <IconSpeakerHigh />;
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
+
+  // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на зелёный
+  const canvasBg = readyCanvas && !postReadyHold ? "#002200" : "#000000";
+  const showLoader = !readyCanvas || postReadyHold;
 
   return (
     <ModelWrapper>
-      {/* Canvas прячем по opacity до полной готовности, чтобы не мелькал фон */}
-      <div style={{ opacity: ready ? 1 : 0, transition: "opacity 300ms ease" }}>
+      {/* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд без «зелёной» щели */}
+      <CanvasFade $visible={readyCanvas}>
         <Canvas
           shadows
           camera={{ position: [10, 0.5, 5], fov: 50, rotation: [0, 0.77, 0] }}
           style={{ width: "100%", height: "100vh", display: "block" }}
         >
-          <color attach="background" args={["#002200"]} />
-          <fog attach="fog" args={["#002200", 10, 40]} />
+          <color attach="background" args={[canvasBg]} />
+          {canvasBg === "#002200" && <fog attach="fog" args={["#002200", 10, 40]} />}
 
-          {/* флаг первого кадра */}
           <FirstFrame onReady={() => setFirstFrame(true)} />
 
           <ambientLight intensity={0.6} color="#00ff1d" />
@@ -376,13 +364,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           </mesh>
 
           <Suspense fallback={null}>
-            <RoomWithCat
-              url="/models/stakan_room.glb"
-              onLoaded={() => {
-                // можно оставить пустым: готовность считает useProgress + FirstFrame
-              }}
-            />
-            <Environment preset="forest" background />
+            <RoomWithCat url="/models/stakan_room.glb" onLoaded={() => {}} />
+            {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
+            {!showLoader && <Environment preset="forest" background />}
           </Suspense>
 
           <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
@@ -395,16 +379,15 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <HueSaturation hue={0.3} saturation={0.5} />
           </EffectComposer>
         </Canvas>
-      </div>
+      </CanvasFade>
 
-      {/* Загрузочный экран — поверх всего через портал */}
-      {!ready &&
-        createPortal(
-          <LoaderTopLayer>
-            <StakanLoader wordmarkSrc={wordmark} subtitle="Гружу 3D-сцену…"  totalDuration={10000}/>
-          </LoaderTopLayer>,
-          document.body
-        )}
+      {/* Лоадер сверху — уходит ПОСЛЕ появления Canvas */}
+      {createPortal(
+        <LoaderTopLayer $visible={showLoader}>
+          <StakanLoader wordmarkSrc={wordmark} subtitle="Гружу 3D-сцену…" stopAt={96} totalDuration={8000} />
+        </LoaderTopLayer>,
+        document.body
+      )}
 
       {/* Кнопка громкости */}
       <SoundFab onClick={cycleVolume} aria-label="Volume" title="Volume" $level={volumeIndex}>
