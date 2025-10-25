@@ -2,13 +2,17 @@ import React, { Suspense, useRef, useEffect, useState, useMemo } from "react";
 import styled from "styled-components";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, useGLTF, useProgress } from "@react-three/drei";
-import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
+import {
+  EffectComposer,
+  Bloom,
+  HueSaturation,
+} from "@react-three/postprocessing";
 import * as THREE from "three";
 import CatModel from "./CatModel";
 import { createPortal } from "react-dom";
 
 /** загрузочный экран */
-import StakanLoader from "../../components/loader/StakanLoader";
+import StakanLoader from "../../shared/components/stakan/StakanLoader";
 import wordmark from "../../assets/STAKAN.svg";
 
 /* --------------------------- Styled Components --------------------------- */
@@ -58,15 +62,25 @@ const SoundFab = styled.button<{ $level: number }>`
   justify-content: center;
   border-radius: 14px;
   border: 1px solid rgba(0, 255, 128, 0.6);
-  background: radial-gradient(120% 120% at 50% 30%, rgba(0, 255, 128, 0.22), rgba(0, 0, 0, 0.6));
-  box-shadow: 0 8px 30px rgba(0, 255, 128, 0.25), inset 0 0 12px rgba(0, 255, 128, 0.15);
+  background: radial-gradient(
+    120% 120% at 50% 30%,
+    rgba(0, 255, 128, 0.22),
+    rgba(0, 0, 0, 0.6)
+  );
+  box-shadow: 0 8px 30px rgba(0, 255, 128, 0.25),
+    inset 0 0 12px rgba(0, 255, 128, 0.15);
   color: #d1ffe7;
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease, opacity 200ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease,
+    border-color 160ms ease, opacity 200ms ease;
   backdrop-filter: blur(6px);
 
-  &:hover { transform: translateY(-2px); }
-  &:active { transform: translateY(0); }
+  &:hover {
+    transform: translateY(-2px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
 
   ${(p) =>
     p.$level === 0
@@ -119,33 +133,69 @@ function FirstFrame({ onReady }: { onReady: () => void }) {
 const IconSpeakerMute = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
     <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path
+      d="M16 9l5 6M21 9l-5 6"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
   </svg>
 );
 const IconSpeakerLow = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
     <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 12c0-1.1-.9-2-2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M14 16c1.1 0 2-.9 2-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path
+      d="M16 12c0-1.1-.9-2-2-2"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+    <path
+      d="M14 16c1.1 0 2-.9 2-2"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
   </svg>
 );
 const IconSpeakerMid = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
     <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 8c1.8 1.2 1.8 6.8 0 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path
+      d="M16 8c1.8 1.2 1.8 6.8 0 8"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
   </svg>
 );
 const IconSpeakerHigh = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
     <path d="M3 9v6h4l5 4V5L7 9H3z" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M16 7c2.7 2 2.7 8 0 10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M18.5 5c3.7 3 3.7 12 0 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path
+      d="M16 7c2.7 2 2.7 8 0 10"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+    <path
+      d="M18.5 5c3.7 3 3.7 12 0 15"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 /* ------------------------- Компонент комнаты ----------------------------- */
 
-function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) {
+function RoomWithCat({
+  url,
+  onLoaded,
+}: {
+  url: string;
+  onLoaded?: () => void;
+}) {
   const { scene } = useMemo(() => {
     if (modelCache.has(url)) return modelCache.get(url);
     const model = useGLTF(url);
@@ -165,8 +215,10 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
     scene.traverse((obj) => {
       const name = obj.name.toLowerCase();
       if (name.includes("chair")) chair = obj;
-      if (name.includes("screen") && (obj as THREE.Mesh).isMesh) screenMesh = obj as THREE.Mesh;
-      if (name.includes("window") && (obj as THREE.Mesh).isMesh) windowMesh = obj as THREE.Mesh;
+      if (name.includes("screen") && (obj as THREE.Mesh).isMesh)
+        screenMesh = obj as THREE.Mesh;
+      if (name.includes("window") && (obj as THREE.Mesh).isMesh)
+        windowMesh = obj as THREE.Mesh;
     });
 
     if (chair && catRef.current) {
@@ -183,14 +235,20 @@ function RoomWithCat({ url, onLoaded }: { url: string; onLoaded?: () => void }) 
     if (screenMesh) {
       const textureURL = "/textures/screen_image.jpeg";
       if (textureCache.has(textureURL)) {
-        screenMesh.material = new THREE.MeshBasicMaterial({ map: textureCache.get(textureURL)!, toneMapped: false });
+        screenMesh.material = new THREE.MeshBasicMaterial({
+          map: textureCache.get(textureURL)!,
+          toneMapped: false,
+        });
       } else {
         const p = new Promise<void>((resolve) => {
           new THREE.TextureLoader().load(textureURL, (texture) => {
             texture.encoding = THREE.sRGBEncoding;
             texture.flipY = false;
             textureCache.set(textureURL, texture);
-            screenMesh.material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
+            screenMesh.material = new THREE.MeshBasicMaterial({
+              map: texture,
+              toneMapped: false,
+            });
             (screenMesh.material as THREE.Material).needsUpdate = true;
             resolve();
           });
@@ -270,7 +328,7 @@ const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → �
 
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
-  const [manualHold, setManualHold] = useState(true);       // короткий буфер от мерцаний
+  const [manualHold, setManualHold] = useState(true); // короткий буфер от мерцаний
   const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
   const { active, progress } = useProgress();
 
@@ -314,18 +372,28 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       if (!a) return;
       a.volume = vol;
       if (vol > 0) a.play().catch(() => {});
-      else { a.pause(); a.currentTime = 0; }
+      else {
+        a.pause();
+        a.currentTime = 0;
+      }
     };
     setVol(rainRef.current);
     setVol(musicRef.current);
   }, [volumeIndex]);
 
-  const cycleVolume = () => setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
+  const cycleVolume = () =>
+    setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
 
   const currentIcon =
-    volumeIndex === 0 ? <IconSpeakerMute /> :
-    volumeIndex === 1 ? <IconSpeakerLow /> :
-    volumeIndex === 2 ? <IconSpeakerMid /> : <IconSpeakerHigh />;
+    volumeIndex === 0 ? (
+      <IconSpeakerMute />
+    ) : volumeIndex === 1 ? (
+      <IconSpeakerLow />
+    ) : volumeIndex === 2 ? (
+      <IconSpeakerMid />
+    ) : (
+      <IconSpeakerHigh />
+    );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
   // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на зелёный
@@ -342,7 +410,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           style={{ width: "100%", height: "100vh", display: "block" }}
         >
           <color attach="background" args={[canvasBg]} />
-          {canvasBg === "#002200" && <fog attach="fog" args={["#002200", 10, 40]} />}
+          {canvasBg === "#002200" && (
+            <fog attach="fog" args={["#002200", 10, 40]} />
+          )}
 
           <FirstFrame onReady={() => setFirstFrame(true)} />
 
@@ -355,8 +425,18 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             shadow-mapSize-width={2048}
             shadow-mapSize-height={2048}
           />
-          <pointLight position={[0, -1, 0]} intensity={1.2} color="#00ff1d" distance={15} />
-          <pointLight position={[0, 2, 0]} intensity={2} distance={5} color="lime" />
+          <pointLight
+            position={[0, -1, 0]}
+            intensity={1.2}
+            color="#00ff1d"
+            distance={15}
+          />
+          <pointLight
+            position={[0, 2, 0]}
+            intensity={2}
+            distance={5}
+            color="lime"
+          />
 
           <mesh position={[0, 2, 0]}>
             <sphereGeometry args={[0.2, 32, 32]} />
@@ -369,13 +449,21 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             {!showLoader && <Environment preset="forest" background />}
           </Suspense>
 
-          <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
+          <mesh
+            receiveShadow
+            rotation={[-Math.PI / 2, 0, 0]}
+            position={[0, -1.5, 0]}
+          >
             <planeGeometry args={[50, 50]} />
             <shadowMaterial opacity={0.3} />
           </mesh>
 
           <EffectComposer>
-            <Bloom intensity={0.4} luminanceThreshold={0.2} luminanceSmoothing={0.9} />
+            <Bloom
+              intensity={0.4}
+              luminanceThreshold={0.2}
+              luminanceSmoothing={0.9}
+            />
             <HueSaturation hue={0.3} saturation={0.5} />
           </EffectComposer>
         </Canvas>
@@ -384,13 +472,23 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {/* Лоадер сверху — уходит ПОСЛЕ появления Canvas */}
       {createPortal(
         <LoaderTopLayer $visible={showLoader}>
-          <StakanLoader wordmarkSrc={wordmark} subtitle="Гружу 3D-сцену…" stopAt={96} totalDuration={8000} />
+          <StakanLoader
+            wordmarkSrc={wordmark}
+            subtitle="Гружу 3D-сцену…"
+            stopAt={96}
+            totalDuration={8000}
+          />
         </LoaderTopLayer>,
         document.body
       )}
 
       {/* Кнопка громкости */}
-      <SoundFab onClick={cycleVolume} aria-label="Volume" title="Volume" $level={volumeIndex}>
+      <SoundFab
+        onClick={cycleVolume}
+        aria-label="Volume"
+        title="Volume"
+        $level={volumeIndex}
+      >
         {currentIcon}
         <LevelBadge>{levelLabel}</LevelBadge>
       </SoundFab>

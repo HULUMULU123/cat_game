@@ -3,7 +3,7 @@ import gift from "../../assets/icons/gift.svg";
 import rules from "../../assets/icons/rules.svg";
 import avatar from "../../assets/avatar.jpg";
 import useGlobalStore from "../../shared/store/useGlobalStore";
-import { HomeModalType } from "./types";
+import type { HomeModalType } from "./types";
 
 const StyledWrapper = styled.div`
   display: flex;
@@ -93,7 +93,10 @@ const Header = ({ onOpenModal }: HeaderProps) => {
           <StyledUserText>{userData?.first_name || ""}!</StyledUserText>
         </StyledUserTextWrapper>
         <StyledUserImgWrapper>
-          <StyledUserImg src={userData?.photo_url || avatar} alt="User avatar" />
+          <StyledUserImg
+            src={userData?.photo_url || avatar}
+            alt="User avatar"
+          />
         </StyledUserImgWrapper>
       </StyledUser>
     </StyledWrapper>

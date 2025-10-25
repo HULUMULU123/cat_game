@@ -9,7 +9,7 @@ import money from "../../../assets/rules_icons/money.svg";
 import points from "../../../assets/rules_icons/points.svg";
 import rightText from "../../../assets/rules_icons/right_text.svg";
 import alert from "../../../assets/rules_icons/alert.svg";
-import { RuleCategory } from "../../home/types";
+import type { RuleCategory } from "../../home/types";
 
 const StyledWrapper = styled.div`
   display: flex;
@@ -64,7 +64,11 @@ const RulesList = ({ openRuleCategory }: RulesListProps) => (
     <StyledRulesList>
       <RulesItem handleClick={openRuleCategory} icon={logo} text="СТАКАН" />
       <RulesItem handleClick={openRuleCategory} icon={drops} text="СБОЙ" />
-      <RulesItem handleClick={openRuleCategory} icon={logoCircle} text="CRASH" />
+      <RulesItem
+        handleClick={openRuleCategory}
+        icon={logoCircle}
+        text="CRASH"
+      />
       <RulesItem
         handleClick={openRuleCategory}
         icon={rightText}
@@ -86,7 +90,11 @@ const RulesList = ({ openRuleCategory }: RulesListProps) => (
         icon={clock}
         text="ТУРНИРЫ И ТАЙМЕРЫ"
       />
-      <RulesItem handleClick={openRuleCategory} icon={points} text="ДОПОЛНИТЕЛЬНО" />
+      <RulesItem
+        handleClick={openRuleCategory}
+        icon={points}
+        text="ДОПОЛНИТЕЛЬНО"
+      />
     </StyledRulesList>
   </StyledWrapper>
 );

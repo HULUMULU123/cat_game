@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { RuleCategory } from "../../home/types";
+import type { RuleCategory } from "../../home/types";
 
 const StyledRulesItem = styled.li`
   height: 50px;
@@ -40,7 +40,10 @@ const RulesItem = ({ icon, text, handleClick }: RulesItemProps) => {
 
   return (
     <StyledRulesItem>
-      <StyledButton type="button" onClick={() => handleClick(normalizedCategory)}>
+      <StyledButton
+        type="button"
+        onClick={() => handleClick(normalizedCategory)}
+      >
         <StyledRuleImg src={icon} alt={text} />
         <StyledRuleText>{text}</StyledRuleText>
       </StyledButton>

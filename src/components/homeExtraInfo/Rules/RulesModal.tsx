@@ -2,7 +2,7 @@ import styled from "styled-components";
 import RulesHeader from "./RulesHeader";
 import ModalName from "../common/ModalName";
 import RulesList from "./RulesList";
-import { RuleCategory } from "../../home/types";
+import type { RuleCategory } from "../../home/types";
 
 const StyledWrapper = styled.div`
   width: 100%;

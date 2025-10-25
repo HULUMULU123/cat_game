@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 
 /** загрузочный экран */
-import StakanLoader from "../components/loader/StakanLoader";
+import StakanLoader from "../shared/components/stakan/StakanLoader";
 import { createPortal } from "react-dom";
 import wordmark from "../assets/STAKAN.svg";
 
@@ -20,7 +20,7 @@ const StyledWrapper = styled.div`
   width: 100%;
   overflow: hidden;
   opacity: 0;
-  transition: opacity 0.6s ease; /* плавное проявление контента */
+  transition: opacity 0.6s ease;
   &.visible {
     opacity: 1;
   }
@@ -54,17 +54,22 @@ const LoaderTopLayer = styled.div<{ $visible: boolean }>`
   inset: 0;
   z-index: 2147483647;
   opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 420ms ease; /* уходит чуть позже контента */
+  transition: opacity 420ms ease;
   pointer-events: ${(p) => (p.$visible ? "auto" : "none")};
+  /* избегаем неожиданных пересчётов layout */
+  background: transparent;
 `;
 
 /* ====================== Хелперы ожидания ====================== */
 
-const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+const nextFrame = () =>
+  new Promise<void>((r) => requestAnimationFrame(() => r()));
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 async function waitImages(container: HTMLElement) {
-  const imgs = Array.from(container.querySelectorAll("img")) as HTMLImageElement[];
+  const imgs = Array.from(
+    container.querySelectorAll("img")
+  ) as HTMLImageElement[];
   const pending = imgs.filter((i) => !i.complete);
   if (pending.length === 0) return;
   await Promise.race([
@@ -78,14 +83,15 @@ async function waitImages(container: HTMLElement) {
           })
       )
     ),
-    // страховка: если какая-то картинка «висит»
     sleep(2500),
   ]);
 }
 
 async function waitVideosMeta(container: HTMLElement) {
-  const vids = Array.from(container.querySelectorAll("video")) as HTMLVideoElement[];
-  const pending = vids.filter((v) => v.readyState < 2); // metadata+enough to play
+  const vids = Array.from(
+    container.querySelectorAll("video")
+  ) as HTMLVideoElement[];
+  const pending = vids.filter((v) => v.readyState < 2);
   if (pending.length === 0) return;
   await Promise.race([
     Promise.all(
@@ -104,7 +110,6 @@ async function waitVideosMeta(container: HTMLElement) {
 }
 
 async function waitFonts() {
-  // Font Loading API (может не быть в старых WebView — поэтому с try/catch)
   try {
     // @ts-ignore
     if (document.fonts && document.fonts.ready) {
@@ -114,33 +119,53 @@ async function waitFonts() {
   } catch {}
 }
 
-/**
- * Главный «стабилизатор»: ждём window.load (если нужно),
- * ассеты внутри контейнера, пару кадров и короткий буфер.
- */
 async function ensureStableReady(container: HTMLElement) {
   if (document.readyState !== "complete") {
-    await new Promise<void>((res) => window.addEventListener("load", () => res(), { once: true }));
+    await new Promise<void>((res) =>
+      window.addEventListener("load", () => res(), { once: true })
+    );
   }
   await waitFonts();
   await waitImages(container);
   await waitVideosMeta(container);
   await nextFrame();
   await nextFrame();
-  await sleep(120); // маленький буфер
+  await sleep(120);
 }
+
+/* ====================== Мемо-обёртки ====================== */
+
+const HeaderMemo: React.FC<{ startTimer: boolean }> = React.memo(
+  ({ startTimer }) => (
+    <StyledHeaderWrapper>
+      <FailrueHeader startTimer={startTimer} />
+    </StyledHeaderWrapper>
+  )
+);
+HeaderMemo.displayName = "HeaderMemo";
+
+const FooterMemo: React.FC<{ score: number }> = React.memo(({ score }) => (
+  <StyledFooterWrapper>
+    <FailureFooter score={score} />
+  </StyledFooterWrapper>
+));
+FooterMemo.displayName = "FooterMemo";
 
 /* ====================== Страница ====================== */
 
 export default function Failure() {
   const [score, setScore] = useState(0);
 
-  // Состояния покадрового сценария загрузки
-  const [contentVisible, setContentVisible] = useState(false); // фейд-ин контента
-  const [loaderVisible, setLoaderVisible] = useState(true);    // кроссфейд лоадера
-  const [startHeaderTimer, setStartHeaderTimer] = useState(false); // старт таймера в хедере
+  // Покадровый сценарий загрузки
+  const [contentVisible, setContentVisible] = useState(false);
+  const [loaderVisible, setLoaderVisible] = useState(true); // видимость (фейд)
+  const [showLoaderNode, setShowLoaderNode] = useState(true); // наличие узла портала
+  const [startHeaderTimer, setStartHeaderTimer] = useState(false);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // стабильный колбэк: не дёргает поддерево на каждый клик
+  const handlePop = useCallback(() => setScore((s) => s + 1), []);
 
   useEffect(() => {
     let alive = true;
@@ -148,25 +173,18 @@ export default function Failure() {
     const run = async () => {
       const root = wrapperRef.current || document.body;
 
-      // страховка: максимально 5 сек на любые «зависшие» ресурсы
       const watchdog = sleep(5000).then(() => {
-        if (alive) console.warn("[Failure] Ready watchdog fired -> forcing show");
+        if (alive)
+          console.warn("[Failure] Ready watchdog fired -> forcing show");
       });
 
       await Promise.race([ensureStableReady(root), watchdog]);
 
       if (!alive) return;
 
-      // 1) показываем контент
       setContentVisible(true);
-
-      // 2) небольшой сдвиг, чтобы контент успел отрисоваться под лоадером
       await sleep(220);
-
-      // 3) скрываем лоадер
       setLoaderVisible(false);
-
-      // 4) ещё немного — и запускаем таймер в хедере
       await sleep(180);
       setStartHeaderTimer(true);
     };
@@ -178,32 +196,39 @@ export default function Failure() {
     };
   }, []);
 
+  // Когда лоадер полностью скрылся — размонтируем портал
+  const onLoaderTransitionEnd = useCallback(() => {
+    if (!loaderVisible) setShowLoaderNode(false);
+  }, [loaderVisible]);
+
   return (
     <>
-      {/* Лоадер поверх всего через портал */}
-      {createPortal(
-        <LoaderTopLayer $visible={loaderVisible}>
-          <StakanLoader
-            wordmarkSrc={wordmark}
-            subtitle="Подготавливаю сцену…"
-            stopAt={96}
-            totalDuration={4000}
-          />
-        </LoaderTopLayer>,
-        document.body
-      )}
+      {/* Лоадер через портал, размонтируем после анимации */}
+      {showLoaderNode &&
+        createPortal(
+          <LoaderTopLayer
+            $visible={loaderVisible}
+            onTransitionEnd={onLoaderTransitionEnd}
+          >
+            <StakanLoader
+              wordmarkSrc={wordmark}
+              subtitle="Подготавливаю сцену…"
+              stopAt={96}
+              totalDuration={4000}
+            />
+          </LoaderTopLayer>,
+          document.body
+        )}
 
-      <StyledWrapper ref={wrapperRef} className={contentVisible ? "visible" : ""}>
-        <StyledHeaderWrapper>
-          {/* Хедер начнёт отсчёт только когда дадим флаг */}
-          <FailrueHeader startTimer={startHeaderTimer} />
-        </StyledHeaderWrapper>
+      <StyledWrapper
+        ref={wrapperRef}
+        className={contentVisible ? "visible" : ""}
+      >
+        <HeaderMemo startTimer={startHeaderTimer} />
 
-        <Droplets onPop={() => setScore((s) => s + 1)} />
+        <Droplets onPop={handlePop} />
 
-        <StyledFooterWrapper>
-          <FailureFooter score={score} />
-        </StyledFooterWrapper>
+        <FooterMemo score={score} />
       </StyledWrapper>
     </>
   );

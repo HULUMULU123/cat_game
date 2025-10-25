@@ -1,5 +1,7 @@
 import { createGlobalStyle } from "styled-components";
-
+import GilroyLight from "../../assets/fonts/Gilroy-Light.otf";
+import ConthraxTTF from "../../assets/fonts/Conthrax.ttf";
+import Roboto from "../../assets/fonts/Roboto.ttf";
 const GlobalStyle = createGlobalStyle`
   :root {
     --color-white-text: rgb(224, 255, 251);
@@ -7,19 +9,23 @@ const GlobalStyle = createGlobalStyle`
 
   @font-face {
     font-family: 'Gilroy';
-    src: url('../assets/fonts/Gilroy-Light.otf') format('opentype');
+    src: url(${GilroyLight}) format('opentype');
+    font-style: normal;
+    font-display: swap;
   }
 
   @font-face {
     font-family: 'Conthrax';
-    src: url('../assets/fonts/Conthrax.ttf') format('truetype');
+    src: url(${ConthraxTTF}) format('truetype');
     font-style: normal;
+    font-display: swap;
   }
 
   @font-face {
     font-family: 'Roboto';
-    src: url('../assets/fonts/Roboto.ttf') format('truetype');
+    src: url(${Roboto}) format('truetype');
     font-style: normal;
+    font-display: swap;
   }
 
   a {

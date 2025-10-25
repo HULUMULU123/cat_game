@@ -5,7 +5,7 @@ import RewardModal from "./DailyReward/Rewards/RewardModal";
 import RulesModal from "./Rules/RulesModal";
 import OpenRuleModal from "./RuleOpen/OpenRuleModal";
 import UserInfo from "./UserInfo/UserInfo";
-import { HomeModalType, RuleCategory } from "../home/types";
+import type { HomeModalType, RuleCategory } from "../home/types";
 
 const StyledModalLayout = styled.div<{ $isVisible: boolean }>`
   top: 0;
@@ -14,7 +14,8 @@ const StyledModalLayout = styled.div<{ $isVisible: boolean }>`
   width: 100vw;
   height: 100vh;
   z-index: 1000000;
-  backdrop-filter: ${({ $isVisible }) => ($isVisible ? "blur(20px)" : "blur(0px)")};
+  backdrop-filter: ${({ $isVisible }) =>
+    $isVisible ? "blur(20px)" : "blur(0px)"};
   background: ${({ $isVisible }) =>
     $isVisible ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0)"};
   display: flex;
@@ -65,9 +66,19 @@ const HomeModal = ({
       case "reward":
         return <RewardModal handleClose={handleClose} />;
       case "rules":
-        return <RulesModal handleClose={handleClose} openRuleCategory={openRuleCategory} />;
+        return (
+          <RulesModal
+            handleClose={handleClose}
+            openRuleCategory={openRuleCategory}
+          />
+        );
       case "rule_category":
-        return <OpenRuleModal handleClose={handleRuleClose} ruleCategory={ruleCategory} />;
+        return (
+          <OpenRuleModal
+            handleClose={handleRuleClose}
+            ruleCategory={ruleCategory}
+          />
+        );
       case "user":
         return <UserInfo handleClose={handleClose} />;
       default:

@@ -2,7 +2,7 @@ import { MouseEvent } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import gift from "../../assets/icons/gift.svg";
-import { HomeModalType } from "./types";
+import type { HomeModalType } from "./types";
 
 const StyledActionBtn = styled.button`
   position: absolute;
