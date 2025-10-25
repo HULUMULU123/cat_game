@@ -1,26 +1,44 @@
-import React from 'react'
-import RulesHeader from './RulesHeader'
-import styled from 'styled-components'
-import ModalName from '../common/ModalName'
-import RulesContent from './RulesContent'
+import styled from "styled-components";
+import RulesHeader from "./RulesHeader";
+import ModalName from "../common/ModalName";
+import RulesContent, { RulesContentProps } from "./RulesContent";
+import data from "../../../assets/data/stakan_rules.json";
+import { RuleCategory } from "../../home/types";
+import DarkLayoutIcon from "./DarkLayoutIcon";
 
-import file from '../../../assets/data/stakan_rules.json'
-import DarkLayoutIcon from './DarkLayoutIcon'
 const StyledWrapper = styled.div`
-  width:100%;
+  width: 100%;
   position: relative;
   height: 100vh;
-  
-`
-export default function OpenRuleModal({handleClose, ruleCategory}) {
-    console.log(ruleCategory)
-    const selectedRules = file[ruleCategory];
+`;
+
+interface OpenRuleModalProps {
+  handleClose: () => void;
+  ruleCategory: RuleCategory;
+}
+
+const rulesData = data as Record<RuleCategory, RulesContentProps["rulesData"]>;
+
+const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
+  const selectedRules = rulesData[ruleCategory];
+
+  if (!selectedRules) {
+    return (
+      <StyledWrapper>
+        <RulesHeader handleClose={handleClose} />
+        <ModalName textName={ruleCategory.toUpperCase()} />
+      </StyledWrapper>
+    );
+  }
+
   return (
     <StyledWrapper>
-        <RulesHeader handleClose={handleClose}/>
-        <ModalName textName={ruleCategory.toUpperCase()} />
-        <RulesContent rulesData={selectedRules}/>
-        <DarkLayoutIcon/>
+      <RulesHeader handleClose={handleClose} />
+      <ModalName textName={ruleCategory.toUpperCase()} />
+      <RulesContent rulesData={selectedRules} />
+      <DarkLayoutIcon />
     </StyledWrapper>
-  )
-}
+  );
+};
+
+export default OpenRuleModal;

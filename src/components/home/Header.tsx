@@ -1,9 +1,10 @@
-import React from "react";
 import styled from "styled-components";
 import gift from "../../assets/icons/gift.svg";
 import rules from "../../assets/icons/rules.svg";
 import avatar from "../../assets/avatar.jpg";
-import useGlobal from "../../hooks/useGlobal";
+import useGlobalStore from "../../shared/store/useGlobalStore";
+import { HomeModalType } from "./types";
+
 const StyledWrapper = styled.div`
   display: flex;
   justify-content: space-between;
@@ -16,13 +17,20 @@ const StyledInfo = styled.div`
   display: flex;
 `;
 
-const StyledUser = styled.div`
+const StyledUser = styled.button`
   display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 `;
 
 const StyledButton = styled.button`
   border: none;
   background: transparent;
+  cursor: pointer;
+
   &:nth-child(2) {
     margin-left: 16px;
   }
@@ -48,39 +56,48 @@ const StyledUserImg = styled.img`
 const StyledUserTextWrapper = styled.div`
   display: flex;
   flex-direction: column;
-
   text-align: right;
   margin-right: 11px;
 `;
+
 const StyledUserText = styled.span`
   color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
   font-weight: 300;
+
   &:nth-child(2) {
     color: rgba(255, 255, 255, 1);
   }
 `;
-export default function Header({ handleOpenModal }) {
-  const userData = useGlobal((state) => state.userData);
+
+interface HeaderProps {
+  onOpenModal: (modalType: HomeModalType) => void;
+}
+
+const Header = ({ onOpenModal }: HeaderProps) => {
+  const userData = useGlobalStore((state) => state.userData);
+
   return (
     <StyledWrapper>
       <StyledInfo>
-        <StyledButton onClick={() => handleOpenModal("rules")}>
-          <StyledIcon src={rules} />
+        <StyledButton onClick={() => onOpenModal("rules")}>
+          <StyledIcon src={rules} alt="Rules icon" />
         </StyledButton>
-        <StyledButton onClick={() => handleOpenModal("reward")}>
-          <StyledIcon src={gift} />
+        <StyledButton onClick={() => onOpenModal("reward")}>
+          <StyledIcon src={gift} alt="Rewards icon" />
         </StyledButton>
       </StyledInfo>
-      <StyledUser onClick={() => handleOpenModal("user")}>
+      <StyledUser type="button" onClick={() => onOpenModal("user")}>
         <StyledUserTextWrapper>
           <StyledUserText>Good Evening,</StyledUserText>
-          <StyledUserText>{userData?.first_name}!</StyledUserText>
+          <StyledUserText>{userData?.first_name || ""}!</StyledUserText>
         </StyledUserTextWrapper>
         <StyledUserImgWrapper>
-          <StyledUserImg src={userData?.photo_url} />
+          <StyledUserImg src={userData?.photo_url || avatar} alt="User avatar" />
         </StyledUserImgWrapper>
       </StyledUser>
     </StyledWrapper>
   );
-}
+};
+
+export default Header;

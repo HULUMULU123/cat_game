@@ -1,55 +1,87 @@
-import React, { useEffect, useState } from 'react'
-import styled from 'styled-components'
-import PrizeModal from './PrizeModal/PrizeModal'
-import RewardModal from './DailyReward/Rewards/RewardModal'
-import RulesModal from './Rules/RulesModal'
-import OpenRuleModal from './RuleOpen/OpenRuleModal'
-import UserInfo from './UserInfo/UserInfo'
+import { useEffect, useState } from "react";
+import styled from "styled-components";
+import PrizeModal from "./PrizeModal/PrizeModal";
+import RewardModal from "./DailyReward/Rewards/RewardModal";
+import RulesModal from "./Rules/RulesModal";
+import OpenRuleModal from "./RuleOpen/OpenRuleModal";
+import UserInfo from "./UserInfo/UserInfo";
+import { HomeModalType, RuleCategory } from "../home/types";
 
-const StyledModalLayout = styled.div`
+const StyledModalLayout = styled.div<{ $isVisible: boolean }>`
   top: 0;
   left: 0;
   position: fixed;
   width: 100vw;
-  height:100vh;
+  height: 100vh;
   z-index: 1000000;
-
-  backdrop-filter: blur(0px);
-  background: rgba(0,0,0,0);
-
+  backdrop-filter: ${({ $isVisible }) => ($isVisible ? "blur(20px)" : "blur(0px)")};
+  background: ${({ $isVisible }) =>
+    $isVisible ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0)"};
   display: flex;
   justify-content: center;
-  align-items: start;
-
+  align-items: flex-start;
   transition: backdrop-filter 0.4s ease, background 0.4s ease;
+`;
 
-  &.open {
-    backdrop-filter: blur(20px);
-    background: rgba(0,0,0,0.3);
-  }
-`
+const ModalContent = styled.div`
+  display: flex;
+  justify-content: center;
+  width: 100%;
+`;
 
-export default function HomeModal({infoType, isOpen, handleClose, handleRuleClose, ruleCategory, openRuleCategory}) {
-    const [animate, setAnimate] = useState(false)
+interface HomeModalProps {
+  infoType: HomeModalType;
+  isOpen: boolean;
+  handleClose: () => void;
+  handleRuleClose: () => void;
+  ruleCategory: RuleCategory;
+  openRuleCategory: (category: RuleCategory) => void;
+}
+
+const HomeModal = ({
+  infoType,
+  isOpen,
+  handleClose,
+  handleRuleClose,
+  ruleCategory,
+  openRuleCategory,
+}: HomeModalProps) => {
+  const [isAnimated, setIsAnimated] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      const timer = setTimeout(() => setAnimate(true), 50) // маленькая задержка
-      return () => clearTimeout(timer)
-    } else {
-      setAnimate(false)
+    if (!isOpen) {
+      setIsAnimated(false);
+      return;
     }
-    console.log(isOpen, infoType)
-  }, [isOpen])
+
+    const timer = window.setTimeout(() => setIsAnimated(true), 50);
+    return () => window.clearTimeout(timer);
+  }, [isOpen]);
+
+  const renderContent = () => {
+    switch (infoType) {
+      case "prize":
+        return <PrizeModal handleClose={handleClose} />;
+      case "reward":
+        return <RewardModal handleClose={handleClose} />;
+      case "rules":
+        return <RulesModal handleClose={handleClose} openRuleCategory={openRuleCategory} />;
+      case "rule_category":
+        return <OpenRuleModal handleClose={handleRuleClose} ruleCategory={ruleCategory} />;
+      case "user":
+        return <UserInfo handleClose={handleClose} />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <StyledModalLayout className={animate ? "open" : ""} onClick={handleClose}>
-      <div style={{display:'flex', justifyContent:'center', width:'100%'}} onClick={(e) => e.stopPropagation()}>
-        {infoType == 'prize' ? <PrizeModal handleClose={handleClose}/> : null}
-        {infoType == 'reward' ? <RewardModal handleClose={handleClose} />: null }
-        {infoType == 'rules' ? <RulesModal handleClose={handleClose} openRuleCategory={openRuleCategory}/>: null }
-        {infoType == 'rule_category' ? <OpenRuleModal handleClose={handleRuleClose} ruleCategory={ruleCategory}/>: null }
-        {infoType == 'user' ? <UserInfo handleClose={handleClose} />: null }
-      </div>
+    <StyledModalLayout $isVisible={isAnimated} onClick={handleClose}>
+      <ModalContent onClick={(event) => event.stopPropagation()}>
+        {renderContent()}
+      </ModalContent>
     </StyledModalLayout>
-  )
-}
+  );
+};
+
+export default HomeModal;
