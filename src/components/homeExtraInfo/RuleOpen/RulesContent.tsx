@@ -1,110 +1,114 @@
-import React from 'react'
-import styled from 'styled-components'
+import { Fragment } from "react";
+import styled from "styled-components";
 
 const StyledWrapper = styled.div`
-display: flex;
-flex-direction: column;
-align-items: center;
-width: 95%;
-margin: 20px auto;
-gap: 15px;
-position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 95%;
+  margin: 20px auto;
+  gap: 15px;
+  position: relative;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  box-sizing: content-box;
+  scrollbar-width: thin;
+  scrollbar-color: #e1fffb #2cc2a9;
+  height: 75vh;
 
-overflow-y: scroll;   /* только вертикальный скролл */
-overflow-x: hidden;   /* горизонтального нет */
-   /* отступ от контента */
-box-sizing: content-box;
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
 
-scrollbar-width: thin;
-  scrollbar-color: #E1FFFB #2CC2A9; /* активная | неактивная *//* чтобы padding не "съел" ширину */
-height: 65vh;
-&::-webkit-scrollbar{
-   width: 4px; 
-}
-&::-webkit-scrollbar-track{
-  background: #2CC2A9;  /* неактивная часть */
-  border-radius: 10px;
-}
+  &::-webkit-scrollbar-track {
+    background: #2cc2a9;
+    border-radius: 10px;
+  }
 
-&::-webkit-scrollbar-thumb{
-  background: #E1FFFB;  /* активная часть */
-  border-radius: 20px;
-}
-height: 75vh;
-`
+  &::-webkit-scrollbar-thumb {
+    background: #e1fffb;
+    border-radius: 20px;
+  }
+`;
 
 const StyledListHeadingWrapper = styled.div`
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 5px;
-width: 90%;
-`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 90%;
+`;
 
 const StyledLine = styled.span`
-display: block;
-width: 100%;
-height: 1px;
-background: #85FFF0;
-border-radius: 10px;`
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: #85fff0;
+  border-radius: 10px;
+`;
 
 const StyledHeadingSpan = styled.span`
-color: #fff;
-font-family: 'Conthrax', sans-serif;
-font-size: 12px;`
+  color: #fff;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+`;
 
 const StyledRulesWrapper = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    width: 90%;
-    font-family: 'Conthrax', sans-serif;
-    color: rgb(158,189,185);
-`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 90%;
+  font-family: "Conthrax", sans-serif;
+  color: rgb(158, 189, 185);
+`;
 
 const StyledRulesHeading = styled.h3`
-margin: 20px 0 15px 0;
-padding: 0;
-font-size: 14px;
-font-weight: 700;
-
-`
+  margin: 20px 0 15px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+`;
 
 const StyledRule = styled.p`
-margin: 5px 0;
-padding: 0;
-font-size: 12px;
-font-weight: 500;`
+  margin: 5px 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+`;
 
-export default function RulesContent({ rulesData }) {
-  return (
-    <StyledWrapper>
-      {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (<>
-        <StyledListHeadingWrapper>
-            <StyledHeadingSpan>{sectionTitle}</StyledHeadingSpan>
-            <StyledLine></StyledLine>
-        </StyledListHeadingWrapper>
-        <StyledRulesWrapper key={sectionTitle}>
-          {/* Если это массив правил */}
-          {Array.isArray(sectionValue) &&
-            sectionValue.map((rule, idx) => (
-              <StyledRule key={idx}>{rule}</StyledRule>
-            ))}
+type RulesContentValue = string[] | Record<string, string[]>;
 
-          {/* Если это объект с подразделами */}
-          {!Array.isArray(sectionValue) &&
-            typeof sectionValue === "object" &&
-            Object.entries(sectionValue).map(([subTitle, rules]) => (
-              <div key={subTitle}>
-                <StyledRulesHeading>{subTitle}</StyledRulesHeading>
-                {Array.isArray(rules) &&
-                  rules.map((rule, idx) => (
-                    <StyledRule key={idx}>{rule}</StyledRule>
-                  ))}
-              </div>
-            ))}
-        </StyledRulesWrapper></>
-      ))}
-    </StyledWrapper>
-  );
+export interface RulesContentProps {
+  rulesData: Record<string, RulesContentValue>;
 }
+
+const renderRulesArray = (rules: string[]) =>
+  rules.map((rule, index) => <StyledRule key={rule + index}>{rule}</StyledRule>);
+
+const renderNestedRules = (sections: Record<string, string[]>) =>
+  Object.entries(sections).map(([subtitle, rules]) => (
+    <div key={subtitle}>
+      <StyledRulesHeading>{subtitle}</StyledRulesHeading>
+      {renderRulesArray(rules)}
+    </div>
+  ));
+
+const RulesContent = ({ rulesData }: RulesContentProps) => (
+  <StyledWrapper>
+    {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (
+      <Fragment key={sectionTitle}>
+        <StyledListHeadingWrapper>
+          <StyledHeadingSpan>{sectionTitle}</StyledHeadingSpan>
+          <StyledLine />
+        </StyledListHeadingWrapper>
+        <StyledRulesWrapper>
+          {Array.isArray(sectionValue)
+            ? renderRulesArray(sectionValue)
+            : renderNestedRules(sectionValue)}
+        </StyledRulesWrapper>
+      </Fragment>
+    ))}
+  </StyledWrapper>
+);
+
+export default RulesContent;
