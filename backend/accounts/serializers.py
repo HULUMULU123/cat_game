@@ -15,7 +15,7 @@ class TelegramAuthSerializer(serializers.Serializer):
         username: str = self.validated_data["username"].lower()
         first_name: str = self.validated_data["first_name"].strip()
         last_name: str = self.validated_data.get("last_name", "").strip()
-
+        print(username)
         user, _ = User.objects.get_or_create(username=username)
         user.first_name = first_name
         user.last_name = last_name
