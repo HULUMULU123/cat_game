@@ -1,10 +1,12 @@
 import styled from "styled-components";
 import RulesHeader from "./RulesHeader";
 import ModalName from "../common/ModalName";
+
 import RulesContent from "./RulesContent";
 import type { RulesContentProps } from "./RulesContent";
 import data from "../../../assets/data/stakan_rules.json";
 import type { RuleCategory } from "../../home/types";
+
 import DarkLayoutIcon from "./DarkLayoutIcon";
 
 const StyledWrapper = styled.div`

@@ -5,7 +5,9 @@ import CrashCount from "../components/home/CrashCount";
 import AdevertSection from "../components/home/AdevertSection";
 import MainAction from "../components/home/MainAction";
 import HomeModal from "../components/homeExtraInfo/HomeModal";
+
 import type { HomeModalType, RuleCategory } from "../components/home/types";
+
 import usePageReady from "../shared/hooks/usePageReady";
 
 const Home = () => {

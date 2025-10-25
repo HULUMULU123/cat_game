@@ -1,83 +1,143 @@
-import React from 'react'
-import styled from 'styled-components'
-import UsersItem from './UsersItem'
-import UserResult from './UserResult'
+import { useEffect, useMemo, useState } from "react";
+import styled from "styled-components";
+import UsersItem from "./UsersItem";
+import UserResult from "./UserResult";
+import { request } from "../../shared/api/httpClient";
+import type {
+  LeaderboardResponse,
+  LeaderboardEntryResponse,
+} from "../../shared/api/types";
+import useGlobalStore from "../../shared/store/useGlobalStore";
 
 const StyledWrapper = styled.div`
-    width: 95%;
-    display: flex;
-    margin: 0 auto;
-    flex-direction: column;
-
-`
+  width: 95%;
+  display: flex;
+  margin: 0 auto;
+  flex-direction: column;
+`;
 
 const StyledContentWrapper = styled.div`
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 20px;
-    position: relative;
-`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  position: relative;
+`;
 
 const StyledHeader = styled.h3`
-font-family: 'Conthrax', sans-serif;
-font-size: 12px;
-color: rgb(224,255,251);
-padding: 0;
-margin: 0;
-font-weight: 500;
-width: 60%; 
-text-align: center;
-
-`
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  color: rgb(224, 255, 251);
+  padding: 0;
+  margin: 0;
+  font-weight: 500;
+  width: 60%;
+  text-align: center;
+`;
 
 const StyledList = styled.ul`
+  display: flex;
+  padding: 0;
+  margin: 0;
+  margin-top: 10px;
+  align-items: center;
+  gap: 5px;
+  width: 95%;
+  flex-direction: column;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  box-sizing: content-box;
+  scrollbar-width: thin;
+  scrollbar-color: #e1fffb #2cc2a9;
+  height: 50vh;
 
-display: flex;
-padding: 0;
-margin:0;
-margin-top: 10px;
-align-items: center;
-gap: 5px;
-width: 95%;
-flex-direction: column;
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
 
+  &::-webkit-scrollbar-track {
+    background: #2cc2a9;
+    border-radius: 10px;
+  }
 
-overflow-y: scroll;   /* только вертикальный скролл */
-overflow-x: hidden;   /* горизонтального нет */
-   /* отступ от контента */
-box-sizing: content-box;
+  &::-webkit-scrollbar-thumb {
+    background: #e1fffb;
+    border-radius: 20px;
+  }
+`;
 
-scrollbar-width: thin;
-  scrollbar-color: #E1FFFB #2CC2A9; /* активная | неактивная *//* чтобы padding не "съел" ширину */
-height: 50vh;
-&::-webkit-scrollbar{
-   width: 4px; 
-}
-&::-webkit-scrollbar-track{
-  background: #2CC2A9;  /* неактивная часть */
-  border-radius: 10px;
-}
+const Placeholder = styled.div`
+  margin: 24px auto;
+  text-align: center;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  color: rgb(199, 247, 238);
+`;
 
-&::-webkit-scrollbar-thumb{
-  background: #E1FFFB;  /* активная часть */
-  border-radius: 20px;
-}
-`
+const UsersList = () => {
+  const tokens = useGlobalStore((state) => state.tokens);
+  const [entries, setEntries] = useState<LeaderboardEntryResponse[]>([]);
+  const [currentUser, setCurrentUser] =
+    useState<LeaderboardEntryResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-export default function UsersList() {
+  useEffect(() => {
+    if (!tokens) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchLeaderboard = async () => {
+      try {
+        const data = await request<LeaderboardResponse>("/leaderboard/", {
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+          },
+        });
+        if (isMounted) {
+          setEntries(data.entries);
+          setCurrentUser(data.current_user);
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError("Не удалось загрузить таблицу лидеров");
+        }
+      }
+    };
+
+    void fetchLeaderboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tokens]);
+
+  const listContent = useMemo(() => {
+    if (error) {
+      return <Placeholder>{error}</Placeholder>;
+    }
+
+    if (!entries.length) {
+      return <Placeholder>Данные таблицы призёров появятся позже</Placeholder>;
+    }
+
+    return entries.map((entry) => (
+      <UsersItem key={entry.position} entry={entry} />
+    ));
+  }, [entries, error]);
+
   return (
     <StyledWrapper>
-        <StyledContentWrapper>
-            <StyledHeader>ТОП ИГРОКОВ ТЕКУЩЕГО СБОЯ</StyledHeader>
-            <StyledList>
-            {Array.from({ length: 100 }, (_, i) => (
-                <UsersItem key={i} number={i + 1} />
-            ))}
-            </StyledList>
-            <UserResult/>
-        </StyledContentWrapper>
+      <StyledContentWrapper>
+        <StyledHeader>ТОП ИГРОКОВ ТЕКУЩЕГО СБОЯ</StyledHeader>
+        <StyledList>{listContent}</StyledList>
+        <UserResult entry={currentUser} />
+      </StyledContentWrapper>
     </StyledWrapper>
-  )
-}
+  );
+};
+
+export default UsersList;

@@ -4,31 +4,39 @@ import useGlobalStore from "../../shared/store/useGlobalStore";
 
 const useTelegramInit = () => {
   const webApp = useWebApp();
-  const setUserFromInitData = useGlobalStore((state) => state.setUserFromInitData);
-  const stopLoading = useGlobalStore((state) => state.stopLoading);
+  const setUserFromInitData = useGlobalStore((s) => s.setUserFromInitData);
+  const stopLoading = useGlobalStore((s) => s.stopLoading);
 
   useEffect(() => {
-    if (!webApp) {
-      return undefined;
-    }
+    if (!webApp) return;
 
+    // обозначаем готовность веб-приложения Telegram
     webApp.ready();
-    setUserFromInitData(webApp.initData);
 
-    if (webApp.disableVerticalSwipes) {
-      webApp.disableVerticalSwipes();
-    }
+    let isMounted = true;
+    let timer: number | undefined;
 
     const previousOverflow = document.body.style.overflow;
     const previousTouchAction = document.body.style.touchAction;
 
+    // отключим прокрутку/жесты на время загрузки
+    if (webApp.disableVerticalSwipes) webApp.disableVerticalSwipes();
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
 
-    const timer = window.setTimeout(() => stopLoading(), 300);
+    (async () => {
+      try {
+        await setUserFromInitData(webApp.initData);
+      } finally {
+        if (isMounted) {
+          timer = window.setTimeout(() => stopLoading(), 300);
+        }
+      }
+    })();
 
     return () => {
-      window.clearTimeout(timer);
+      isMounted = false;
+      if (typeof timer === "number") window.clearTimeout(timer);
       document.body.style.overflow = previousOverflow;
       document.body.style.touchAction = previousTouchAction;
     };

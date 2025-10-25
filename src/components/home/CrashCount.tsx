@@ -1,6 +1,8 @@
-import styled from "styled-components"
-import bg from '../../assets/Rectangle 31.svg';
-import coin from '../../assets/coin.png'
+import styled from "styled-components";
+import { useMemo } from "react";
+import bg from "../../assets/Rectangle 31.svg";
+import coin from "../../assets/coin.png";
+import useGlobalStore from "../../shared/store/useGlobalStore";
 const StyledWrapper = styled.div`
   width: 95%;
   height: 100px;
@@ -30,11 +32,11 @@ const StyledCoinImg = styled.img`
   `
 
 const StyledCoinCount = styled.span`
-  font-family: 'Conthrax', sans-serif;
+  font-family: "Conthrax", sans-serif;
   font-weight: 700;
   font-size: 30px;
   color: #fff;
-  `
+`
 
 const StyledCoinLine = styled.span`
   display:block;
@@ -49,23 +51,32 @@ const StyledCoinLine = styled.span`
 
 const StyledCoinName = styled.span`
   margin-left: auto;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: 100;
   font-size: 14px;
   color: #fff;
-`
+`;
 
-export default function CrashCount() {
+const CrashCount = () => {
+  const balance = useGlobalStore((state) => state.balance);
+
+  const formattedBalance = useMemo(
+    () => balance.toLocaleString("ru-RU"),
+    [balance],
+  );
+
   return (
     <StyledWrapper>
       <StyledContentWrapper>
         <StyledCoinWrapper>
-          <StyledCoinImg src={coin}/>
-          <StyledCoinCount>5 500</StyledCoinCount>
+          <StyledCoinImg src={coin} />
+          <StyledCoinCount>{formattedBalance}</StyledCoinCount>
         </StyledCoinWrapper>
-        <StyledCoinLine></StyledCoinLine>
+        <StyledCoinLine />
         <StyledCoinName>CRASH</StyledCoinName>
       </StyledContentWrapper>
     </StyledWrapper>
-  )
-}
+  );
+};
+
+export default CrashCount;

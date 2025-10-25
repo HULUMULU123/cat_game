@@ -1,5 +1,7 @@
 import { BrowserRouter, useLocation } from "react-router-dom";
-import { Fragment } from "react";
+
+import { Fragment, useEffect } from "react";
+
 import AppRoutes from "./routes/AppRoutes";
 import RouteLoadingGate from "./components/RouteLoadingGate";
 import AppLoader from "./components/AppLoader";
@@ -11,6 +13,17 @@ const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.isLoading);
 
   useTelegramInit();
+
+  const tokens = useGlobalStore((state) => state.tokens);
+  const loadProfile = useGlobalStore((state) => state.loadProfile);
+
+  useTelegramInit();
+
+  useEffect(() => {
+    if (tokens) {
+      void loadProfile();
+    }
+  }, [tokens, loadProfile]);
 
   const isFailurePage = pathname.includes("failure");
 
