@@ -12,9 +12,9 @@ import points from "../../../assets/rules_icons/points.svg";
 import rightText from "../../../assets/rules_icons/right_text.svg";
 import alert from "../../../assets/rules_icons/alert.svg";
 
-import { request } from "../../shared/api/httpClient";
-import useGlobalStore from "../../shared/store/useGlobalStore";
-import type { RuleCategoryResponse } from "../../shared/api/types";
+import { request } from "../../../shared/api/httpClient"; // ← FIX
+import useGlobalStore from "../../../shared/store/useGlobalStore"; // ← FIX
+import type { RuleCategoryResponse } from "../../../shared/api/types"; // ← FIX
 import type { RuleCategory } from "../../home/types";
 
 const StyledWrapper = styled.div`
