@@ -346,14 +346,11 @@ class LeaderboardView(APIView):
                     "first_name": e.profile.user.first_name or "",
                     "last_name": e.profile.user.last_name or "",
                     "score": int(e.score or 0),
-                    # duration_seconds больше не используем — оставим 0 для совместимости фронта
-                    "duration_seconds": 0,
-                    # время получения результата берём из updated_at
+                    "duration_seconds": 0,  # legacy поле, больше не используем
                     "achieved_at": e.updated_at.isoformat() if e.updated_at else None,
                 }
             )
 
         current = next((r for r in rows if r["username"] == request.user.username), None)
 
-        # отдаём сразу словари, без сериалайзера, чтобы исключить несовпадение полей
         return Response({"entries": rows, "current_user": current})
