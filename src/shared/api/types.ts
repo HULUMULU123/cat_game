@@ -33,7 +33,9 @@ export type LeaderboardEntryResponse = {
   first_name: string;
   last_name: string;
   score: number;
-  duration_seconds: number;
+  duration_seconds: number; // legacy
+  achieved_at?: string | null; // ← новое поле
+  display_time?: string; // фронтовая вспомогательная строка HH:MM
 };
 
 export type LeaderboardResponse = {
