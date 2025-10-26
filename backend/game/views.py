@@ -333,7 +333,7 @@ class LeaderboardView(APIView):
         qs = (
             ScoreEntry.objects
             .select_related("profile", "profile__user")
-            .filter(score__gt=0)
+            .filter(points__gt=0)
             .order_by("-points", "earned_at", "id")
         )
 
