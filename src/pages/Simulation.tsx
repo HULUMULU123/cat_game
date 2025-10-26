@@ -46,24 +46,22 @@ const Simulation = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((state) => state.updateBalance);
   const balance = useGlobalStore((state) => state.balance);
+
   const [config, setConfig] = useState<SimulationConfigResponse | null>(null);
   const [modalState, setModalState] = useState<ModalState>("");
   const [modalMessage, setModalMessage] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    if (!tokens) {
-      return;
-    }
+    if (!tokens) return;
 
     let isMounted = true;
 
     const fetchConfig = async () => {
       try {
+        // ВАЖНО: бэк отдаёт attempt_cost и три уровня наград
         const data = await request<SimulationConfigResponse>("/simulation/", {
-          headers: {
-            Authorization: `Bearer ${tokens.access}`,
-          },
+          headers: { Authorization: `Bearer ${tokens.access}` },
         });
         if (isMounted) {
           setConfig(data);
@@ -80,12 +78,10 @@ const Simulation = () => {
     };
   }, [tokens]);
 
+  // "0 / <attempt_cost>" для шапки раздела
   const infoExtra = useMemo(() => {
-    if (!config) {
-      return "";
-    }
-
-    return `0 / ${config.cost}`;
+    if (!config) return "";
+    return `0 / ${config.attempt_cost}`;
   }, [config]);
 
   const handleStart = async () => {
@@ -95,7 +91,8 @@ const Simulation = () => {
       return;
     }
 
-    if (balance < config.cost) {
+    // Проверяем баланс против attempt_cost
+    if (balance < config.attempt_cost) {
       setModalState("insufficient");
       setModalMessage(
         "Недостаточно CRASH. Запустите рекламу, чтобы пополнить баланс."
@@ -105,16 +102,18 @@ const Simulation = () => {
 
     setIsProcessing(true);
     try {
+      // Бэк сам спишет attempt_cost, вернёт новый баланс
       const data = await request<SimulationStartResponse>(
         "/simulation/start/",
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${tokens.access}`,
-          },
+          headers: { Authorization: `Bearer ${tokens.access}` },
         }
       );
+
+      // обновим баланс из ответа
       updateBalance(data.balance);
+
       setModalState("success");
       setModalMessage(data.detail);
     } catch (error) {
@@ -144,9 +143,7 @@ const Simulation = () => {
   };
 
   const handleModalToggle = (value: boolean) => {
-    if (!value) {
-      setModalState("");
-    }
+    if (!value) setModalState("");
   };
 
   return (
@@ -154,15 +151,26 @@ const Simulation = () => {
       <StyledWrapper>
         <CoinCount />
         <SectionInfo InfoName="СИМУЛЯЦИЯ" InfoExtra={infoExtra} />
+
         <SectionContent
           description={config?.description ?? ""}
-          cost={config?.cost ?? 0}
+          // показываем актуальную цену запуска
+          cost={config?.attempt_cost ?? 0}
           onStart={handleStart}
           isProcessing={isProcessing}
         />
-        <SimulationRoadMap />
+
+        {/* Дорожная карта наград: подтягиваем уровни с бэка */}
+        <SimulationRoadMap
+          attemptCost={config?.attempt_cost ?? 0}
+          reward1={config?.reward_level_1 ?? 0}
+          reward2={config?.reward_level_2 ?? 0}
+          reward3={config?.reward_level_3 ?? 0}
+        />
+
         <SimulationTimer />
       </StyledWrapper>
+
       {modalState ? (
         <ModalLayout isOpen={Boolean(modalState)} setIsOpen={handleModalToggle}>
           <ModalWindow
