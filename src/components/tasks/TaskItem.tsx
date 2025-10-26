@@ -59,7 +59,6 @@ const StyledListButton = styled.button<{ $done: boolean }>`
   &:active {
     transform: translateY(1px);
   }
-
   &:disabled {
     opacity: 0.6;
     cursor: default;
@@ -85,17 +84,19 @@ interface TaskItemProps {
   id: number;
   name: string;
   img: string;
+  url?: string;
   done: boolean;
-  onToggle: (taskId: number, done: boolean) => void;
-  disabled?: boolean; // опционально: чтобы блокировать кнопку во время запроса
+  onOpenAndComplete: (taskId: number, done: boolean, url?: string) => void;
+  disabled?: boolean;
 }
 
 const TaskItem = ({
   id,
   name,
   img,
+  url,
   done,
-  onToggle,
+  onOpenAndComplete,
   disabled = false,
 }: TaskItemProps) => (
   <StyledListItem $done={done}>
@@ -105,15 +106,13 @@ const TaskItem = ({
         <StyledListName>{name}</StyledListName>
         <StyledListButton
           type="button"
-          onClick={() => onToggle(id, done)}
+          onClick={() => onOpenAndComplete(id, done, url)}
           disabled={disabled}
           $done={done}
-          aria-label={
-            done ? "Снять отметку выполнения" : "Отметить как выполнено"
-          }
-          title={done ? "Снять отметку выполнения" : "Отметить как выполнено"}
+          aria-label="Открыть и отметить выполненным"
+          title="Открыть и отметить выполненным"
         >
-          <StyledButtonImg src={arrow} alt="toggle" />
+          <StyledButtonImg src={arrow} alt="open" />
         </StyledListButton>
       </StyledListItemContent>
     </StyledWrapper>

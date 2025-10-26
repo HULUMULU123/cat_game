@@ -19,12 +19,10 @@ const StyledContentWrapper = styled.div`
   &::-webkit-scrollbar {
     width: 4px;
   }
-
   &::-webkit-scrollbar-track {
     background: #2cc2a9;
     border-radius: 10px;
   }
-
   &::-webkit-scrollbar-thumb {
     background: #e1fffb;
     border-radius: 20px;
@@ -51,20 +49,18 @@ const TasksList = () => {
   const [tasks, setTasks] = useState<TaskAssignmentResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
 
-  // --- загрузка списка задач ---
   const fetchTasks = useCallback(async () => {
     if (!tokens) return;
     setLoading(true);
     try {
       const data = await request<TaskAssignmentResponse[]>("/tasks/", {
-        headers: {
-          Authorization: `Bearer ${tokens.access}`,
-        },
+        headers: { Authorization: `Bearer ${tokens.access}` },
       });
       setTasks(data);
       setError(null);
-    } catch (err) {
+    } catch {
       setError("Не удалось загрузить задания");
     } finally {
       setLoading(false);
@@ -75,50 +71,56 @@ const TasksList = () => {
     void fetchTasks();
   }, [fetchTasks]);
 
-  // --- переключение выполнения ---
-  const handleToggleTask = async (taskId: number, done: boolean) => {
+  // открыть ссылку и отметить выполненным (требование)
+  const handleOpenAndComplete = async (
+    taskId: number,
+    done: boolean,
+    url?: string | null
+  ) => {
     if (!tokens) return;
-    try {
-      const response = await request<{
-        is_completed: boolean;
-        balance: number;
-      }>("/tasks/toggle/", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokens.access}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          task_id: taskId,
-          is_completed: !done,
-        }),
-      });
 
-      // обновляем локальное состояние
+    // Открываем ссылку в новой вкладке (если есть)
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    // Если уже выполнено — можем ничего не делать, либо принудительно подтверждать
+    if (done) return;
+
+    try {
+      setPendingIds((prev) => new Set(prev).add(taskId));
+      const resp = await request<{ is_completed: boolean; balance: number }>(
+        "/tasks/toggle/",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ task_id: taskId, is_completed: true }), // ← всегда ставим как выполнено
+        }
+      );
+
       setTasks((prev) =>
         prev.map((t) =>
-          t.task_id === taskId
-            ? { ...t, is_completed: response.is_completed }
-            : t
+          t.task_id === taskId ? { ...t, is_completed: resp.is_completed } : t
         )
       );
-    } catch (err) {
-      console.error("Ошибка при обновлении задачи:", err);
+    } catch (e) {
+      console.error("Ошибка при отметке задания:", e);
+    } finally {
+      setPendingIds((prev) => {
+        const copy = new Set(prev);
+        copy.delete(taskId);
+        return copy;
+      });
     }
   };
 
   const listContent = useMemo(() => {
-    if (error) {
-      return <Placeholder>{error}</Placeholder>;
-    }
-
-    if (loading) {
-      return <Placeholder>Загрузка заданий...</Placeholder>;
-    }
-
-    if (!tasks.length) {
-      return <Placeholder>Заданий пока нет</Placeholder>;
-    }
+    if (error) return <Placeholder>{error}</Placeholder>;
+    if (loading) return <Placeholder>Загрузка заданий...</Placeholder>;
+    if (!tasks.length) return <Placeholder>Заданий пока нет</Placeholder>;
 
     return tasks.map((task) => (
       <TaskItem
@@ -126,11 +128,13 @@ const TasksList = () => {
         id={task.task_id}
         name={task.name}
         img={task.icon || advert}
+        url={task.link || undefined}
         done={task.is_completed}
-        onToggle={handleToggleTask}
+        onOpenAndComplete={handleOpenAndComplete}
+        disabled={pendingIds.has(task.task_id)}
       />
     ));
-  }, [tasks, error, loading, handleToggleTask]);
+  }, [tasks, error, loading, pendingIds]);
 
   return (
     <StyledContentWrapper>

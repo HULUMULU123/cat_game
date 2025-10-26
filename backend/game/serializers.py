@@ -27,10 +27,12 @@ class TaskCompletionSerializer(serializers.ModelSerializer[TaskCompletion]):
     description = serializers.CharField(source="task.description", read_only=True)
     reward = serializers.IntegerField(source="task.reward", read_only=True)
     icon = serializers.CharField(source="task.icon", read_only=True)
+    link = serializers.CharField(source="task.link", read_only=True)  # ← добавили
 
     class Meta:
         model = TaskCompletion
-        fields = ("task_id", "name", "description", "reward", "icon", "is_completed")
+        fields = ("task_id", "name", "description", "reward", "icon", "link", "is_completed")
+
 
 
 # ---------- Quiz ----------

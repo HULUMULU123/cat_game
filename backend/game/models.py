@@ -48,6 +48,7 @@ class Task(TimestampedModel):
     description = models.TextField(blank=True, verbose_name="Описание")
     reward = models.PositiveIntegerField(default=0, verbose_name="Награда (монеты)")
     icon = models.URLField(blank=True, verbose_name="Иконка (URL)")
+    link = models.URLField(blank=True, verbose_name="Ссылка (URL)")  # ← добавили
 
     class Meta:
         db_table = "задания"
