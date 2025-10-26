@@ -345,9 +345,9 @@ class LeaderboardView(APIView):
                     "username": e.profile.user.username,
                     "first_name": e.profile.user.first_name or "",
                     "last_name": e.profile.user.last_name or "",
-                    "score": int(e.score or 0),
+                    "score": int(e.points or 0),
                     "duration_seconds": 0,  # legacy поле, больше не используем
-                    "achieved_at": e.updated_at.isoformat() if e.updated_at else None,
+                    "achieved_at": e.earned_at.isoformat() if e.earned_at else None,
                 }
             )
 
