@@ -1,5 +1,7 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
 import styled from "styled-components";
 import RulesItem from "./RulesItem";
+
 import clock from "../../../assets/rules_icons/clock.svg";
 import drops from "../../../assets/rules_icons/drops.svg";
 import gift from "../../../assets/rules_icons/gift.svg";
@@ -10,6 +12,9 @@ import points from "../../../assets/rules_icons/points.svg";
 import rightText from "../../../assets/rules_icons/right_text.svg";
 import alert from "../../../assets/rules_icons/alert.svg";
 
+import { request } from "../../shared/api/httpClient";
+import useGlobalStore from "../../shared/store/useGlobalStore";
+import type { RuleCategoryResponse } from "../../shared/api/types";
 import type { RuleCategory } from "../../home/types";
 
 const StyledWrapper = styled.div`
@@ -50,69 +55,106 @@ const StyledRulesList = styled.ul`
   padding: 0;
   margin: 0;
   width: 95%;
+
+  @media (max-width: 540px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+`;
+
+const Placeholder = styled.div`
+  color: #c7f7ee;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  text-align: center;
+  margin: 20px 0;
 `;
 
 interface RulesListProps {
   openRuleCategory: (category: RuleCategory) => void;
 }
 
-const RulesList = ({ openRuleCategory }: RulesListProps) => (
-  <StyledWrapper>
-    <StyledListHeadingWrapper>
-      <StyledHeadingSpan>КАТЕГОРИИ</StyledHeadingSpan>
-      <StyledLine />
-    </StyledListHeadingWrapper>
-    <StyledRulesList>
-      <RulesItem handleClick={openRuleCategory} icon={logo} text="СТАКАН" />
-      <RulesItem handleClick={openRuleCategory} icon={drops} text="СБОЙ" />
+/** Подбор иконки по названию категории */
+const pickIcon = (name: string): string => {
+  const n = name.toLowerCase();
 
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={logoCircle}
-        text="CRASH"
-      />
+  if (n.includes("стакан")) return logo;
+  if (n.includes("сбой") || n.includes("crash")) return drops;
+  if (n.includes("условия")) return rightText;
+  if (n.includes("анома")) return gift;
+  if (n.includes("запрещ")) return alert;
+  if (n.includes("передача") || n.includes("материаль")) return money;
+  if (n.includes("таймер") || n.includes("турнир")) return clock;
+  if (n.includes("допол")) return points;
 
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={logoCircle}
-        text="CRASH"
-      />
+  // дефолт
+  return logoCircle;
+};
 
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={rightText}
-        text="УСЛОВИЯ УЧАСТИЯ"
-      />
-      <RulesItem handleClick={openRuleCategory} icon={gift} text="АНОМАЛИЯ" />
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={alert}
-        text="ЗАПРЕЩЕННЫЕ ДЕЙСТВИЯ"
-      />
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={money}
-        text="ПЕРЕДАЧА МАТЕРИАЛЬНОГО АНАЛОГА"
-      />
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={clock}
-        text="ТУРНИРЫ И ТАЙМЕРЫ"
-      />
+/** Трансформируем ответ бэка к вашему типу RuleCategory */
+const toRuleCategory = (r: RuleCategoryResponse): RuleCategory => ({
+  id: r.id,
+  text: r.category,
+  rule: r.rule_text,
+});
 
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={points}
-        text="ДОПОЛНИТЕЛЬНО"
-      />
+const RulesList = ({ openRuleCategory }: RulesListProps) => {
+  const tokens = useGlobalStore((s) => s.tokens);
+  const [rules, setRules] = useState<RuleCategoryResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-      <RulesItem
-        handleClick={openRuleCategory}
-        icon={points}
-        text="ДОПОЛНИТЕЛЬНО"
-      />
-    </StyledRulesList>
-  </StyledWrapper>
-);
+  const fetchRules = useCallback(async () => {
+    if (!tokens) return;
+    setLoading(true);
+    try {
+      const data = await request<RuleCategoryResponse[]>("/rules/", {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+      setRules(data);
+      setErr(null);
+    } catch (e) {
+      console.error("[Rules] fetch error:", e);
+      setErr("Не удалось загрузить правила");
+    } finally {
+      setLoading(false);
+    }
+  }, [tokens]);
+
+  useEffect(() => {
+    void fetchRules();
+  }, [fetchRules]);
+
+  const content = useMemo(() => {
+    if (loading) return <Placeholder>Загрузка правил…</Placeholder>;
+    if (err) return <Placeholder>{err}</Placeholder>;
+    if (!rules.length)
+      return <Placeholder>Правила пока не добавлены</Placeholder>;
+
+    return (
+      <StyledRulesList>
+        {rules.map((r) => (
+          <RulesItem
+            key={r.id}
+            icon={pickIcon(r.category)}
+            text={r.category}
+            handleClick={() => openRuleCategory(toRuleCategory(r))}
+          />
+        ))}
+      </StyledRulesList>
+    );
+  }, [loading, err, rules, openRuleCategory]);
+
+  return (
+    <StyledWrapper>
+      <StyledListHeadingWrapper>
+        <StyledHeadingSpan>КАТЕГОРИИ</StyledHeadingSpan>
+        <StyledLine />
+      </StyledListHeadingWrapper>
+
+      {content}
+    </StyledWrapper>
+  );
+};
 
 export default RulesList;
