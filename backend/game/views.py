@@ -322,7 +322,7 @@ class ScoreListView(APIView):
 
 class LeaderboardView(APIView):
     """
-    Лидерборд на основе LeaderboardEntry:
+    Лидерборд на основе ScoreEntry:
       - только записи с score > 0 (игроки, реально что-то заработали),
       - сортируем по score (убыв.) и времени получения результата (updated_at возр.),
       - показываем achieved_at как updated_at.
@@ -331,7 +331,7 @@ class LeaderboardView(APIView):
 
     def get(self, request: Request) -> Response:
         qs = (
-            LeaderboardEntry.objects
+            ScoreEntry.objects
             .select_related("profile", "profile__user")
             .filter(score__gt=0)
             .order_by("-score", "updated_at", "id")
