@@ -100,9 +100,7 @@ const UsersItem = ({ entry }: UsersItemProps) => {
           <StyledUserSpan>{displayName}</StyledUserSpan>
         </StyledUserProfile>
         <StyledUserInfo>
-          <StyledUserTime>
-            {formatDuration(entry.duration_seconds)}
-          </StyledUserTime>
+          <StyledUserTime>{formatDuration(entry.achieved_at)}</StyledUserTime>
           <StyledUserScore>
             {entry.score.toLocaleString("ru-RU")}
           </StyledUserScore>
