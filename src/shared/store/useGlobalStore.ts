@@ -15,6 +15,13 @@ export type TelegramUser = {
   photo_url?: string;
 };
 
+type ProfileResponse = {
+  username: string;
+  first_name: string;
+  last_name: string;
+  balance: number;
+};
+
 interface GlobalState {
   userData: TelegramUser | null;
 
@@ -24,7 +31,12 @@ interface GlobalState {
 
   setUserFromInitData: (initData: string | undefined | null) => Promise<void>;
   loadProfile: () => Promise<void>;
+
+  /** Обновить баланс без запроса (когда бэк уже вернул новое значение). */
   updateBalance: (balance: number) => void;
+
+  /** Подтянуть баланс запросом (например, после начислений на бэке). */
+  refreshBalance: () => Promise<void>;
 
   isLoading: boolean;
   startLoading: () => void;
@@ -90,7 +102,26 @@ const useGlobalStore = create<GlobalState>((set, get) => ({
   startLoading: () => set({ isLoading: true }),
   stopLoading: () => set({ isLoading: false }),
 
-  updateBalance: (balance) => set({ balance }),
+  updateBalance: (balance) => {
+    console.log("[store] updateBalance:", balance);
+    set({ balance });
+  },
+
+  refreshBalance: async () => {
+    const { tokens } = get();
+    if (!tokens) {
+      console.warn("[store] refreshBalance: no tokens");
+      return;
+    }
+    try {
+      console.log("[store] GET /auth/me/ (refreshBalance)");
+      const data = await getJson<ProfileResponse>("/auth/me/", tokens.access);
+      set({ balance: data.balance });
+      console.log("[store] balance refreshed:", data.balance);
+    } catch (err) {
+      console.error("[store] refreshBalance failed:", err);
+    }
+  },
 
   setUserFromInitData: async (initData) => {
     if (!initData) return;
@@ -101,10 +132,15 @@ const useGlobalStore = create<GlobalState>((set, get) => ({
     // сохраним локально — пригодится даже без бэкенда
     set({ userData: user });
 
-    // если нет username — авторизация через /auth/telegram невозможна
-    if (!user.username) return;
+    if (!user.username) {
+      console.warn(
+        "[store] setUserFromInitData: no username — skip backend auth"
+      );
+      return;
+    }
 
     try {
+      console.log("[store] POST /auth/telegram/");
       const data = await postJson<{
         access: string;
         refresh: string;
@@ -131,6 +167,8 @@ const useGlobalStore = create<GlobalState>((set, get) => ({
         balance: data.user.balance,
         hasHydratedProfile: true,
       });
+
+      console.log("[store] telegram auth ok; balance:", data.user.balance);
     } catch (err) {
       console.error("Failed to authorize with backend", err);
       // оставим локальные userData, но без токенов
@@ -142,12 +180,8 @@ const useGlobalStore = create<GlobalState>((set, get) => ({
     if (!tokens || hasHydratedProfile) return;
 
     try {
-      const data = await getJson<{
-        username: string;
-        first_name: string;
-        last_name: string;
-        balance: number;
-      }>("/auth/me/", tokens.access);
+      console.log("[store] GET /auth/me/ (loadProfile)");
+      const data = await getJson<ProfileResponse>("/auth/me/", tokens.access);
 
       set({
         userData: {
@@ -158,6 +192,8 @@ const useGlobalStore = create<GlobalState>((set, get) => ({
         balance: data.balance,
         hasHydratedProfile: true,
       });
+
+      console.log("[store] profile loaded; balance:", data.balance);
     } catch (err) {
       console.error("Failed to load profile", err);
     }
