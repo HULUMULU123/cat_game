@@ -15,16 +15,54 @@ const StyledWrapper = styled.div`
   height: 100vh;
 `;
 
+const StyledRuleText = styled.div`
+  width: 92%;
+  margin: 10px auto 0;
+  color: var(--color-white-text);
+  font-family: "Roboto", sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap; /* сохраняем переносы строк */
+  opacity: 0.9;
+`;
+
 interface OpenRuleModalProps {
   handleClose: () => void;
+  /** объект категории из бэка: { id, text, rule } */
   ruleCategory: RuleCategory;
 }
 
-const rulesData = data as Record<RuleCategory, RulesContentProps["rulesData"]>;
+/** Локальные (старые) структурированные правила как резерв */
+const rulesData = data as Record<string, RulesContentProps["rulesData"]>;
+
+/** Безопасные хелперы */
+const safeUpper = (v: unknown) =>
+  typeof v === "string" ? v.toUpperCase() : "";
+const safeString = (v: unknown) => (typeof v === "string" ? v : "");
+
+const pickLegacyRules = (
+  text: string | undefined
+): RulesContentProps["rulesData"] | undefined => {
+  if (!text) return undefined;
+  const keyVariants = [
+    text,
+    text.trim(),
+    text.toUpperCase(),
+    text.toLowerCase(),
+    text.trim().toUpperCase(),
+    text.trim().toLowerCase(),
+  ];
+
+  for (const k of keyVariants) {
+    if (k in rulesData) {
+      return rulesData[k];
+    }
+  }
+  return undefined;
+};
 
 const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
-  const selectedRules = rulesData[ruleCategory];
-
+  // Заголовок секции
   const categoryTitle =
     typeof (ruleCategory as any)?.text === "string"
       ? (ruleCategory as any).text
@@ -32,23 +70,35 @@ const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
       ? ruleCategory
       : "";
 
-  const toTitleUpper = (v: unknown) =>
-    typeof v === "string" ? v.toUpperCase() : "";
+  // Текст правила из бэка
+  const backendRuleText =
+    typeof (ruleCategory as any)?.rule === "string"
+      ? ((ruleCategory as any).rule as string)
+      : "";
 
-  if (!selectedRules) {
+  // Пытаемся найти структурированный контент в локальном JSON
+  const legacyRules = pickLegacyRules(safeString((ruleCategory as any)?.text));
+
+  // Если есть контент из старого JSON — показываем его (как раньше)
+  if (legacyRules) {
     return (
       <StyledWrapper>
         <RulesHeader handleClose={handleClose} />
-        <ModalName textName={toTitleUpper(categoryTitle)} />
+        <ModalName textName={safeUpper(categoryTitle)} />
+        <RulesContent rulesData={legacyRules} />
+        <DarkLayoutIcon />
       </StyledWrapper>
     );
   }
 
+  // Иначе — показываем плоский текст правила из бэка (или плейсхолдер)
   return (
     <StyledWrapper>
       <RulesHeader handleClose={handleClose} />
-      <ModalName textName={toTitleUpper(categoryTitle)} />
-      <RulesContent rulesData={selectedRules} />
+      <ModalName textName={safeUpper(categoryTitle)} />
+      <StyledRuleText>
+        {backendRuleText || "Правило скоро появится"}
+      </StyledRuleText>
       <DarkLayoutIcon />
     </StyledWrapper>
   );

@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import styled from "styled-components";
 
 const StyledWrapper = styled.div`
@@ -76,14 +76,30 @@ const StyledRule = styled.p`
   font-weight: 500;
 `;
 
+const StyledPlainText = styled.div`
+  width: 90%;
+  font-family: "Roboto", sans-serif;
+  color: rgb(224, 255, 251);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap; /* сохраняем переносы строк */
+`;
+
+// ----- типы -----
 type RulesContentValue = string[] | Record<string, string[]>;
 
 export interface RulesContentProps {
-  rulesData: Record<string, RulesContentValue>;
+  /** Структурированные правила (старый формат JSON) */
+  rulesData?: Record<string, RulesContentValue>;
+  /** Плоский текст правила (новый формат из бэка) */
+  plainText?: string | null;
 }
 
+// ----- helpers рендера -----
 const renderRulesArray = (rules: string[]) =>
-  rules.map((rule, index) => <StyledRule key={rule + index}>{rule}</StyledRule>);
+  rules.map((rule, index) => (
+    <StyledRule key={rule + index}>{rule}</StyledRule>
+  ));
 
 const renderNestedRules = (sections: Record<string, string[]>) =>
   Object.entries(sections).map(([subtitle, rules]) => (
@@ -93,22 +109,52 @@ const renderNestedRules = (sections: Record<string, string[]>) =>
     </div>
   ));
 
-const RulesContent = ({ rulesData }: RulesContentProps) => (
-  <StyledWrapper>
-    {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (
-      <Fragment key={sectionTitle}>
-        <StyledListHeadingWrapper>
-          <StyledHeadingSpan>{sectionTitle}</StyledHeadingSpan>
-          <StyledLine />
-        </StyledListHeadingWrapper>
-        <StyledRulesWrapper>
-          {Array.isArray(sectionValue)
-            ? renderRulesArray(sectionValue)
-            : renderNestedRules(sectionValue)}
-        </StyledRulesWrapper>
-      </Fragment>
-    ))}
-  </StyledWrapper>
-);
+const RulesContent = ({ rulesData, plainText }: RulesContentProps) => {
+  const hasStructured = useMemo(
+    () => rulesData && Object.keys(rulesData).length > 0,
+    [rulesData]
+  );
+  const hasPlain = useMemo(
+    () => typeof plainText === "string" && plainText.trim().length > 0,
+    [plainText]
+  );
+
+  // 1) Если есть структурированные данные — рендерим их (как раньше)
+  if (hasStructured && rulesData) {
+    return (
+      <StyledWrapper>
+        {Object.entries(rulesData).map(([sectionTitle, sectionValue]) => (
+          <Fragment key={sectionTitle}>
+            <StyledListHeadingWrapper>
+              <StyledHeadingSpan>{sectionTitle}</StyledHeadingSpan>
+              <StyledLine />
+            </StyledListHeadingWrapper>
+            <StyledRulesWrapper>
+              {Array.isArray(sectionValue)
+                ? renderRulesArray(sectionValue)
+                : renderNestedRules(sectionValue)}
+            </StyledRulesWrapper>
+          </Fragment>
+        ))}
+      </StyledWrapper>
+    );
+  }
+
+  // 2) Если есть простой текст из бэка — показываем его
+  if (hasPlain && typeof plainText === "string") {
+    return (
+      <StyledWrapper>
+        <StyledPlainText>{plainText}</StyledPlainText>
+      </StyledWrapper>
+    );
+  }
+
+  // 3) Ничего не передали
+  return (
+    <StyledWrapper>
+      <StyledPlainText>Правило скоро появится.</StyledPlainText>
+    </StyledWrapper>
+  );
+};
 
 export default RulesContent;

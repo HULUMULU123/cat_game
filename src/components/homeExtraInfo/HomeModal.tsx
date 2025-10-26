@@ -19,9 +19,6 @@ const StyledModalLayout = styled.div<{ $isVisible: boolean }>`
   backdrop-filter: ${({ $isVisible }) =>
     $isVisible ? "blur(20px)" : "blur(0px)"};
 
-  backdrop-filter: ${({ $isVisible }) =>
-    $isVisible ? "blur(20px)" : "blur(0px)"};
-
   background: ${({ $isVisible }) =>
     $isVisible ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0)"};
   display: flex;
@@ -60,7 +57,6 @@ const HomeModal = ({
       setIsAnimated(false);
       return;
     }
-
     const timer = window.setTimeout(() => setIsAnimated(true), 50);
     return () => window.clearTimeout(timer);
   }, [isOpen]);
@@ -69,8 +65,10 @@ const HomeModal = ({
     switch (infoType) {
       case "prize":
         return <PrizeModal handleClose={handleClose} />;
+
       case "reward":
         return <RewardModal handleClose={handleClose} />;
+
       case "rules":
         return (
           <RulesModal
@@ -78,20 +76,7 @@ const HomeModal = ({
             openRuleCategory={openRuleCategory}
           />
         );
-      case "rule_category":
-        return (
-          <OpenRuleModal
-            handleClose={handleRuleClose}
-            ruleCategory={ruleCategory}
-          />
-        );
 
-        return (
-          <RulesModal
-            handleClose={handleClose}
-            openRuleCategory={openRuleCategory}
-          />
-        );
       case "rule_category":
         return (
           <OpenRuleModal
@@ -102,13 +87,19 @@ const HomeModal = ({
 
       case "user":
         return <UserInfo handleClose={handleClose} />;
+
       default:
         return null;
     }
   };
 
   return (
-    <StyledModalLayout $isVisible={isAnimated} onClick={handleClose}>
+    <StyledModalLayout
+      $isVisible={isAnimated}
+      onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+    >
       <ModalContent onClick={(event) => event.stopPropagation()}>
         {renderContent()}
       </ModalContent>
