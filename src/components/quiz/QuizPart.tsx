@@ -15,14 +15,6 @@ const StyledContentWrapper = styled.div`
   flex-direction: column;
 `;
 
-const HeaderRow = styled.div`
-  width: 90%;
-  margin: 0 auto 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
 const StyledQuestionSpan = styled.span`
   margin: 0 auto;
   font-size: 12px;
@@ -31,18 +23,6 @@ const StyledQuestionSpan = styled.span`
   color: rgb(224, 255, 251);
   width: 90%;
   text-align: center;
-`;
-
-const TimerBadge = styled.span`
-  min-width: 56px;
-  text-align: center;
-  padding: 6px 10px;
-  border-radius: 7px;
-  background: rgba(79, 197, 191, 0.25);
-  color: #e0fffb;
-  font-family: "Conthrax", sans-serif;
-  font-size: 12px;
-  font-weight: 700;
 `;
 
 const StyledAnswersList = styled.ul`
@@ -132,6 +112,7 @@ const NextButton = styled.button`
 
 type Props = {
   onProgressChange?: (p: { current: number; total: number }) => void;
+  onTimerChange?: (t: { remaining: number; total: number }) => void; // <-- пробрасываем во внешний визуальный таймер
 };
 
 const TOTAL_QUESTIONS = 5;
@@ -146,7 +127,7 @@ const shuffle = <T,>(arr: T[]): T[] => {
   return a;
 };
 
-export default function QuizPart({ onProgressChange }: Props) {
+export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((s) => s.updateBalance);
 
@@ -170,15 +151,15 @@ export default function QuizPart({ onProgressChange }: Props) {
     try {
       setError(null);
 
-      // 1) Пытаемся получить пачку по одному запросу
+      // 1) основной путь — пачка
       let data: QuizResponse[] | QuizResponse = await request<any>(
-        "/quiz/?count=5",
+        "/quiz/random/",
         {
           headers: { Authorization: `Bearer ${tokens.access}` },
         }
       );
 
-      // 2) Если вернулся не массив — пробуем 5 параллельных запросов
+      // 2) фолбэк — 5 одиночных вызовов
       if (!Array.isArray(data)) {
         const calls = Array.from({ length: TOTAL_QUESTIONS }).map(() =>
           request<QuizResponse>("/quiz/", {
@@ -204,11 +185,15 @@ export default function QuizPart({ onProgressChange }: Props) {
       setFinishMsg(null);
       setRemaining(QUESTION_TIME_SEC);
       onProgressChange?.({ current: 0, total: pack.length });
+      onTimerChange?.({
+        remaining: QUESTION_TIME_SEC,
+        total: QUESTION_TIME_SEC,
+      });
     } catch (e) {
       console.error("[Quiz] load error:", e);
       setError("Не удалось загрузить вопросы");
     }
-  }, [tokens, onProgressChange]);
+  }, [tokens, onProgressChange, onTimerChange]);
 
   useEffect(() => {
     void fetchQuestions();
@@ -221,28 +206,28 @@ export default function QuizPart({ onProgressChange }: Props) {
 
   const total = questions?.length || TOTAL_QUESTIONS;
 
-  // ===== Таймер =====
+  // ===== Таймер логики (не UI) =====
   useEffect(() => {
     if (!q) return;
 
-    // запускаем таймер только если не ответили
     if (hasAnswered) return;
 
     setRemaining(QUESTION_TIME_SEC);
-    if (timerRef.current) {
-      window.clearInterval(timerRef.current);
-    }
+    onTimerChange?.({ remaining: QUESTION_TIME_SEC, total: QUESTION_TIME_SEC });
+
+    if (timerRef.current) window.clearInterval(timerRef.current);
+
     const id = window.setInterval(() => {
       setRemaining((s) => {
-        if (s <= 1) {
-          // таймер истёк — отмечаем неверным и подсвечиваем правильный
+        const next = s - 1;
+        const clamped = next <= 0 ? 0 : next;
+        onTimerChange?.({ remaining: clamped, total: QUESTION_TIME_SEC });
+
+        if (clamped === 0) {
           window.clearInterval(id);
-          // флаг ответа (чтобы показалась кнопка "Далее")
-          setHasAnswered(true);
-          // selected остаётся null: подсветится только правильный
-          return 0;
+          setHasAnswered(true); // таймер истёк — считаем как неверный
         }
-        return s - 1;
+        return clamped;
       });
     }, 1000);
     timerRef.current = id;
@@ -251,7 +236,7 @@ export default function QuizPart({ onProgressChange }: Props) {
       if (timerRef.current) window.clearInterval(timerRef.current);
       timerRef.current = null;
     };
-  }, [q, hasAnswered]);
+  }, [q, hasAnswered, onTimerChange]);
 
   // ===== Выбор ответа =====
   const handleSelect = (answerIndex: number) => {
@@ -277,16 +262,11 @@ export default function QuizPart({ onProgressChange }: Props) {
   const handleNext = async () => {
     if (!questions) return;
 
-    // последний → отправляем результат
     if (idx === questions.length - 1) {
       if (!tokens) return;
       setSubmitting(true);
       try {
-        const payload = {
-          mode: "quiz",
-          correct: correctCount,
-          total: total,
-        };
+        const payload = { mode: "quiz", correct: correctCount, total: total };
         const resp = await request<{
           detail?: string;
           reward?: number;
@@ -310,6 +290,7 @@ export default function QuizPart({ onProgressChange }: Props) {
             resp?.reward ?? 0
           }`;
         setFinishMsg(msg);
+        onTimerChange?.({ remaining: 0, total: QUESTION_TIME_SEC });
       } catch (e) {
         if (e instanceof ApiError) {
           setFinishMsg(
@@ -326,13 +307,13 @@ export default function QuizPart({ onProgressChange }: Props) {
       return;
     }
 
-    // следующий вопрос
     const next = idx + 1;
     setIdx(next);
     setSelected(null);
     setHasAnswered(false);
     setRemaining(QUESTION_TIME_SEC);
     onProgressChange?.({ current: next, total });
+    onTimerChange?.({ remaining: QUESTION_TIME_SEC, total: QUESTION_TIME_SEC });
   };
 
   // ===== Рендер =====
@@ -352,11 +333,6 @@ export default function QuizPart({ onProgressChange }: Props) {
           </>
         ) : q ? (
           <>
-            <HeaderRow>
-              <TimerBadge>{remaining.toString().padStart(2, "0")}s</TimerBadge>
-              <span style={{ visibility: "hidden" }}>.</span>
-            </HeaderRow>
-
             <StyledQuestionSpan>{q.question || "Вопрос"}</StyledQuestionSpan>
 
             <StyledAnswersList>

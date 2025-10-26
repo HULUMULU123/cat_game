@@ -103,20 +103,25 @@ type Props = {
   current?: number;
   total?: number;
   rewardPreview?: number;
+  timer?: { remaining: number; total: number };
 };
 
 export default function QuizInfo({
   current = 0,
   total = 5,
   rewardPreview = 1,
+  timer,
 }: Props) {
   return (
     <StyledWrapper>
       <StyledContentWrapper>
-        {/* Это общий таймер, если нужен. На логику вопроса не влияет */}
-        <QuizTimer />
+        {/* Визуальный таймер вопроса */}
+        <QuizTimer
+          duration={timer?.total ?? 20}
+          remaining={timer?.remaining ?? 0}
+        />
         <StyledRoadWrapper>
-          <StyledLine></StyledLine>
+          <StyledLine />
           <StyledList>
             {Array.from({ length: total }).map((_, i) => {
               const done = i < current;
@@ -126,7 +131,7 @@ export default function QuizInfo({
                   <StyledDoneSpan $advert={active}>
                     {Math.min(i + 1, total)} / {total}
                   </StyledDoneSpan>
-                  <StyledPoint $advert={active}></StyledPoint>
+                  <StyledPoint $advert={active} />
                   <StyledDoneImg
                     src={done ? check : active ? advert : undefined}
                   />

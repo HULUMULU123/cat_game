@@ -17,6 +17,11 @@ export default function Quiz() {
     total: 5,
   });
 
+  const [timer, setTimer] = useState<{ remaining: number; total: number }>({
+    remaining: 20,
+    total: 20,
+  });
+
   return (
     <StyledWrapper>
       <CoinCount />
@@ -24,8 +29,15 @@ export default function Quiz() {
         InfoName={"НЕЙРОФИЛЬТР"}
         InfoExtra={`${progress.current} / ${progress.total}`}
       />
-      <QuizPart onProgressChange={setProgress} />
-      <QuizInfo current={progress.current} total={progress.total} />
+      <QuizPart
+        onProgressChange={setProgress}
+        onTimerChange={setTimer} // <- получаем оставшееся время на вопрос
+      />
+      <QuizInfo
+        current={progress.current}
+        total={progress.total}
+        timer={timer} // <- отрисовываем визуальный таймер тут
+      />
     </StyledWrapper>
   );
 }
