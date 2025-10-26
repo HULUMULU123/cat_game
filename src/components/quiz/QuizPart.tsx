@@ -333,7 +333,9 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
           </>
         ) : q ? (
           <>
-            <StyledQuestionSpan>{q.question || "Вопрос"}</StyledQuestionSpan>
+            <StyledQuestionSpan>
+              {q.question_text || "Вопрос"}
+            </StyledQuestionSpan>
 
             <StyledAnswersList>
               {q.answers.map((answer, index) => (
