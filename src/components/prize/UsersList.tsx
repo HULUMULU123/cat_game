@@ -75,6 +75,19 @@ const Placeholder = styled.div`
   color: rgb(199, 247, 238);
 `;
 
+/** Форматируем ISO-время результата в HH:MM (локальное) */
+const formatAchievedTime = (iso?: string | null) => {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const hh = d.getHours().toString().padStart(2, "0");
+    const mm = d.getMinutes().toString().padStart(2, "0");
+    return `${hh}:${mm}`;
+  } catch {
+    return "";
+  }
+};
+
 const UsersList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const [entries, setEntries] = useState<LeaderboardEntryResponse[]>([]);
@@ -83,33 +96,46 @@ const UsersList = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!tokens) {
-      return;
-    }
-
+    if (!tokens) return;
     let isMounted = true;
 
     const fetchLeaderboard = async () => {
       try {
+        // Если нужно конкретный сбой — добавьте ?failure=<id>
         const data = await request<LeaderboardResponse>("/leaderboard/", {
-          headers: {
-            Authorization: `Bearer ${tokens.access}`,
-          },
+          headers: { Authorization: `Bearer ${tokens.access}` },
         });
-        if (isMounted) {
-          setEntries(data.entries);
-          setCurrentUser(data.current_user);
-          setError(null);
-        }
+
+        if (!isMounted) return;
+
+        // фронтовая подстраховка (бэкенд уже фильтрует score>0):
+        const filtered = (data.entries || []).filter((e) => (e.score ?? 0) > 0);
+
+        // добавляем display_time, чтобы UsersItem/Result могли отрисовать время результата
+        const enhanced = filtered.map((e) => ({
+          ...e,
+          display_time: formatAchievedTime((e as any).achieved_at),
+        })) as LeaderboardEntryResponse[];
+
+        setEntries(enhanced);
+        setCurrentUser(
+          data.current_user
+            ? ({
+                ...data.current_user,
+                display_time: formatAchievedTime(
+                  (data.current_user as any).achieved_at
+                ),
+              } as LeaderboardEntryResponse)
+            : null
+        );
+        setError(null);
       } catch (err) {
-        if (isMounted) {
-          setError("Не удалось загрузить таблицу лидеров");
-        }
+        if (!isMounted) return;
+        setError("Не удалось загрузить таблицу лидеров");
       }
     };
 
     void fetchLeaderboard();
-
     return () => {
       isMounted = false;
     };
@@ -125,7 +151,7 @@ const UsersList = () => {
     }
 
     return entries.map((entry) => (
-      <UsersItem key={entry.position} entry={entry} />
+      <UsersItem key={`${entry.username}-${entry.position}`} entry={entry} />
     ));
   }, [entries, error]);
 

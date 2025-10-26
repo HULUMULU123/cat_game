@@ -322,23 +322,37 @@ class ScoreListView(APIView):
 
 class LeaderboardView(APIView):
     """
-    «Лидерборд» считается на лету по сумме очков из ScoreEntry.
-    Позиции сортируются по убыванию очков, при равенстве — по возрастанию суммарной длительности.
+    Лидерборд: только игроки, заработавшие очки в сбое.
+    Сумма очков считается по ScoreEntry, отфильтрованным по failure (если задан),
+    либо по любому ненулевому сбою (failure IS NOT NULL).
+    Время в таблице — момент получения результата (MAX(scores.created_at)).
     """
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request: Request) -> Response:
+        # необязательный фильтр по конкретному сбою
+        failure_id = request.query_params.get("failure")
+        if failure_id:
+            score_filter = Q(scores__failure_id=failure_id)
+        else:
+            # только записи, привязанные к какому-либо сбою
+            score_filter = Q(scores__failure__isnull=False)
+
         qs = (
             UserProfile.objects.select_related("user")
-            .annotate(total_points=Sum("scores__points"), total_duration=Sum("scores__duration_seconds"))
-            .order_by("-total_points", "total_duration", "id")
+            .annotate(
+                total_points=Sum("scores__points", filter=score_filter),
+                last_achieved=Max("scores__created_at", filter=score_filter),
+            )
+            .filter(total_points__gt=0)  # только те, кто реально что-то заработал в сбое
+            .order_by("-total_points", "last_achieved", "id")
         )
 
         rows = []
         pos = 1
         for p in qs:
             total_points = int(p.total_points or 0)
-            total_duration = int(p.total_duration or 0)
+            # duration_seconds больше не используем; оставим 0 для совместимости
             rows.append(
                 {
                     "position": pos,
@@ -346,12 +360,12 @@ class LeaderboardView(APIView):
                     "first_name": p.user.first_name or "",
                     "last_name": p.user.last_name or "",
                     "score": total_points,
-                    "duration_seconds": total_duration,
+                    "duration_seconds": 0,  # legacy-совместимость с фронтом
+                    "achieved_at": (p.last_achieved.isoformat() if p.last_achieved else None),
                 }
             )
             pos += 1
 
-        # current user row (или None, если нет очков и пользователя нет в выборке)
         current = next((r for r in rows if r["username"] == request.user.username), None)
 
         return Response(

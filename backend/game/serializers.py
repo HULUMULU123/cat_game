@@ -93,11 +93,15 @@ class ScoreEntrySerializer(serializers.ModelSerializer[ScoreEntry]):
     class Meta:
         model = ScoreEntry
         fields = (
-            "points",
-            "duration_seconds",
-            "earned_at",
+            "position",
+            "username",
+            "first_name",
+            "last_name",
+            "score",
+            # "duration_seconds",  # <- больше не используем в выдаче
+            "achieved_at",
             "failure_id",
-            "failure_name",
+            "failure_title",
         )
 
 
