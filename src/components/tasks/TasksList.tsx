@@ -44,6 +44,46 @@ const Placeholder = styled.div`
   color: #c7f7ee;
 `;
 
+// ---- helpers ----
+const normalizeUrl = (url?: string | null): string | undefined => {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  const hasProtocol = /^https?:\/\//i.test(trimmed);
+  const finalUrl = hasProtocol ? trimmed : `https://${trimmed}`;
+  try {
+    // validate
+    // eslint-disable-next-line no-new
+    new URL(finalUrl);
+    return finalUrl;
+  } catch (e) {
+    console.warn("[Tasks] URL is invalid after normalization:", {
+      url,
+      finalUrl,
+      e,
+    });
+    return undefined;
+  }
+};
+
+const openInNewTabSafe = (href: string) => {
+  console.log("[Tasks] try open:", href);
+  const win = window.open(href, "_blank", "noopener,noreferrer");
+  if (win && !win.closed) {
+    console.log("[Tasks] window.open success");
+    return true;
+  }
+  console.warn("[Tasks] window.open blocked, fallback to <a>.click()");
+  const a = document.createElement("a");
+  a.href = href;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return true;
+};
+
 const TasksList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const [tasks, setTasks] = useState<TaskAssignmentResponse[]>([]);
@@ -52,15 +92,21 @@ const TasksList = () => {
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
 
   const fetchTasks = useCallback(async () => {
-    if (!tokens) return;
+    if (!tokens) {
+      console.warn("[Tasks] no tokens, skip fetch");
+      return;
+    }
     setLoading(true);
     try {
+      console.log("[Tasks] GET /tasks/");
       const data = await request<TaskAssignmentResponse[]>("/tasks/", {
         headers: { Authorization: `Bearer ${tokens.access}` },
       });
+      console.log("[Tasks] fetched:", data);
       setTasks(data);
       setError(null);
-    } catch {
+    } catch (e) {
+      console.error("[Tasks] fetch error:", e);
       setError("Не удалось загрузить задания");
     } finally {
       setLoading(false);
@@ -71,24 +117,36 @@ const TasksList = () => {
     void fetchTasks();
   }, [fetchTasks]);
 
-  // открыть ссылку и отметить выполненным (требование)
+  // открыть ссылку и отметить выполненным
   const handleOpenAndComplete = async (
     taskId: number,
     done: boolean,
-    url?: string | null
+    rawUrl?: string | null
   ) => {
-    if (!tokens) return;
+    console.log("[Tasks] click task:", { taskId, done, rawUrl });
 
-    // Открываем ссылку в новой вкладке (если есть)
+    const url = normalizeUrl(rawUrl);
     if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
+      openInNewTabSafe(url);
+    } else {
+      console.warn("[Tasks] link is empty/invalid, not opening a tab", {
+        rawUrl,
+      });
     }
 
-    // Если уже выполнено — можем ничего не делать, либо принудительно подтверждать
-    if (done) return;
+    if (done) {
+      console.log("[Tasks] already completed → skip toggle");
+      return;
+    }
+
+    if (!tokens) {
+      console.warn("[Tasks] no tokens, cannot toggle completion");
+      return;
+    }
 
     try {
       setPendingIds((prev) => new Set(prev).add(taskId));
+      console.log("[Tasks] POST /tasks/toggle/", { taskId });
       const resp = await request<{ is_completed: boolean; balance: number }>(
         "/tasks/toggle/",
         {
@@ -97,9 +155,10 @@ const TasksList = () => {
             Authorization: `Bearer ${tokens.access}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ task_id: taskId, is_completed: true }), // ← всегда ставим как выполнено
+          body: JSON.stringify({ task_id: taskId, is_completed: true }),
         }
       );
+      console.log("[Tasks] toggle resp:", resp);
 
       setTasks((prev) =>
         prev.map((t) =>
@@ -107,7 +166,7 @@ const TasksList = () => {
         )
       );
     } catch (e) {
-      console.error("Ошибка при отметке задания:", e);
+      console.error("[Tasks] toggle error:", e);
     } finally {
       setPendingIds((prev) => {
         const copy = new Set(prev);

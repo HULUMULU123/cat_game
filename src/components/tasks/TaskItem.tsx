@@ -98,26 +98,35 @@ const TaskItem = ({
   done,
   onOpenAndComplete,
   disabled = false,
-}: TaskItemProps) => (
-  <StyledListItem $done={done}>
-    <StyledWrapper $done={done}>
-      <StyledListItemContent>
-        <StyledListImg src={img} alt="task icon" />
-        <StyledListName>{name}</StyledListName>
-        <StyledListButton
-          type="button"
-          onClick={() => onOpenAndComplete(id, done, url)}
-          disabled={disabled}
-          $done={done}
-          aria-label="Открыть и отметить выполненным"
-          title="Открыть и отметить выполненным"
-        >
-          <StyledButtonImg src={arrow} alt="open" />
-        </StyledListButton>
-      </StyledListItemContent>
-    </StyledWrapper>
-    <StyledCheck $done={done} src={check} alt="completed" />
-  </StyledListItem>
-);
+}: TaskItemProps) => {
+  const handleClick = () => {
+    console.log("[TaskItem] button click", { id, name, url, done });
+    onOpenAndComplete(id, done, url);
+  };
+
+  console.log("[TaskItem] render", { id, name, url, done, disabled });
+
+  return (
+    <StyledListItem $done={done}>
+      <StyledWrapper $done={done}>
+        <StyledListItemContent>
+          <StyledListImg src={img} alt="task icon" />
+          <StyledListName>{name}</StyledListName>
+          <StyledListButton
+            type="button"
+            onClick={handleClick}
+            disabled={disabled}
+            $done={done}
+            aria-label="Открыть и отметить выполненным"
+            title="Открыть и отметить выполненным"
+          >
+            <StyledButtonImg src={arrow} alt="open" />
+          </StyledListButton>
+        </StyledListItemContent>
+      </StyledWrapper>
+      <StyledCheck $done={done} src={check} alt="completed" />
+    </StyledListItem>
+  );
+};
 
 export default TaskItem;
