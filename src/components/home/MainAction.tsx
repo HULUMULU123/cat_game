@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import gift from "../../assets/icons/gift.svg";
 import type { HomeModalType } from "./types";
 import { request } from "../../shared/api/httpClient";
-import type { GiftResponse } from "../../shared/api/types";
+import type { GiftResponse, FailureResponse } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 
-const StyledActionBtn = styled.button`
+const StyledActionBtn = styled.button<{ $disabled?: boolean }>`
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -20,7 +20,9 @@ const StyledActionBtn = styled.button`
   max-width: 50vh;
   border-radius: 7px;
   border: none;
-  cursor: pointer;
+  cursor: ${({ $disabled }) => ($disabled ? "default" : "pointer")};
+  opacity: ${({ $disabled }) => ($disabled ? 0.6 : 1)};
+  pointer-events: ${({ $disabled }) => ($disabled ? "none" : "auto")};
 
   @media (max-width: 370px) {
     width: 80%;
@@ -85,9 +87,12 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
   const tokens = useGlobalStore((s) => s.tokens);
 
   const [giftInfo, setGiftInfo] = useState<GiftResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [giftError, setGiftError] = useState<string | null>(null);
+
+  const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
 
+  // ---- fetch gift ----
   useEffect(() => {
     if (!tokens) return;
     let mounted = true;
@@ -99,12 +104,12 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
         });
         if (mounted) {
           setGiftInfo(data);
-          setError(null);
+          setGiftError(null);
         }
       } catch {
         if (mounted) {
           setGiftInfo(null);
-          setError("Подарок недоступен");
+          setGiftError("Подарок недоступен");
         }
       }
     })();
@@ -114,25 +119,111 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
     };
   }, [tokens]);
 
+  // ---- fetch current failure (берём последний созданный) ----
   useEffect(() => {
-    if (!giftInfo?.expires_at) return;
+    if (!tokens) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        const data = await request<FailureResponse[]>("/failures/", {
+          headers: { Authorization: `Bearer ${tokens.access}` },
+        });
+        if (mounted) {
+          // предполагаем, что первый элемент — самый актуальный (вьюха отдает -created_at)
+          setFailure(data[0] ?? null);
+        }
+      } catch (e) {
+        if (mounted) setFailure(null);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [tokens]);
+
+  // тикер раз в секунду (если есть смысл считать)
+  useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, [giftInfo?.expires_at]);
+  }, []);
 
-  const countdown = useMemo(() => {
-    if (!giftInfo?.expires_at) return null;
-    const expiresAt = new Date(giftInfo.expires_at).getTime();
-    const diff = Math.max(expiresAt - now, 0);
-    const hours = Math.floor(diff / 3_600_000);
-    const minutes = Math.floor((diff % 3_600_000) / 60_000);
-    const seconds = Math.floor((diff % 60_000) / 1_000);
+  const startMs = useMemo(
+    () => (failure?.start_time ? new Date(failure.start_time).getTime() : null),
+    [failure?.start_time]
+  );
+  const endMs = useMemo(
+    () => (failure?.end_time ? new Date(failure.end_time).getTime() : null),
+    [failure?.end_time]
+  );
+
+  const isActive = useMemo(() => {
+    if (!failure) return false;
+    // активен, если старт известен и уже наступил
+    if (startMs !== null && now >= startMs) {
+      // и не закончился, если известен конец
+      if (endMs !== null) return now < endMs;
+      return true; // без конца — идёт
+    }
+    return false;
+  }, [failure, startMs, endMs, now]);
+
+  const isUpcoming = useMemo(() => {
+    if (!failure) return true; // нет сбоя — считаем как "скоро"
+    if (startMs === null) return true; // "скоро будет", время не указано
+    return now < startMs;
+  }, [failure, startMs, now]);
+
+  const headerText = useMemo(() => {
+    if (isActive) return failure?.name || "СБОЙ НАЧАЛСЯ";
+    if (isUpcoming) return "СБОЙ СКОРО";
+    return "СБОЙ";
+  }, [isActive, isUpcoming, failure?.name]);
+
+  const timerText = useMemo(() => {
     const pad = (v: number) => v.toString().padStart(2, "0");
-    return `${pad(hours)} : ${pad(minutes)} : ${pad(seconds)}`;
-  }, [giftInfo?.expires_at, now]);
+
+    // до старта
+    if (isUpcoming && startMs !== null) {
+      const diff = Math.max(startMs - now, 0);
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1_000);
+      return `${pad(h)} : ${pad(m)} : ${pad(s)}`;
+    }
+
+    // время старта неизвестно
+    if (isUpcoming && startMs === null) {
+      return "Скоро будет";
+    }
+
+    // идёт: до конца, если он известен
+    if (isActive && endMs !== null) {
+      const diff = Math.max(endMs - now, 0);
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1_000);
+      return `${pad(h)} : ${pad(m)} : ${pad(s)}`;
+    }
+
+    // идёт без времени окончания
+    if (isActive && endMs === null) {
+      return "Идет";
+    }
+
+    return ""; // дефолт
+  }, [isUpcoming, isActive, startMs, endMs, now]);
+
+  const buttonDisabled = !isActive;
+
+  const handleActionClick = () => {
+    if (buttonDisabled) return;
+    navigate("/failure");
+  };
 
   const handleGiftClick = (event: MouseEvent) => {
-    event.stopPropagation(); // чтобы не сработал навигатор на родителе
+    event.stopPropagation(); // чтобы не сработал клик по основной кнопке
     onOpenModal("prize");
   };
 
@@ -144,13 +235,16 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
   };
 
   return (
-    <StyledActionBtn type="button" onClick={() => navigate("/failure")}>
+    <StyledActionBtn
+      type="button"
+      onClick={handleActionClick}
+      $disabled={buttonDisabled}
+      aria-disabled={buttonDisabled}
+    >
       <StyledActionContentWrapper>
         <StyledActionTextWrapper>
-          <StyledActionName>
-            {giftInfo?.title ?? "СБОЙ НАЧАЛСЯ"}
-          </StyledActionName>
-          <StyledActionTimer>{countdown ?? error ?? ""}</StyledActionTimer>
+          <StyledActionName>{headerText}</StyledActionName>
+          <StyledActionTimer>{timerText || giftError || ""}</StyledActionTimer>
         </StyledActionTextWrapper>
 
         {/* НЕ кнопка внутри кнопки */}
