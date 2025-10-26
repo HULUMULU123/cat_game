@@ -113,6 +113,7 @@ export default function QuizInfo({
   return (
     <StyledWrapper>
       <StyledContentWrapper>
+        {/* Это общий таймер, если нужен. На логику вопроса не влияет */}
         <QuizTimer />
         <StyledRoadWrapper>
           <StyledLine></StyledLine>
@@ -123,7 +124,7 @@ export default function QuizInfo({
               return (
                 <StyledItem key={i}>
                   <StyledDoneSpan $advert={active}>
-                    {i + 1} / {total}
+                    {Math.min(i + 1, total)} / {total}
                   </StyledDoneSpan>
                   <StyledPoint $advert={active}></StyledPoint>
                   <StyledDoneImg

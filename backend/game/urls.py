@@ -7,6 +7,7 @@ from .views import (
 
     # Викторина
     QuizQuestionView,
+    QuizRandomBatchView,   # <-- НОВОЕ
 
     # Симуляция
     SimulationConfigView,
@@ -34,6 +35,7 @@ urlpatterns = [
 
     # Викторина
     path("quiz/", QuizQuestionView.as_view(), name="quiz"),
+    path("quiz/random/", QuizRandomBatchView.as_view(), name="quiz-random"),  # <-- НОВЫЙ путь
 
     # Симуляция
     path("simulation/", SimulationConfigView.as_view(), name="simulation-config"),

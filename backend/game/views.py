@@ -33,6 +33,7 @@ from .serializers import (
     FailureSerializer,
     ScoreEntrySerializer,
     LeaderboardRowSerializer,
+    QuizResultResponseSerializer
 )
 
 User = get_user_model()
@@ -119,6 +120,65 @@ class QuizQuestionView(APIView):
         return Response(serializer.data)
 
 
+# --- НОВОЕ: 5 случайных вопросов ---
+class QuizRandomBatchView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        # можно передать count, по умолчанию 5
+        try:
+            count = int(request.query_params.get("count", 5))
+        except (TypeError, ValueError):
+            count = 5
+        count = max(1, min(count, 20))  # ограничим адекватно
+
+        qs = QuizQuestion.objects.order_by("?")[:count]
+        if not qs:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = QuizQuestionSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+# --- НОВОЕ: приём результата квиза на /scores/ (POST) ---
+class ScoreListView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        # оставьте вашу текущую реализацию списка очков/статистики, если была
+        return Response({"detail": "OK"})
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        submit_ser = QuizResultSubmitSerializer(data=request.data)
+        submit_ser.is_valid(raise_exception=True)
+        correct = submit_ser.validated_data["correct"]
+        total = submit_ser.validated_data["total"]
+        mode = submit_ser.validated_data["mode"]
+
+        # простая 3-уровневая шкала наград
+        # 60%+ правильных → 500, все правильные → 1000, иначе 100 (если >=20%), ниже — 0
+        import math
+
+        reward = 0
+        if total > 0:
+            if correct == total:
+                reward = 1000
+            elif correct >= math.ceil(total * 0.6):
+                reward = 500
+            elif correct >= math.ceil(total * 0.2):
+                reward = 100
+            else:
+                reward = 0
+
+        profile = request.user.userprofile
+        profile.balance += reward
+        profile.save(update_fields=["balance", "updated_at"])
+
+        resp = QuizResultResponseSerializer(
+            {"detail": f"Результат сохранён ({mode}). Награда: {reward}", "reward": reward, "balance": profile.balance}
+        )
+        return Response(resp.data, status=status.HTTP_200_OK)
 # ---------- Simulation ----------
 
 class SimulationConfigView(APIView):

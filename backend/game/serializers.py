@@ -110,3 +110,16 @@ class LeaderboardRowSerializer(serializers.Serializer):
     last_name = serializers.CharField(allow_blank=True)
     score = serializers.IntegerField()
     duration_seconds = serializers.IntegerField()
+
+
+# --- НОВОЕ: сериалайзеры для результата квиза ---
+class QuizResultSubmitSerializer(serializers.Serializer):
+    mode = serializers.CharField()
+    correct = serializers.IntegerField(min_value=0)
+    total = serializers.IntegerField(min_value=1)
+
+
+class QuizResultResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    reward = serializers.IntegerField()
+    balance = serializers.IntegerField()

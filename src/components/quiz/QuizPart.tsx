@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { request, ApiError } from "../../shared/api/httpClient";
 import type { QuizResponse } from "../../shared/api/types";
@@ -6,13 +6,21 @@ import useGlobalStore from "../../shared/store/useGlobalStore";
 
 const StyledWrapper = styled.div`
   width: 95%;
-  margin: 32px auto 0 auto;
+  margin: 24px auto 0 auto;
 `;
 
 const StyledContentWrapper = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
+`;
+
+const HeaderRow = styled.div`
+  width: 90%;
+  margin: 0 auto 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const StyledQuestionSpan = styled.span`
@@ -25,13 +33,26 @@ const StyledQuestionSpan = styled.span`
   text-align: center;
 `;
 
+const TimerBadge = styled.span`
+  min-width: 56px;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: rgba(79, 197, 191, 0.25);
+  color: #e0fffb;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+`;
+
 const StyledAnswersList = styled.ul`
   padding: 0;
   display: flex;
   gap: 8px;
   flex-direction: column;
-  margin-top: 17px;
+  margin-top: 12px;
   align-items: center;
+  width: 100%;
 `;
 
 const StyledAnwerContent = styled.div`
@@ -45,7 +66,7 @@ const StyledAnwerContent = styled.div`
 type ItemState = "idle" | "correct" | "wrongSelected";
 
 const StyledAnswersItem = styled.li<{ $state: ItemState }>`
-  width: 100%;
+  width: 95%;
   display: flex;
   background: ${({ $state }) => {
     switch ($state) {
@@ -59,7 +80,7 @@ const StyledAnswersItem = styled.li<{ $state: ItemState }>`
   }};
   border-radius: 7px;
   padding: 10px 0;
-  cursor: pointer;
+  cursor: ${({ $state }) => ($state === "idle" ? "pointer" : "default")};
   user-select: none;
 `;
 
@@ -114,6 +135,7 @@ type Props = {
 };
 
 const TOTAL_QUESTIONS = 5;
+const QUESTION_TIME_SEC = 20;
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = arr.slice();
@@ -124,7 +146,7 @@ const shuffle = <T,>(arr: T[]): T[] => {
   return a;
 };
 
-const QuizPart = ({ onProgressChange }: Props) => {
+export default function QuizPart({ onProgressChange }: Props) {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((s) => s.updateBalance);
 
@@ -138,14 +160,17 @@ const QuizPart = ({ onProgressChange }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [finishMsg, setFinishMsg] = useState<string | null>(null);
 
-  // грузим вопросы
+  const [remaining, setRemaining] = useState<number>(QUESTION_TIME_SEC);
+  const timerRef = useRef<number | null>(null);
+
+  // ===== Загрузка 5 вопросов =====
   const fetchQuestions = useCallback(async () => {
     if (!tokens) return;
 
     try {
       setError(null);
 
-      // 1) пробуем получить пачку
+      // 1) Пытаемся получить пачку по одному запросу
       let data: QuizResponse[] | QuizResponse = await request<any>(
         "/quiz/?count=5",
         {
@@ -153,17 +178,15 @@ const QuizPart = ({ onProgressChange }: Props) => {
         }
       );
 
-      // 2) если вернулся объект — пробуем другой путь или оборачиваем
+      // 2) Если вернулся не массив — пробуем 5 параллельных запросов
       if (!Array.isArray(data)) {
-        try {
-          const alt = await request<QuizResponse[] | QuizResponse>("/quiz/", {
+        const calls = Array.from({ length: TOTAL_QUESTIONS }).map(() =>
+          request<QuizResponse>("/quiz/", {
             headers: { Authorization: `Bearer ${tokens.access}` },
-          });
-          data = Array.isArray(alt) ? alt : [alt];
-        } catch {
-          // оставим как есть (один вопрос)
-          data = [data as QuizResponse];
-        }
+          })
+        );
+        const results = await Promise.all(calls);
+        data = results;
       }
 
       const list = data as QuizResponse[];
@@ -173,12 +196,14 @@ const QuizPart = ({ onProgressChange }: Props) => {
           : list.slice(0, TOTAL_QUESTIONS);
 
       setQuestions(pack);
+      // сброс состояния раунда
       setIdx(0);
       setSelected(null);
       setHasAnswered(false);
       setCorrectCount(0);
       setFinishMsg(null);
-      onProgressChange?.({ current: 0, total: TOTAL_QUESTIONS });
+      setRemaining(QUESTION_TIME_SEC);
+      onProgressChange?.({ current: 0, total: pack.length });
     } catch (e) {
       console.error("[Quiz] load error:", e);
       setError("Не удалось загрузить вопросы");
@@ -196,12 +221,49 @@ const QuizPart = ({ onProgressChange }: Props) => {
 
   const total = questions?.length || TOTAL_QUESTIONS;
 
+  // ===== Таймер =====
+  useEffect(() => {
+    if (!q) return;
+
+    // запускаем таймер только если не ответили
+    if (hasAnswered) return;
+
+    setRemaining(QUESTION_TIME_SEC);
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+    }
+    const id = window.setInterval(() => {
+      setRemaining((s) => {
+        if (s <= 1) {
+          // таймер истёк — отмечаем неверным и подсвечиваем правильный
+          window.clearInterval(id);
+          // флаг ответа (чтобы показалась кнопка "Далее")
+          setHasAnswered(true);
+          // selected остаётся null: подсветится только правильный
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    timerRef.current = id;
+
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [q, hasAnswered]);
+
+  // ===== Выбор ответа =====
   const handleSelect = (answerIndex: number) => {
     if (!q || hasAnswered) return;
     const isCorrect = answerIndex === q.correct_answer_index;
     setSelected(answerIndex);
     setHasAnswered(true);
     if (isCorrect) setCorrectCount((c) => c + 1);
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const itemStateFor = (i: number): ItemState => {
@@ -211,10 +273,11 @@ const QuizPart = ({ onProgressChange }: Props) => {
     return "idle";
   };
 
+  // ===== Следующий вопрос / Завершение =====
   const handleNext = async () => {
     if (!questions) return;
 
-    // последний вопрос → отправляем результат
+    // последний → отправляем результат
     if (idx === questions.length - 1) {
       if (!tokens) return;
       setSubmitting(true);
@@ -224,7 +287,6 @@ const QuizPart = ({ onProgressChange }: Props) => {
           correct: correctCount,
           total: total,
         };
-        // Отправляем на твой бэк. Если у тебя другой путь — поменяй здесь.
         const resp = await request<{
           detail?: string;
           reward?: number;
@@ -239,7 +301,7 @@ const QuizPart = ({ onProgressChange }: Props) => {
         });
 
         if (typeof resp?.balance === "number") {
-          updateBalance(resp.balance);
+          useGlobalStore.getState().updateBalance(resp.balance);
         }
 
         const msg =
@@ -264,14 +326,16 @@ const QuizPart = ({ onProgressChange }: Props) => {
       return;
     }
 
-    // переходим дальше
+    // следующий вопрос
     const next = idx + 1;
     setIdx(next);
     setSelected(null);
     setHasAnswered(false);
+    setRemaining(QUESTION_TIME_SEC);
     onProgressChange?.({ current: next, total });
   };
 
+  // ===== Рендер =====
   return (
     <StyledWrapper>
       <StyledContentWrapper>
@@ -288,7 +352,12 @@ const QuizPart = ({ onProgressChange }: Props) => {
           </>
         ) : q ? (
           <>
-            <StyledQuestionSpan>{q.question}</StyledQuestionSpan>
+            <HeaderRow>
+              <TimerBadge>{remaining.toString().padStart(2, "0")}s</TimerBadge>
+              <span style={{ visibility: "hidden" }}>.</span>
+            </HeaderRow>
+
+            <StyledQuestionSpan>{q.question || "Вопрос"}</StyledQuestionSpan>
 
             <StyledAnswersList>
               {q.answers.map((answer, index) => (
@@ -326,6 +395,4 @@ const QuizPart = ({ onProgressChange }: Props) => {
       </StyledContentWrapper>
     </StyledWrapper>
   );
-};
-
-export default QuizPart;
+}

@@ -25,7 +25,7 @@ export default function Quiz() {
         InfoExtra={`${progress.current} / ${progress.total}`}
       />
       <QuizPart onProgressChange={setProgress} />
-      <QuizInfo />
+      <QuizInfo current={progress.current} total={progress.total} />
     </StyledWrapper>
   );
 }
