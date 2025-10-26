@@ -44,15 +44,18 @@ const Placeholder = styled.div`
   color: #c7f7ee;
 `;
 
-// ---- helpers ----
+/* ----------------- helpers ----------------- */
 const normalizeUrl = (url?: string | null): string | undefined => {
   if (!url) return undefined;
   const trimmed = url.trim();
   if (!trimmed) return undefined;
+
+  // добавим протокол, если его нет
   const hasProtocol = /^https?:\/\//i.test(trimmed);
   const finalUrl = hasProtocol ? trimmed : `https://${trimmed}`;
+
   try {
-    // validate
+    // валидация URL (кинет исключение, если невалидный)
     // eslint-disable-next-line no-new
     new URL(finalUrl);
     return finalUrl;
@@ -66,23 +69,42 @@ const normalizeUrl = (url?: string | null): string | undefined => {
   }
 };
 
-const openInNewTabSafe = (href: string) => {
-  console.log("[Tasks] try open:", href);
-  const win = window.open(href, "_blank", "noopener,noreferrer");
-  if (win && !win.closed) {
-    console.log("[Tasks] window.open success");
-    return true;
+/**
+ * Пытается открыть ссылку в новой вкладке.
+ * Возвращает способ открытия:
+ *  - "win"  — через window.open
+ *  - "a"    — через программный клик по <a>
+ *  - "none" — ничто не сработало (маловероятно)
+ */
+const openInNewTabSafe = (href: string): "win" | "a" | "none" => {
+  try {
+    console.log("[Tasks] try window.open:", href);
+    const win = window.open(href, "_blank", "noopener,noreferrer");
+    if (win && !win.closed) {
+      console.log("[Tasks] window.open success");
+      return "win";
+    }
+  } catch (e) {
+    console.warn("[Tasks] window.open threw:", e);
   }
-  console.warn("[Tasks] window.open blocked, fallback to <a>.click()");
-  const a = document.createElement("a");
-  a.href = href;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  return true;
+
+  try {
+    console.warn("[Tasks] window.open blocked → fallback <a>.click()");
+    const a = document.createElement("a");
+    a.href = href;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return "a";
+  } catch (e) {
+    console.error("[Tasks] <a>.click() fallback failed:", e);
+  }
+
+  return "none";
 };
+/* ------------------------------------------- */
 
 const TasksList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
@@ -118,63 +140,78 @@ const TasksList = () => {
   }, [fetchTasks]);
 
   // открыть ссылку и отметить выполненным
-  const handleOpenAndComplete = async (
-    taskId: number,
-    done: boolean,
-    rawUrl?: string | null
-  ) => {
-    console.log("[Tasks] click task:", { taskId, done, rawUrl });
+  const handleOpenAndComplete = useCallback(
+    async (taskId: number, done: boolean, rawUrl?: string | null) => {
+      console.log("[Tasks] click task:", { taskId, done, rawUrl });
 
-    const url = normalizeUrl(rawUrl);
-    if (url) {
-      openInNewTabSafe(url);
-    } else {
-      console.warn("[Tasks] link is empty/invalid, not opening a tab", {
-        rawUrl,
-      });
-    }
+      const url = normalizeUrl(rawUrl);
+      if (url) {
+        const method = openInNewTabSafe(url);
+        console.log("[Tasks] open method:", method);
 
-    if (done) {
-      console.log("[Tasks] already completed → skip toggle");
-      return;
-    }
-
-    if (!tokens) {
-      console.warn("[Tasks] no tokens, cannot toggle completion");
-      return;
-    }
-
-    try {
-      setPendingIds((prev) => new Set(prev).add(taskId));
-      console.log("[Tasks] POST /tasks/toggle/", { taskId });
-      const resp = await request<{ is_completed: boolean; balance: number }>(
-        "/tasks/toggle/",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${tokens.access}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ task_id: taskId, is_completed: true }),
+        // если вы в iframe/webview и попапы заблокированы — последний шанс:
+        if (method === "none") {
+          try {
+            console.warn("[Tasks] final fallback → location.assign");
+            window.location.assign(url);
+          } catch (e) {
+            console.error("[Tasks] location.assign failed:", e);
+          }
         }
-      );
-      console.log("[Tasks] toggle resp:", resp);
+      } else {
+        console.warn("[Tasks] link is empty/invalid, not opening a tab", {
+          rawUrl,
+        });
+      }
 
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.task_id === taskId ? { ...t, is_completed: resp.is_completed } : t
-        )
-      );
-    } catch (e) {
-      console.error("[Tasks] toggle error:", e);
-    } finally {
-      setPendingIds((prev) => {
-        const copy = new Set(prev);
-        copy.delete(taskId);
-        return copy;
-      });
-    }
-  };
+      if (done) {
+        console.log("[Tasks] already completed → skip toggle");
+        return;
+      }
+
+      if (!tokens) {
+        console.warn("[Tasks] no tokens, cannot toggle completion");
+        return;
+      }
+
+      try {
+        setPendingIds((prev) => {
+          const s = new Set(prev);
+          s.add(taskId);
+          return s;
+        });
+
+        console.log("[Tasks] POST /tasks/toggle/", { taskId });
+        const resp = await request<{ is_completed: boolean; balance: number }>(
+          "/tasks/toggle/",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${tokens.access}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ task_id: taskId, is_completed: true }),
+          }
+        );
+        console.log("[Tasks] toggle resp:", resp);
+
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.task_id === taskId ? { ...t, is_completed: resp.is_completed } : t
+          )
+        );
+      } catch (e) {
+        console.error("[Tasks] toggle error:", e);
+      } finally {
+        setPendingIds((prev) => {
+          const copy = new Set(prev);
+          copy.delete(taskId);
+          return copy;
+        });
+      }
+    },
+    [tokens]
+  );
 
   const listContent = useMemo(() => {
     if (error) return <Placeholder>{error}</Placeholder>;
@@ -193,7 +230,7 @@ const TasksList = () => {
         disabled={pendingIds.has(task.task_id)}
       />
     ));
-  }, [tasks, error, loading, pendingIds]);
+  }, [tasks, error, loading, pendingIds, handleOpenAndComplete]);
 
   return (
     <StyledContentWrapper>
