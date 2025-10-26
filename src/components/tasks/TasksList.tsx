@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import styled from "styled-components";
 import TaskItem from "./TaskItem";
 import advert from "../../assets/icons/advert.svg";
@@ -50,42 +50,70 @@ const TasksList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const [tasks, setTasks] = useState<TaskAssignmentResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // --- загрузка списка задач ---
+  const fetchTasks = useCallback(async () => {
+    if (!tokens) return;
+    setLoading(true);
+    try {
+      const data = await request<TaskAssignmentResponse[]>("/tasks/", {
+        headers: {
+          Authorization: `Bearer ${tokens.access}`,
+        },
+      });
+      setTasks(data);
+      setError(null);
+    } catch (err) {
+      setError("Не удалось загрузить задания");
+    } finally {
+      setLoading(false);
+    }
+  }, [tokens]);
 
   useEffect(() => {
-    if (!tokens) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const fetchTasks = async () => {
-      try {
-        const data = await request<TaskAssignmentResponse[]>("/tasks/", {
-          headers: {
-            Authorization: `Bearer ${tokens.access}`,
-          },
-        });
-        if (isMounted) {
-          setTasks(data);
-          setError(null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError("Не удалось загрузить задания");
-        }
-      }
-    };
-
     void fetchTasks();
+  }, [fetchTasks]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [tokens]);
+  // --- переключение выполнения ---
+  const handleToggleTask = async (taskId: number, done: boolean) => {
+    if (!tokens) return;
+    try {
+      const response = await request<{
+        is_completed: boolean;
+        balance: number;
+      }>("/tasks/toggle/", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokens.access}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          task_id: taskId,
+          is_completed: !done,
+        }),
+      });
+
+      // обновляем локальное состояние
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.task_id === taskId
+            ? { ...t, is_completed: response.is_completed }
+            : t
+        )
+      );
+    } catch (err) {
+      console.error("Ошибка при обновлении задачи:", err);
+    }
+  };
 
   const listContent = useMemo(() => {
     if (error) {
       return <Placeholder>{error}</Placeholder>;
+    }
+
+    if (loading) {
+      return <Placeholder>Загрузка заданий...</Placeholder>;
     }
 
     if (!tasks.length) {
@@ -95,12 +123,14 @@ const TasksList = () => {
     return tasks.map((task) => (
       <TaskItem
         key={task.task_id}
+        id={task.task_id}
         name={task.name}
         img={task.icon || advert}
         done={task.is_completed}
+        onToggle={handleToggleTask}
       />
     ));
-  }, [tasks, error]);
+  }, [tasks, error, loading, handleToggleTask]);
 
   return (
     <StyledContentWrapper>

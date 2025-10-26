@@ -2,7 +2,7 @@ import styled from "styled-components";
 import arrow from "../../assets/icons/arrow.svg";
 import check from "../../assets/icons/check.svg";
 
-const StyledListItem = styled.li<{ $done: boolean }> `
+const StyledListItem = styled.li<{ $done: boolean }>`
   opacity: ${({ $done }) => ($done ? "0.6" : "1")};
   display: flex;
   padding: 15px 7px;
@@ -15,7 +15,7 @@ const StyledListItem = styled.li<{ $done: boolean }> `
   position: relative;
 `;
 
-const StyledWrapper = styled.div<{ $done: boolean }> `
+const StyledWrapper = styled.div<{ $done: boolean }>`
   filter: ${({ $done }) => ($done ? "blur(3px)" : "none")};
   width: 100%;
   height: 100%;
@@ -45,14 +45,25 @@ const StyledListName = styled.span`
   width: 60%;
 `;
 
-const StyledListButton = styled.button`
+const StyledListButton = styled.button<{ $done: boolean }>`
   width: 20%;
   padding: 10px 0;
   border: none;
-  background: #44edd1;
+  background: ${({ $done }) => ($done ? "#ffb4b4" : "#44edd1")};
   margin-left: auto;
   display: flex;
   border-radius: 7px;
+  cursor: pointer;
+  transition: opacity 0.15s ease-in-out, transform 0.05s ease-in-out;
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
 `;
 
 const StyledButtonImg = styled.img`
@@ -60,7 +71,7 @@ const StyledButtonImg = styled.img`
   margin: auto;
 `;
 
-const StyledCheck = styled.img<{ $done: boolean }> `
+const StyledCheck = styled.img<{ $done: boolean }>`
   width: 25px;
   position: absolute;
   z-index: 5;
@@ -71,19 +82,38 @@ const StyledCheck = styled.img<{ $done: boolean }> `
 `;
 
 interface TaskItemProps {
+  id: number;
   name: string;
   img: string;
-  done?: boolean;
+  done: boolean;
+  onToggle: (taskId: number, done: boolean) => void;
+  disabled?: boolean; // опционально: чтобы блокировать кнопку во время запроса
 }
 
-const TaskItem = ({ name, img, done = false }: TaskItemProps) => (
+const TaskItem = ({
+  id,
+  name,
+  img,
+  done,
+  onToggle,
+  disabled = false,
+}: TaskItemProps) => (
   <StyledListItem $done={done}>
     <StyledWrapper $done={done}>
       <StyledListItemContent>
         <StyledListImg src={img} alt="task icon" />
         <StyledListName>{name}</StyledListName>
-        <StyledListButton type="button">
-          <StyledButtonImg src={arrow} alt="open" />
+        <StyledListButton
+          type="button"
+          onClick={() => onToggle(id, done)}
+          disabled={disabled}
+          $done={done}
+          aria-label={
+            done ? "Снять отметку выполнения" : "Отметить как выполнено"
+          }
+          title={done ? "Снять отметку выполнения" : "Отметить как выполнено"}
+        >
+          <StyledButtonImg src={arrow} alt="toggle" />
         </StyledListButton>
       </StyledListItemContent>
     </StyledWrapper>

@@ -1,49 +1,112 @@
 from __future__ import annotations
 
+from datetime import date
+
+from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.db.models import Sum, F
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Gift, LeaderboardEntry, QuizQuestion, SimulationConfig, TaskAssignment
+from .models import (
+    UserProfile,
+    Task,
+    TaskCompletion,
+    SimulationConfig,
+    RuleCategory,
+    DailyReward,
+    DailyRewardClaim,
+    Failure,
+    QuizQuestion,
+    ScoreEntry,
+)
 from .serializers import (
-    GiftSerializer,
-    LeaderboardEntrySerializer,
+    TaskCompletionSerializer,
     QuizQuestionSerializer,
     SimulationConfigSerializer,
-    TaskAssignmentSerializer,
+    RuleCategorySerializer,
+    DailyRewardSerializer,
+    DailyRewardClaimSerializer,
+    FailureSerializer,
+    ScoreEntrySerializer,
+    LeaderboardRowSerializer,
 )
 
+User = get_user_model()
 
-class ActiveGiftView(APIView):
+
+# ---------- Tasks ----------
+
+class TaskCompletionListView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request: Request) -> Response:
-        gift = (
-            Gift.objects.filter(expires_at__isnull=True)
-            | Gift.objects.filter(expires_at__gte=timezone.now())
-        ).order_by("-updated_at").first()
-        if not gift:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        serializer = GiftSerializer(gift)
-        return Response(serializer.data)
-
-
-class TaskAssignmentListView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get(self, request: Request) -> Response:
+        # note: related_name="profile" → request.user.profile
+        profile = request.user.profile
         assignments = (
-            TaskAssignment.objects.filter(profile=request.user.userprofile)
+            TaskCompletion.objects.filter(profile=profile)
             .select_related("task")
             .order_by("-is_completed", "task__name")
         )
-        serializer = TaskAssignmentSerializer(assignments, many=True)
+        # ensure every task is visible: create missing rows (not completed)
+        existing_task_ids = set(assignments.values_list("task_id", flat=True))
+        missing_tasks = Task.objects.exclude(id__in=existing_task_ids)
+        TaskCompletion.objects.bulk_create(
+            [TaskCompletion(profile=profile, task=t, is_completed=False) for t in missing_tasks],
+            ignore_conflicts=True,
+        )
+        assignments = (
+            TaskCompletion.objects.filter(profile=profile)
+            .select_related("task")
+            .order_by("-is_completed", "task__name")
+        )
+        serializer = TaskCompletionSerializer(assignments, many=True)
         return Response(serializer.data)
 
+
+class TaskToggleCompleteView(APIView):
+    """POST {"task_id": int, "is_completed": bool}"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        profile = request.user.profile
+        task_id = request.data.get("task_id")
+        is_completed = bool(request.data.get("is_completed", True))
+
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            return Response({"detail": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        assignment, _ = TaskCompletion.objects.select_for_update().get_or_create(
+            profile=profile, task=task, defaults={"is_completed": False}
+        )
+        if is_completed and not assignment.is_completed:
+            assignment.is_completed = True
+            assignment.save(update_fields=["is_completed", "updated_at"])
+            # optional: reward user instantly for task.reward
+            profile.balance = F("balance") + task.reward
+            profile.save(update_fields=["balance", "updated_at"])
+            profile.refresh_from_db(fields=["balance"])
+
+        if not is_completed and assignment.is_completed:
+            assignment.is_completed = False
+            assignment.save(update_fields=["is_completed", "updated_at"])
+
+        return Response(
+            {
+                "task_id": task.id,
+                "is_completed": assignment.is_completed,
+                "balance": profile.balance,
+            }
+        )
+
+
+# ---------- Quiz ----------
 
 class QuizQuestionView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -56,18 +119,7 @@ class QuizQuestionView(APIView):
         return Response(serializer.data)
 
 
-class LeaderboardView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get(self, request: Request) -> Response:
-        entries = LeaderboardEntry.objects.select_related("profile", "profile__user").order_by("position")
-        serializer = LeaderboardEntrySerializer(entries, many=True)
-        current_entry = entries.filter(profile=request.user.userprofile).first()
-        current_data = (
-            LeaderboardEntrySerializer(current_entry).data if current_entry else None
-        )
-        return Response({"entries": serializer.data, "current_user": current_data})
-
+# ---------- Simulation ----------
 
 class SimulationConfigView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -75,7 +127,13 @@ class SimulationConfigView(APIView):
     def get(self, request: Request) -> Response:
         config = SimulationConfig.objects.order_by("-updated_at").first()
         if not config:
-            config = SimulationConfig.objects.create(cost=200, description="Запустите симуляцию, чтобы потренироваться без риска.")
+            config = SimulationConfig.objects.create(
+                attempt_cost=200,
+                reward_level_1=100,
+                reward_level_2=500,
+                reward_level_3=1000,
+                description="Default simulation config",
+            )
         serializer = SimulationConfigSerializer(config)
         return Response(serializer.data)
 
@@ -85,29 +143,160 @@ class SimulationStartView(APIView):
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
-        profile = request.user.userprofile
+        profile = request.user.profile
         config = SimulationConfig.objects.select_for_update().order_by("-updated_at").first()
         if not config:
-            config = SimulationConfig.objects.create(cost=200, description="Запустите симуляцию, чтобы потренироваться без риска.")
-        cost = config.cost
+            config = SimulationConfig.objects.create(
+                attempt_cost=200,
+                reward_level_1=100,
+                reward_level_2=500,
+                reward_level_3=1000,
+                description="Default simulation config",
+            )
+        cost = config.attempt_cost
+        profile.refresh_from_db(fields=["balance"])
+
         if profile.balance < cost:
             return Response(
-                {
-                    "detail": "Недостаточно монет для запуска симуляции.",
-                    "balance": profile.balance,
-                    "required": cost,
-                },
+                {"detail": "Недостаточно монет для запуска симуляции.", "balance": profile.balance, "required": cost},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        profile.balance -= cost
+        profile.balance = F("balance") - cost
         profile.save(update_fields=["balance", "updated_at"])
+        profile.refresh_from_db(fields=["balance"])
+
+        return Response({"detail": "Симуляция успешно запущена!", "balance": profile.balance, "cost": cost})
+
+
+# ---------- Rules ----------
+
+class RuleCategoryListView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        rules = RuleCategory.objects.order_by("category")
+        return Response(RuleCategorySerializer(rules, many=True).data)
+
+
+# ---------- Daily rewards ----------
+
+def _weekday_1_7(d: date) -> int:
+    # Python: Monday=0..Sunday=6 → 1..7
+    return d.weekday() + 1
+
+
+class DailyRewardConfigView(APIView):
+    """Возвращает конфиг наград на 7 дней."""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        rewards = DailyReward.objects.order_by("day_number")
+        if rewards.count() == 0:
+            # bootstrap default config
+            objs = [DailyReward(day_number=i, reward_amount=0) for i in range(1, 8)]
+            DailyReward.objects.bulk_create(objs, ignore_conflicts=True)
+            rewards = DailyReward.objects.order_by("day_number")
+        return Response(DailyRewardSerializer(rewards, many=True).data)
+
+
+class DailyRewardClaimTodayView(APIView):
+    """POST {} — выдать награду за текущий день недели (1–7), если ещё не была получена сегодня."""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        profile = request.user.profile
+        now = timezone.localtime()
+        day_num = _weekday_1_7(now.date())
+
+        try:
+            reward_cfg = DailyReward.objects.get(day_number=day_num)
+        except DailyReward.DoesNotExist:
+            return Response({"detail": "Конфиг наград не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+        # запрещаем повторное получение в пределах календарной даты
+        already_today = DailyRewardClaim.objects.filter(
+            profile=profile, reward=reward_cfg, claimed_at__date=now.date()
+        ).exists()
+        if already_today:
+            return Response({"detail": "Награда за сегодня уже получена."}, status=status.HTTP_400_BAD_REQUEST)
+
+        claim = DailyRewardClaim.objects.create(profile=profile, reward=reward_cfg, claimed_at=now)
+
+        # начисляем монеты
+        profile.balance = F("balance") + reward_cfg.reward_amount
+        profile.save(update_fields=["balance", "updated_at"])
+        profile.refresh_from_db(fields=["balance"])
 
         return Response(
             {
-                "detail": "Симуляция успешно запущена!",
+                "detail": "Ежедневная награда получена",
+                "claim": DailyRewardClaimSerializer(claim).data,
                 "balance": profile.balance,
-                "cost": cost,
-            },
-            status=status.HTTP_200_OK,
+            }
+        )
+
+
+# ---------- Failures ----------
+
+class FailureListView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        failures = Failure.objects.order_by("-created_at")
+        return Response(FailureSerializer(failures, many=True).data)
+
+
+# ---------- Scores & Leaderboard ----------
+
+class ScoreListView(APIView):
+    """Список очков текущего пользователя (с привязкой к сбоям)."""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        profile = request.user.profile
+        scores = ScoreEntry.objects.filter(profile=profile).select_related("failure").order_by("-earned_at")
+        return Response(ScoreEntrySerializer(scores, many=True).data)
+
+
+class LeaderboardView(APIView):
+    """
+    «Лидерборд» считается на лету по сумме очков из ScoreEntry.
+    Позиции сортируются по убыванию очков, при равенстве — по возрастанию суммарной длительности.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        qs = (
+            UserProfile.objects.select_related("user")
+            .annotate(total_points=Sum("scores__points"), total_duration=Sum("scores__duration_seconds"))
+            .order_by("-total_points", "total_duration", "id")
+        )
+
+        rows = []
+        pos = 1
+        for p in qs:
+            total_points = int(p.total_points or 0)
+            total_duration = int(p.total_duration or 0)
+            rows.append(
+                {
+                    "position": pos,
+                    "username": p.user.username,
+                    "first_name": p.user.first_name or "",
+                    "last_name": p.user.last_name or "",
+                    "score": total_points,
+                    "duration_seconds": total_duration,
+                }
+            )
+            pos += 1
+
+        # current user row (или None, если нет очков и пользователя нет в выборке)
+        current = next((r for r in rows if r["username"] == request.user.username), None)
+
+        return Response(
+            {
+                "entries": LeaderboardRowSerializer(rows, many=True).data,
+                "current_user": LeaderboardRowSerializer(current).data if current else None,
+            }
         )

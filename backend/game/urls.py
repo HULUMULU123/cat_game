@@ -1,19 +1,55 @@
 from django.urls import path
 
 from .views import (
-    ActiveGiftView,
-    LeaderboardView,
+    # Задания
+    TaskCompletionListView,
+    TaskToggleCompleteView,
+
+    # Викторина
     QuizQuestionView,
+
+    # Симуляция
     SimulationConfigView,
     SimulationStartView,
-    TaskAssignmentListView,
+
+    # Правила
+    RuleCategoryListView,
+
+    # Ежедневные награды
+    DailyRewardConfigView,
+    DailyRewardClaimTodayView,
+
+    # Сбои
+    FailureListView,
+
+    # Очки и лидерборд
+    ScoreListView,
+    LeaderboardView,
 )
 
 urlpatterns = [
-    path("gift/", ActiveGiftView.as_view(), name="gift"),
-    path("tasks/", TaskAssignmentListView.as_view(), name="tasks"),
+    # Задания
+    path("tasks/", TaskCompletionListView.as_view(), name="tasks"),
+    path("tasks/toggle/", TaskToggleCompleteView.as_view(), name="task-toggle"),
+
+    # Викторина
     path("quiz/", QuizQuestionView.as_view(), name="quiz"),
-    path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+
+    # Симуляция
     path("simulation/", SimulationConfigView.as_view(), name="simulation-config"),
     path("simulation/start/", SimulationStartView.as_view(), name="simulation-start"),
+
+    # Правила
+    path("rules/", RuleCategoryListView.as_view(), name="rules"),
+
+    # Ежедневные награды
+    path("daily-rewards/", DailyRewardConfigView.as_view(), name="daily-rewards"),
+    path("daily-rewards/claim/", DailyRewardClaimTodayView.as_view(), name="daily-reward-claim"),
+
+    # Сбои
+    path("failures/", FailureListView.as_view(), name="failures"),
+
+    # Очки и лидерборд
+    path("scores/", ScoreListView.as_view(), name="scores"),
+    path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
 ]
