@@ -74,22 +74,21 @@ interface UsersItemProps {
   entry: LeaderboardEntryResponse;
 }
 
-const formatDuration = (seconds: number) => {
-  const hrs = Math.floor(seconds / 3600)
-    .toString()
-    .padStart(2, "0");
-  const mins = Math.floor((seconds % 3600) / 60)
-    .toString()
-    .padStart(2, "0");
-  const secs = Math.floor(seconds % 60)
-    .toString()
-    .padStart(2, "0");
-
-  return `${hrs} : ${mins} : ${secs}`;
+const formatHHMM = (iso?: string | null): string => {
+  if (!iso) return "--:--";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--:--";
+  const hh = d.getHours().toString().padStart(2, "0");
+  const mm = d.getMinutes().toString().padStart(2, "0");
+  return `${hh}:${mm}`;
 };
 
 const UsersItem = ({ entry }: UsersItemProps) => {
   const displayName = entry.first_name || entry.username;
+  const timeStr =
+    entry.display_time && entry.display_time.trim().length > 0
+      ? entry.display_time
+      : formatHHMM(entry.achieved_at);
 
   return (
     <StyledUserItem>
@@ -100,7 +99,7 @@ const UsersItem = ({ entry }: UsersItemProps) => {
           <StyledUserSpan>{displayName}</StyledUserSpan>
         </StyledUserProfile>
         <StyledUserInfo>
-          <StyledUserTime>{formatDuration(entry.achieved_at)}</StyledUserTime>
+          <StyledUserTime>{timeStr}</StyledUserTime>
           <StyledUserScore>
             {entry.score.toLocaleString("ru-RU")}
           </StyledUserScore>
