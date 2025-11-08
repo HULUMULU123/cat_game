@@ -85,6 +85,52 @@ class TaskCompletion(TimestampedModel):
 
 
 # ==============================
+# Adsgram assignments
+# ==============================
+
+
+class AdsgramAssignmentStatus(models.TextChoices):
+    REQUESTED = "requested", "Задание получено"
+    COMPLETED = "completed", "Задание выполнено"
+    FAILED = "failed", "Ошибка"
+
+
+class AdsgramAssignment(TimestampedModel):
+    profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="adsgram_assignments",
+        verbose_name="Профиль",
+    )
+    external_assignment_id = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name="ID задания Adsgram",
+    )
+    placement_id = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Placement ID",
+    )
+    status = models.CharField(
+        max_length=32,
+        choices=AdsgramAssignmentStatus.choices,
+        default=AdsgramAssignmentStatus.REQUESTED,
+        verbose_name="Статус",
+    )
+    payload = models.JSONField(default=dict, blank=True, verbose_name="Данные интеграции")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Время завершения")
+
+    class Meta:
+        db_table = "adsgram_assignments"
+        verbose_name = "Задание Adsgram"
+        verbose_name_plural = "Задания Adsgram"
+
+    def __str__(self) -> str:
+        return f"Adsgram {self.external_assignment_id} ({self.get_status_display()})"
+
+
+# ==============================
 # Simulation (награды и цена)
 # ==============================
 

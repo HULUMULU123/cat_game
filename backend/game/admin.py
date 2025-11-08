@@ -12,6 +12,7 @@ from .models import (
     Failure,
     QuizQuestion,
     ScoreEntry,
+    AdsgramAssignment,
 )
 
 # --- Типы только для mypy ---
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
     FailureAdminBase = _ModelAdmin[Failure]  # type: ignore[index]
     QuizQuestionAdminBase = _ModelAdmin[QuizQuestion]  # type: ignore[index]
     ScoreEntryAdminBase = _ModelAdmin[ScoreEntry]  # type: ignore[index]
+    AdsgramAssignmentAdminBase = _ModelAdmin[AdsgramAssignment]  # type: ignore[index]
 else:
     UserProfileAdminBase = admin.ModelAdmin
     TaskAdminBase = admin.ModelAdmin
@@ -39,6 +41,7 @@ else:
     FailureAdminBase = admin.ModelAdmin
     QuizQuestionAdminBase = admin.ModelAdmin
     ScoreEntryAdminBase = admin.ModelAdmin
+    AdsgramAssignmentAdminBase = admin.ModelAdmin
 
 
 # --- Регистрация моделей ---
@@ -123,3 +126,18 @@ class ScoreEntryAdmin(ScoreEntryAdminBase):
     list_filter = ("failure",)
     search_fields = ("profile__user__username",)
     readonly_fields = ("earned_at", "created_at", "updated_at")
+
+
+@admin.register(AdsgramAssignment)
+class AdsgramAssignmentAdmin(AdsgramAssignmentAdminBase):
+    list_display = (
+        "external_assignment_id",
+        "profile",
+        "placement_id",
+        "status",
+        "created_at",
+        "completed_at",
+    )
+    list_filter = ("status", "placement_id")
+    search_fields = ("external_assignment_id", "profile__user__username")
+    readonly_fields = ("created_at", "updated_at")

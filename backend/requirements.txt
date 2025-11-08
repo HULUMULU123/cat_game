@@ -2,3 +2,5 @@ Django>=4.2,<5.0
 djangorestframework>=3.14,<3.16
 djangorestframework-simplejwt>=5.3,<6.0
 django-cors-headers>=4.3,<5.0
+django-jazzmin>=2.6,<3.0
+requests>=2.31,<3.0

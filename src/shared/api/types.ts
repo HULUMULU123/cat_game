@@ -57,6 +57,18 @@ export type SimulationStartResponse = {
   cost: number;
 };
 
+// --- Adsgram ---
+export type AdsgramAssignmentResponse = {
+  assignment_id: string;
+  placement_id: string | null;
+  status: "requested" | "completed" | "failed";
+  payload: Record<string, unknown> | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: number | null;
+};
+
 // --- Rules ---
 export type RuleCategoryResponse = {
   id: number;

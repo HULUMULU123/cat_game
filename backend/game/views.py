@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import date
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Sum, F
 from django.utils import timezone
 from rest_framework import permissions, status
@@ -22,6 +23,8 @@ from .models import (
     Failure,
     QuizQuestion,
     ScoreEntry,
+    AdsgramAssignment,
+    AdsgramAssignmentStatus,
 )
 from .serializers import (
     TaskCompletionSerializer,
@@ -33,7 +36,14 @@ from .serializers import (
     FailureSerializer,
     ScoreEntrySerializer,
     LeaderboardRowSerializer,
-    QuizResultResponseSerializer
+    QuizResultResponseSerializer,
+    AdsgramAssignmentSerializer,
+    AdsgramAssignmentRequestSerializer,
+    AdsgramAssignmentCompleteSerializer,
+)
+from .services import (
+    AdsgramIntegrationError,
+    get_adsgram_client,
 )
 
 User = get_user_model()
@@ -306,6 +316,122 @@ class FailureListView(APIView):
     def get(self, request: Request) -> Response:
         failures = Failure.objects.order_by("-created_at")
         return Response(FailureSerializer(failures, many=True).data)
+
+
+# ---------- Adsgram ----------
+
+
+class AdsgramAssignmentRequestView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        serializer = AdsgramAssignmentRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        placement_id = serializer.validated_data.get("placement_id") or getattr(
+            settings,
+            "ADSGRAM_DEFAULT_PLACEMENT_ID",
+            "",
+        )
+
+        profile = request.user.profile
+        client = get_adsgram_client()
+
+        try:
+            remote_payload = client.request_assignment(
+                user_id=request.user.id,
+                placement_id=placement_id or None,
+            )
+        except AdsgramIntegrationError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        assignment_id = str(
+            remote_payload.get("assignment_id")
+            or remote_payload.get("id")
+            or ""
+        ).strip()
+        if not assignment_id:
+            return Response(
+                {"detail": "Adsgram не вернул идентификатор задания."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        payload = {"request": remote_payload}
+
+        try:
+            assignment = AdsgramAssignment.objects.create(
+                profile=profile,
+                external_assignment_id=assignment_id,
+                placement_id=placement_id,
+                status=AdsgramAssignmentStatus.REQUESTED,
+                payload=payload,
+            )
+        except IntegrityError:
+            assignment = AdsgramAssignment.objects.select_for_update().get(
+                external_assignment_id=assignment_id
+            )
+            if assignment.profile_id != profile.id:
+                return Response(
+                    {"detail": "Задание закреплено за другим пользователем."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            assignment.status = AdsgramAssignmentStatus.REQUESTED
+            assignment.placement_id = placement_id
+            assignment.payload = payload
+            assignment.completed_at = None
+            assignment.save(update_fields=[
+                "status",
+                "placement_id",
+                "payload",
+                "completed_at",
+                "updated_at",
+            ])
+
+        return Response(AdsgramAssignmentSerializer(assignment).data)
+
+
+class AdsgramAssignmentCompleteView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        serializer = AdsgramAssignmentCompleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        assignment_id = serializer.validated_data["assignment_id"]
+        profile = request.user.profile
+
+        try:
+            assignment = (
+                AdsgramAssignment.objects.select_for_update()
+                .get(external_assignment_id=assignment_id, profile=profile)
+            )
+        except AdsgramAssignment.DoesNotExist:
+            return Response({"detail": "Задание не найдено."}, status=status.HTTP_404_NOT_FOUND)
+
+        client = get_adsgram_client()
+        try:
+            completion_payload = client.confirm_assignment(
+                assignment_id=assignment.external_assignment_id,
+                user_id=request.user.id,
+            )
+        except AdsgramIntegrationError as exc:
+            payload = assignment.payload or {}
+            payload["error"] = str(exc)
+            assignment.payload = payload
+            assignment.status = AdsgramAssignmentStatus.FAILED
+            assignment.save(update_fields=["payload", "status", "updated_at"])
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        payload = assignment.payload or {}
+        payload["completion"] = completion_payload
+        assignment.payload = payload
+        assignment.status = AdsgramAssignmentStatus.COMPLETED
+        assignment.completed_at = timezone.now()
+        assignment.save(update_fields=["payload", "status", "completed_at", "updated_at"])
+
+        return Response(AdsgramAssignmentSerializer(assignment).data)
 
 
 # ---------- Scores & Leaderboard ----------

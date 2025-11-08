@@ -14,6 +14,7 @@ from .models import (
     Failure,
     QuizQuestion,
     ScoreEntry,
+    AdsgramAssignment,
 )
 
 User = get_user_model()
@@ -127,3 +128,32 @@ class QuizResultResponseSerializer(serializers.Serializer):
     detail = serializers.CharField()
     reward = serializers.IntegerField()
     balance = serializers.IntegerField()
+
+
+# ---------- Adsgram ----------
+
+
+class AdsgramAssignmentRequestSerializer(serializers.Serializer):
+    placement_id = serializers.CharField(required=False, allow_blank=True)
+
+
+class AdsgramAssignmentCompleteSerializer(serializers.Serializer):
+    assignment_id = serializers.CharField()
+
+
+class AdsgramAssignmentSerializer(serializers.ModelSerializer[AdsgramAssignment]):
+    assignment_id = serializers.CharField(source="external_assignment_id", read_only=True)
+    user_id = serializers.IntegerField(source="profile.user_id", read_only=True)
+
+    class Meta:
+        model = AdsgramAssignment
+        fields = (
+            "assignment_id",
+            "placement_id",
+            "status",
+            "payload",
+            "completed_at",
+            "created_at",
+            "updated_at",
+            "user_id",
+        )
