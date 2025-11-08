@@ -70,10 +70,10 @@ interface SectionContentProps {
   description: string;
   cost: number;
   onStart: () => void;
-  isProcessing: boolean;
+  isDisabled: boolean;
 }
 
-const SectionContent = ({ description, cost, onStart, isProcessing }: SectionContentProps) => (
+const SectionContent = ({ description, cost, onStart, isDisabled }: SectionContentProps) => (
   <StyledWrapper>
     <StyledContentWrapper>
       <StyledTextP style={{ marginBottom: "5px" }}>
@@ -81,7 +81,7 @@ const SectionContent = ({ description, cost, onStart, isProcessing }: SectionCon
       </StyledTextP>
       <StyledTextP>{description}</StyledTextP>
       <StyledTextSpan>Запустить симуляцию</StyledTextSpan>
-      <StyledButton type="button" onClick={onStart} disabled={isProcessing}>
+      <StyledButton type="button" onClick={onStart} disabled={isDisabled}>
         <StyledCoinImg src={coin} alt="coin" />
         {cost}
       </StyledButton>

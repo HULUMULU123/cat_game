@@ -60,9 +60,12 @@ interface GlobalState {
   updateBalance: (balance: number) => void;
   refreshBalance: () => Promise<void>;
   submitReferralCode: (code: string) => Promise<{ detail: string }>;
+  redeemPromoCode: (code: string) => Promise<{ detail: string }>;
 
   setTokens: (t: AuthTokens | null) => void;
   logout: () => void;
+
+  incrementProfileStat: (stat: "failures" | "quizzes" | "tasks") => void;
 
   isLoading: boolean;
   startLoading: () => void;
@@ -261,6 +264,25 @@ const useGlobalStore = create<GlobalState>()(
 
         updateBalance: (balance) => set({ balance }),
 
+        incrementProfileStat: (stat) =>
+          set((state) => {
+            const keyMap = {
+              failures: "failuresCompleted",
+              quizzes: "quizzesCompleted",
+              tasks: "tasksCompleted",
+            } as const;
+
+            const key = keyMap[stat];
+            const current = state.profileStats[key] ?? 0;
+
+            return {
+              profileStats: {
+                ...state.profileStats,
+                [key]: current + 1,
+              },
+            };
+          }),
+
         refreshBalance: async () => {
           const { tokens } = get();
           if (!tokens) return;
@@ -294,6 +316,35 @@ const useGlobalStore = create<GlobalState>()(
 
             applyProfileResponse(response);
             return { detail: "Реферальный код успешно активирован" };
+          } catch (error) {
+            if (error instanceof Error) {
+              try {
+                const parsed = JSON.parse(error.message) as { detail?: string };
+                if (parsed?.detail) throw new Error(parsed.detail);
+              } catch {}
+            }
+            throw error;
+          }
+        },
+
+        redeemPromoCode: async (code) => {
+          const trimmed = code.trim();
+          if (!trimmed) throw new Error("Введите промокод");
+
+          const { tokens } = get();
+          if (!tokens)
+            throw new Error("Не удалось подтвердить профиль пользователя");
+
+          try {
+            const response = await authPostJson<ProfileResponse>(
+              "/auth/promo/",
+              { code: trimmed },
+              get,
+              set
+            );
+
+            applyProfileResponse(response);
+            return { detail: "Промокод успешно активирован" };
           } catch (error) {
             if (error instanceof Error) {
               try {

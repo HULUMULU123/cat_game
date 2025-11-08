@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styled from 'styled-components'
 import submit from '../../../assets/icons/submit.svg'
+import useGlobalStore from '../../../shared/store/useGlobalStore'
 const StyledLayout = styled.div`
 position: fixed;
 top:0;
@@ -66,14 +67,56 @@ height: 25px;`
 const StyledSubmitImg = styled.img`
 width:100%;
 height: 100%;`
+const StyledStatus = styled.span`
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  color: #fff;
+  display: block;
+  margin-top: 8px;
+  text-align: center;
+`;
+
 export default function PromoModal({handleCloseModal}) {
+  const redeemPromoCode = useGlobalStore((state) => state.redeemPromoCode);
+  const [value, setValue] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (status === 'loading') return;
+    try {
+      setStatus('loading');
+      const result = await redeemPromoCode(value);
+      setStatus('success');
+      setMessage(result.detail);
+      setValue('');
+    } catch (error) {
+      setStatus('error');
+      setMessage(error instanceof Error ? error.message : 'Не удалось активировать промокод');
+    }
+  };
+
   return (
     <StyledLayout onClick={()=>handleCloseModal(false)}>
         <StyledPromoWrapper onClick={(e) => e.stopPropagation()}>
-            <StyledPromoForm>
-                <StyledPromoInput name='promo' placeholder='ПРОМОКОД'/>
-                <StyledPromoSubmit><StyledSubmitImg src={submit}/></StyledPromoSubmit>
+            <StyledPromoForm onSubmit={handleSubmit}>
+                <StyledPromoInput
+                  name='promo'
+                  placeholder='ПРОМОКОД'
+                  value={value}
+                  onChange={(event) => setValue(event.target.value)}
+                  disabled={status === 'loading'}
+                />
+                <StyledPromoSubmit type='submit' disabled={status === 'loading'}>
+                  <StyledSubmitImg src={submit}/>
+                </StyledPromoSubmit>
             </StyledPromoForm>
+            {status !== 'idle' ? (
+              <StyledStatus>
+                {status === 'loading' ? 'Проверяем...' : message}
+              </StyledStatus>
+            ) : null}
         </StyledPromoWrapper>
     </StyledLayout>
   )

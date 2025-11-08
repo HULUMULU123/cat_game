@@ -5,7 +5,7 @@ from datetime import date
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.request import Request
@@ -35,6 +35,8 @@ from .serializers import (
     DailyRewardSerializer,
     DailyRewardClaimSerializer,
     FailureSerializer,
+    FailureStartSerializer,
+    FailureCompleteSerializer,
     ScoreEntrySerializer,
     LeaderboardRowSerializer,
     QuizResultResponseSerializer,
@@ -163,28 +165,41 @@ class ScoreListView(APIView):
     def post(self, request: Request) -> Response:
         submit_ser = QuizResultSubmitSerializer(data=request.data)
         submit_ser.is_valid(raise_exception=True)
-        correct = submit_ser.validated_data["correct"]
-        total = submit_ser.validated_data["total"]
+
+        answers_payload = submit_ser.validated_data["answers"]
         mode = submit_ser.validated_data["mode"]
 
-        # простая 3-уровневая шкала наград
-        # 60%+ правильных → 500, все правильные → 1000, иначе 100 (если >=20%), ниже — 0
-        import math
+        question_ids = [entry["question_id"] for entry in answers_payload]
+        questions = {
+            q.id: q
+            for q in QuizQuestion.objects.filter(id__in=question_ids)
+        }
 
+        correct = 0
+        total = len(answers_payload)
         reward = 0
-        if total > 0:
-            if correct == total:
-                reward = 1000
-            elif correct >= math.ceil(total * 0.6):
-                reward = 500
-            elif correct >= math.ceil(total * 0.2):
-                reward = 100
-            else:
-                reward = 0
+
+        for entry in answers_payload:
+            question = questions.get(entry["question_id"])
+            if not question:
+                continue
+
+            answers = list(question.answers or [])
+            try:
+                correct_text = answers[question.correct_answer_index]
+            except IndexError:
+                correct_text = answers[0] if answers else ""
+
+            selected = (entry.get("selected_answer") or "").strip()
+            if answers and selected == correct_text.strip():
+                correct += 1
+                reward += int(question.reward or 0)
 
         profile = request.user.userprofile
-        profile.balance += reward
-        profile.save(update_fields=["balance", "updated_at"])
+        if reward:
+            profile.balance = F("balance") + reward
+            profile.save(update_fields=["balance", "updated_at"])
+            profile.refresh_from_db(fields=["balance"])
 
         QuizAttempt.objects.create(
             profile=profile,
@@ -195,7 +210,11 @@ class ScoreListView(APIView):
         )
 
         resp = QuizResultResponseSerializer(
-            {"detail": f"Результат сохранён ({mode}). Награда: {reward}", "reward": reward, "balance": profile.balance}
+            {
+                "detail": f"Результат сохранён ({mode}). Награда: {reward}",
+                "reward": reward,
+                "balance": profile.balance,
+            }
         )
         return Response(resp.data, status=status.HTTP_200_OK)
 # ---------- Simulation ----------
@@ -211,6 +230,7 @@ class SimulationConfigView(APIView):
                 reward_level_1=100,
                 reward_level_2=500,
                 reward_level_3=1000,
+                duration_seconds=60,
                 description="Default simulation config",
             )
         serializer = SimulationConfigSerializer(config)
@@ -230,6 +250,7 @@ class SimulationStartView(APIView):
                 reward_level_1=100,
                 reward_level_2=500,
                 reward_level_3=1000,
+                duration_seconds=60,
                 description="Default simulation config",
             )
         cost = config.attempt_cost
@@ -245,7 +266,34 @@ class SimulationStartView(APIView):
         profile.save(update_fields=["balance", "updated_at"])
         profile.refresh_from_db(fields=["balance"])
 
-        return Response({"detail": "Симуляция успешно запущена!", "balance": profile.balance, "cost": cost})
+        return Response(
+            {
+                "detail": "Симуляция успешно запущена!",
+                "balance": profile.balance,
+                "cost": cost,
+                "duration_seconds": config.duration_seconds,
+            }
+        )
+
+
+class SimulationAdRewardView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        profile = request.user.profile
+        reward = int(getattr(settings, "SIMULATION_AD_REWARD", 200))
+        profile.balance = F("balance") + reward
+        profile.save(update_fields=["balance", "updated_at"])
+        profile.refresh_from_db(fields=["balance"])
+
+        return Response(
+            {
+                "detail": "Баланс пополнен за просмотр рекламы.",
+                "balance": profile.balance,
+                "reward": reward,
+            }
+        )
 
 
 # ---------- Rules ----------
@@ -259,6 +307,15 @@ class RuleCategoryListView(APIView):
 
 
 # ---------- Daily rewards ----------
+
+def _failure_is_active(failure: Failure, now: timezone.datetime | None = None) -> bool:
+    now = now or timezone.now()
+    if failure.start_time and failure.start_time > now:
+        return False
+    if failure.end_time and failure.end_time <= now:
+        return False
+    return True
+
 
 def _weekday_1_7(d: date) -> int:
     # Python: Monday=0..Sunday=6 → 1..7
@@ -325,6 +382,96 @@ class FailureListView(APIView):
     def get(self, request: Request) -> Response:
         failures = Failure.objects.order_by("-created_at")
         return Response(FailureSerializer(failures, many=True).data)
+
+
+class FailureStartView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        serializer = FailureStartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        failure_id = serializer.validated_data.get("failure_id")
+        now = timezone.now()
+        profile = request.user.profile
+
+        qs = Failure.objects.select_for_update()
+
+        if failure_id is not None:
+            try:
+                failure = qs.get(id=failure_id)
+            except Failure.DoesNotExist:
+                return Response({"detail": "Сбой не найден."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            failure = (
+                qs.filter(Q(start_time__isnull=True) | Q(start_time__lte=now))
+                .filter(Q(end_time__isnull=True) | Q(end_time__gt=now))
+                .order_by("-start_time", "-created_at")
+                .first()
+            )
+            if not failure:
+                return Response({"detail": "Активный сбой не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not _failure_is_active(failure, now):
+            return Response({"detail": "Сбой недоступен для участия."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
+            return Response(
+                {"detail": "Вы уже участвовали в этом сбое."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "detail": "Можно начинать.",
+                "failure": FailureSerializer(failure).data,
+                "duration_seconds": 60,
+            }
+        )
+
+
+class FailureCompleteView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        serializer = FailureCompleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        failure_id = serializer.validated_data["failure_id"]
+        points = serializer.validated_data["points"]
+        duration = serializer.validated_data["duration_seconds"]
+
+        profile = request.user.profile
+
+        try:
+            failure = Failure.objects.select_for_update().get(id=failure_id)
+        except Failure.DoesNotExist:
+            return Response({"detail": "Сбой не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+        if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
+            return Response(
+                {"detail": "Результат уже зафиксирован."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ScoreEntry.objects.create(
+            profile=profile,
+            failure=failure,
+            points=points,
+            duration_seconds=duration,
+            earned_at=timezone.now(),
+        )
+
+        return Response(
+            {
+                "detail": "Результат сохранён.",
+                "score": points,
+                "failure": FailureSerializer(failure).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 # ---------- Adsgram ----------
