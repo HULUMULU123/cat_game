@@ -5,6 +5,7 @@ import RewardModal from "./DailyReward/Rewards/RewardModal";
 import RulesModal from "./Rules/RulesModal";
 import OpenRuleModal from "./RuleOpen/OpenRuleModal";
 import UserInfo from "./UserInfo/UserInfo";
+import useGlobalStore from "../../shared/store/useGlobalStore";
 
 import type { HomeModalType, RuleCategory } from "../home/types";
 
@@ -51,6 +52,7 @@ const HomeModal = ({
   openRuleCategory,
 }: HomeModalProps) => {
   const [isAnimated, setIsAnimated] = useState(false);
+  const setBottomNavVisible = useGlobalStore((state) => state.setBottomNavVisible);
 
   useEffect(() => {
     if (!isOpen) {
@@ -60,6 +62,11 @@ const HomeModal = ({
     const timer = window.setTimeout(() => setIsAnimated(true), 50);
     return () => window.clearTimeout(timer);
   }, [isOpen]);
+
+  useEffect(() => {
+    setBottomNavVisible(false);
+    return () => setBottomNavVisible(true);
+  }, [setBottomNavVisible]);
 
   const renderContent = () => {
     switch (infoType) {

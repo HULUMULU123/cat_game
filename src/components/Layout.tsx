@@ -8,6 +8,7 @@ import prize from "../assets/icons/prize.svg";
 import bg from "../assets/bg_image.png"
 import MyIcon from "./icons/MyIcon";
 import FailureLayout from "./FailureLayout";
+import useGlobalStore from "../shared/store/useGlobalStore";
 const LayoutWrapper = styled.div`
   /* padding-bottom: 70px; отступ под меню */
   /* ограничение ширины высотой экрана */
@@ -113,6 +114,7 @@ const StyledLight = styled.div`
 `
 export default function Layout() {
   const location = useLocation();
+  const isBottomNavVisible = useGlobalStore((state) => state.isBottomNavVisible);
 
   if (location.pathname === '/failure') return <FailureLayout/>
 
@@ -121,46 +123,47 @@ export default function Layout() {
       <LayoutWrapper>
         <Outlet />
       </LayoutWrapper>
+      {isBottomNavVisible ? (
+        <BottomNav>
+          <NavButton to="/tasks" $active={location.pathname === "/tasks" ? 1 : 0}>
+            <StyledIcon src={tasks} />
+            <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
 
-      <BottomNav>
-        <NavButton to="/tasks" $active={location.pathname === "/tasks" ? 1 : 0}>
-          <StyledIcon src={tasks} />
-          <StyledActiveIndicator $active={location.pathname === "/tasks" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
-        <NavButton
-          to="/simulation"
-          active={location.pathname === "/simulation" ? 1 : 0}
-        >
-          <StyledIcon src={logo} />
-          <StyledActiveIndicator $active={location.pathname === "/simulation" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
+            </StyledActiveIndicator>
+          </NavButton>
+          <NavButton
+            to="/simulation"
+            active={location.pathname === "/simulation" ? 1 : 0}
+          >
+            <StyledIcon src={logo} />
+            <StyledActiveIndicator $active={location.pathname === "/simulation" ? 1 : 0}>
 
-        <NavButton
-          to="/"
-          $main={true}
-          $active={location.pathname === "/" ? 1 : 0}
-        >
-          <MyIcon height={40} width={40} fill={location.pathname === "/" ? '#2CC2A9' : "#fff" }/>
-        </NavButton>
+            </StyledActiveIndicator>
+          </NavButton>
 
-        <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
-          <StyledIcon src={quiz} />
-          <StyledActiveIndicator $active={location.pathname === "/quiz" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
+          <NavButton
+            to="/"
+            $main={true}
+            $active={location.pathname === "/" ? 1 : 0}
+          >
+            <MyIcon height={40} width={40} fill={location.pathname === "/" ? '#2CC2A9' : "#fff" }/>
+          </NavButton>
 
-        <NavButton to="/prize" active={location.pathname === "/prize" ? 1 : 0}>
-          <StyledIcon src={prize} />
-          <StyledActiveIndicator $active={location.pathname === "/prize" ? 1 : 0}>
-            
-          </StyledActiveIndicator>
-        </NavButton>
-      </BottomNav>
+          <NavButton to="/quiz" active={location.pathname === "/quiz" ? 1 : 0}>
+            <StyledIcon src={quiz} />
+            <StyledActiveIndicator $active={location.pathname === "/quiz" ? 1 : 0}>
+
+            </StyledActiveIndicator>
+          </NavButton>
+
+          <NavButton to="/prize" active={location.pathname === "/prize" ? 1 : 0}>
+            <StyledIcon src={prize} />
+            <StyledActiveIndicator $active={location.pathname === "/prize" ? 1 : 0}>
+
+            </StyledActiveIndicator>
+          </NavButton>
+        </BottomNav>
+      ) : null}
     </>
   );
 }

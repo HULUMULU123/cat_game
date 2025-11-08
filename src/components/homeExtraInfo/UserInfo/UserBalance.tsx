@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import styled from 'styled-components'
+
 import coin from '../../../assets/coin.png'
+import useGlobalStore from '../../../shared/store/useGlobalStore'
 
 const StyledWrapper = styled.div`
   display: flex;
@@ -48,14 +50,22 @@ font-size: 30px;
 font-weight: 700;
 color: #fff;
 `
+
 export default function UserBalance() {
+  const balance = useGlobalStore((state) => state.balance)
+
+  const formattedBalance = useMemo(
+    () => balance.toLocaleString('ru-RU'),
+    [balance],
+  )
+
   return (
     <StyledWrapper>
       <StyledBlockHeader>БАЛАНС CRASH</StyledBlockHeader>
       <StyledCoinWrapper>
         <StyledCoinContent>
           <StyledCoinImg src={coin}/>
-          <StyledCoinBalance>5 500</StyledCoinBalance>
+          <StyledCoinBalance>{formattedBalance}</StyledCoinBalance>
         </StyledCoinContent>
       </StyledCoinWrapper>
     </StyledWrapper>

@@ -15,17 +15,37 @@ export type TelegramUser = {
   photo_url?: string;
 };
 
+type ProfileStatsResponse = {
+  failures_completed: number;
+  quizzes_completed: number;
+  tasks_completed: number;
+};
+
 type ProfileResponse = {
   username: string;
   first_name: string;
   last_name: string;
   balance: number;
+  referral_code: string;
+  referred_by_code: string | null;
+  referrals_count: number;
+  stats: ProfileStatsResponse;
+};
+
+type ProfileStatsState = {
+  failuresCompleted: number;
+  quizzesCompleted: number;
+  tasksCompleted: number;
 };
 
 interface GlobalState {
   userData: TelegramUser | null;
 
   balance: number;
+  referralCode: string | null;
+  referredByCode: string | null;
+  referralsCount: number;
+  profileStats: ProfileStatsState;
   tokens: AuthTokens | null;
   hasHydratedProfile: boolean;
 
@@ -38,9 +58,14 @@ interface GlobalState {
   /** Подтянуть баланс запросом (например, после начислений на бэке). */
   refreshBalance: () => Promise<void>;
 
+  submitReferralCode: (code: string) => Promise<{ detail: string }>;
+
   isLoading: boolean;
   startLoading: () => void;
   stopLoading: () => void;
+
+  isBottomNavVisible: boolean;
+  setBottomNavVisible: (visible: boolean) => void;
 }
 
 /* ---------------- helpers ---------------- */
@@ -62,6 +87,24 @@ const getJson = async <T>(path: string, token: string): Promise<T> => {
   });
   if (!response.ok)
     throw new Error((await response.text()) || `GET ${path} failed`);
+  return (await response.json()) as T;
+};
+
+const postJsonAuthorized = async <T>(
+  path: string,
+  token: string,
+  body: unknown,
+): Promise<T> => {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok)
+    throw new Error((await response.text()) || `POST ${path} failed`);
   return (await response.json()) as T;
 };
 
@@ -92,112 +135,166 @@ const parseTelegramUser = (initData: string): TelegramUser | null => {
 
 /* ---------------- store ---------------- */
 
-const useGlobalStore = create<GlobalState>((set, get) => ({
-  userData: null,
-  balance: 0,
-  tokens: null,
-  hasHydratedProfile: false,
+const useGlobalStore = create<GlobalState>((set, get) => {
+  const applyProfileResponse = (payload: ProfileResponse) => {
+    set((state) => ({
+      userData: {
+        first_name: payload.first_name,
+        last_name: payload.last_name,
+        username: payload.username,
+        photo_url: state.userData?.photo_url ?? "",
+      },
+      balance: payload.balance,
+      referralCode: payload.referral_code,
+      referredByCode: payload.referred_by_code,
+      referralsCount: payload.referrals_count,
+      profileStats: {
+        failuresCompleted: payload.stats?.failures_completed ?? 0,
+        quizzesCompleted: payload.stats?.quizzes_completed ?? 0,
+        tasksCompleted: payload.stats?.tasks_completed ?? 0,
+      },
+      hasHydratedProfile: true,
+    }));
+  };
 
-  isLoading: true,
-  startLoading: () => set({ isLoading: true }),
-  stopLoading: () => set({ isLoading: false }),
+  return {
+    userData: null,
+    balance: 0,
+    referralCode: null,
+    referredByCode: null,
+    referralsCount: 0,
+    profileStats: {
+      failuresCompleted: 0,
+      quizzesCompleted: 0,
+      tasksCompleted: 0,
+    },
+    tokens: null,
+    hasHydratedProfile: false,
 
-  updateBalance: (balance) => {
-    console.log("[store] updateBalance:", balance);
-    set({ balance });
-  },
+    isLoading: true,
+    startLoading: () => set({ isLoading: true }),
+    stopLoading: () => set({ isLoading: false }),
 
-  refreshBalance: async () => {
-    const { tokens } = get();
-    if (!tokens) {
-      console.warn("[store] refreshBalance: no tokens");
-      return;
-    }
-    try {
-      console.log("[store] GET /auth/me/ (refreshBalance)");
-      const data = await getJson<ProfileResponse>("/auth/me/", tokens.access);
-      set({ balance: data.balance });
-      console.log("[store] balance refreshed:", data.balance);
-    } catch (err) {
-      console.error("[store] refreshBalance failed:", err);
-    }
-  },
+    isBottomNavVisible: true,
+    setBottomNavVisible: (visible) => set({ isBottomNavVisible: visible }),
 
-  setUserFromInitData: async (initData) => {
-    if (!initData) return;
+    updateBalance: (balance) => {
+      console.log("[store] updateBalance:", balance);
+      set({ balance });
+    },
 
-    const user = parseTelegramUser(initData);
-    if (!user) return;
+    refreshBalance: async () => {
+      const { tokens } = get();
+      if (!tokens) {
+        console.warn("[store] refreshBalance: no tokens");
+        return;
+      }
+      try {
+        console.log("[store] GET /auth/me/ (refreshBalance)");
+        const data = await getJson<ProfileResponse>("/auth/me/", tokens.access);
+        applyProfileResponse(data);
+        console.log("[store] balance refreshed:", data.balance);
+      } catch (err) {
+        console.error("[store] refreshBalance failed:", err);
+      }
+    },
 
-    // сохраним локально — пригодится даже без бэкенда
-    set({ userData: user });
+    submitReferralCode: async (code) => {
+      const trimmed = code.trim();
+      if (!trimmed) {
+        throw new Error("Введите реферальный код");
+      }
 
-    if (!user.username) {
-      console.warn(
-        "[store] setUserFromInitData: no username — skip backend auth"
-      );
-      return;
-    }
+      const { tokens } = get();
+      if (!tokens) {
+        throw new Error("Не удалось подтвердить профиль пользователя");
+      }
 
-    try {
-      console.log("[store] POST /auth/telegram/");
-      const data = await postJson<{
-        access: string;
-        refresh: string;
-        user: {
-          username: string;
-          first_name: string;
-          last_name: string;
-          balance: number;
-        };
-      }>("/auth/telegram/", {
-        username: user.username,
-        first_name: user.first_name,
-        last_name: user.last_name,
-      });
+      try {
+        const response = await postJsonAuthorized<ProfileResponse>(
+          "/auth/referral/",
+          tokens.access,
+          { code: trimmed },
+        );
 
-      set({
-        userData: {
-          first_name: data.user.first_name,
-          last_name: data.user.last_name,
-          username: data.user.username,
-          photo_url: user.photo_url,
-        },
-        tokens: { access: data.access, refresh: data.refresh },
-        balance: data.user.balance,
-        hasHydratedProfile: true,
-      });
+        applyProfileResponse(response);
+        return { detail: "Реферальный код успешно активирован" };
+      } catch (error) {
+        if (error instanceof Error) {
+          try {
+            const parsed = JSON.parse(error.message) as { detail?: string };
+            if (parsed?.detail) {
+              throw new Error(parsed.detail);
+            }
+          } catch {
+            // игнорируем ошибки парсинга — пробрасываем исходную
+          }
+        }
+        throw error;
+      }
+    },
 
-      console.log("[store] telegram auth ok; balance:", data.user.balance);
-    } catch (err) {
-      console.error("Failed to authorize with backend", err);
-      // оставим локальные userData, но без токенов
-    }
-  },
+    setUserFromInitData: async (initData) => {
+      if (!initData) return;
 
-  loadProfile: async () => {
-    const { tokens, hasHydratedProfile } = get();
-    if (!tokens || hasHydratedProfile) return;
+      const user = parseTelegramUser(initData);
+      if (!user) return;
 
-    try {
-      console.log("[store] GET /auth/me/ (loadProfile)");
-      const data = await getJson<ProfileResponse>("/auth/me/", tokens.access);
+      // сохраним локально — пригодится даже без бэкенда
+      set({ userData: user });
 
-      set({
-        userData: {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          username: data.username,
-        },
-        balance: data.balance,
-        hasHydratedProfile: true,
-      });
+      if (!user.username) {
+        console.warn(
+          "[store] setUserFromInitData: no username — skip backend auth",
+        );
+        return;
+      }
 
-      console.log("[store] profile loaded; balance:", data.balance);
-    } catch (err) {
-      console.error("Failed to load profile", err);
-    }
-  },
-}));
+      try {
+        console.log("[store] POST /auth/telegram/");
+        const data = await postJson<{
+          access: string;
+          refresh: string;
+          user: ProfileResponse;
+        }>("/auth/telegram/", {
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+        });
+
+        set({
+          tokens: { access: data.access, refresh: data.refresh },
+        });
+        applyProfileResponse(data.user);
+        set((state) => ({
+          userData: {
+            ...state.userData,
+            photo_url: user.photo_url,
+          },
+        }));
+
+        console.log("[store] telegram auth ok; balance:", data.user.balance);
+      } catch (err) {
+        console.error("Failed to authorize with backend", err);
+        // оставим локальные userData, но без токенов
+      }
+    },
+
+    loadProfile: async () => {
+      const { tokens, hasHydratedProfile } = get();
+      if (!tokens || hasHydratedProfile) return;
+
+      try {
+        console.log("[store] GET /auth/me/ (loadProfile)");
+        const data = await getJson<ProfileResponse>("/auth/me/", tokens.access);
+        applyProfileResponse(data);
+
+        console.log("[store] profile loaded; balance:", data.balance);
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      }
+    },
+  };
+});
 
 export default useGlobalStore;
