@@ -114,11 +114,11 @@ LOGGING = {
 }
 
 JAZZMIN_SETTINGS = {
-    "site_title": "Cat Game Admin",
-    "site_header": "Cat Game",
-    "site_brand": "Cat Game",
-    "welcome_sign": "Добро пожаловать в панель управления Cat Game",
-    "copyright": "Cat Game",
+    "site_title": "STAKAN Admin",
+    "site_header": "STAKAN",
+    "site_brand": "STAKAN",
+    "welcome_sign": "Добро пожаловать в панель управления STAKAN",
+    "copyright": "STAKAN",
 }
 
 ADSGRAM_API_BASE_URL = os.environ.get("ADSGRAM_API_BASE_URL", "")

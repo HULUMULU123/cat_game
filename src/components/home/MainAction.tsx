@@ -61,7 +61,7 @@ const StyledActionTimer = styled.span`
   }
 `;
 
-/** ⚠️ БЫЛО button — делает вложенную кнопку. Делаем div с семантикой кнопки. */
+/**  БЫЛО button — делает вложенную кнопку. Делаем div с семантикой кнопки. */
 const StyledGiftWrapper = styled.div`
   position: absolute;
   top: -20px;
@@ -109,7 +109,7 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
       } catch {
         if (mounted) {
           setGiftInfo(null);
-          setGiftError("Подарок недоступен");
+          setGiftError("Время неизвестно...");
         }
       }
     })();
@@ -176,10 +176,10 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
   }, [failure, startMs, now]);
 
   const headerText = useMemo(() => {
-    if (isActive) return failure?.name || "СБОЙ НАЧАЛСЯ";
+    if (isActive) return "СБОЙ ЗАКОНЧИТСЯ ЧЕРЕЗ";
     if (isUpcoming) return "СБОЙ СКОРО";
-    return "СБОЙ";
-  }, [isActive, isUpcoming, failure?.name]);
+    return "ПОИСК АНОМАЛИЙ";
+  }, [isActive, isUpcoming]);
 
   const timerText = useMemo(() => {
     const pad = (v: number) => v.toString().padStart(2, "0");
