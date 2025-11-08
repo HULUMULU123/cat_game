@@ -23,6 +23,7 @@ from .models import (
     Failure,
     QuizQuestion,
     ScoreEntry,
+    QuizAttempt,
     AdsgramAssignment,
     AdsgramAssignmentStatus,
 )
@@ -184,6 +185,14 @@ class ScoreListView(APIView):
         profile = request.user.userprofile
         profile.balance += reward
         profile.save(update_fields=["balance", "updated_at"])
+
+        QuizAttempt.objects.create(
+            profile=profile,
+            mode=mode,
+            correct_answers=correct,
+            total_questions=total,
+            reward=reward,
+        )
 
         resp = QuizResultResponseSerializer(
             {"detail": f"Результат сохранён ({mode}). Награда: {reward}", "reward": reward, "balance": profile.balance}
