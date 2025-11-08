@@ -3,6 +3,10 @@ import styled from "styled-components";
 import { request, ApiError } from "../../shared/api/httpClient";
 import type { QuizResponse } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
+import ModalLayout from "../modalWindow/ModalLayout";
+import ModalWindow from "../modalWindow/ModalWindow";
+import black_advert from "../../assets/icons/black_advert.svg";
+import useAdsgramAd, { AdsgramStatus } from "../../shared/hooks/useAdsgramAd";
 
 const StyledWrapper = styled.div`
   width: 95%;
@@ -110,6 +114,25 @@ const NextButton = styled.button`
   }
 `;
 
+const ModalBtnContentWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+`;
+
+const ModalBtnContentImg = styled.img`
+  width: 20px;
+  height: 20px;
+`;
+
+const ModalBtnContentText = styled.span`
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  color: var(--color-main);
+  text-transform: uppercase;
+`;
+
 type Props = {
   onProgressChange?: (p: { current: number; total: number }) => void;
   onTimerChange?: (t: { remaining: number; total: number }) => void; // <-- пробрасываем во внешний визуальный таймер
@@ -117,6 +140,33 @@ type Props = {
 
 const TOTAL_QUESTIONS = 5;
 const QUESTION_TIME_SEC = 20;
+
+const btnLabelByStatus = (status: AdsgramStatus): string => {
+  switch (status) {
+    case "awaiting":
+      return "Инициализация";
+    case "confirming":
+      return "Подтверждение";
+    case "completed":
+      return "Просмотрено";
+    case "requesting":
+      return "Запрос";
+    default:
+      return "Смотреть рекламу";
+  }
+};
+
+const ModalBtnContent = ({ status }: { status: AdsgramStatus }) => (
+  <ModalBtnContentWrapper>
+    <ModalBtnContentImg src={black_advert} alt="advert" />
+    <ModalBtnContentText>{btnLabelByStatus(status)}</ModalBtnContentText>
+  </ModalBtnContentWrapper>
+);
+
+type AnswerLogEntry = {
+  questionId: number;
+  selectedAnswer: string;
+};
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = arr.slice();
@@ -129,7 +179,13 @@ const shuffle = <T,>(arr: T[]): T[] => {
 
 export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   const tokens = useGlobalStore((state) => state.tokens);
-  const updateBalance = useGlobalStore((s) => s.updateBalance);
+  const {
+    startAdFlow,
+    isLoading: isAdLoading,
+    status: adsStatus,
+    error: adsError,
+    reset: resetAds,
+  } = useAdsgramAd();
 
   const [questions, setQuestions] = useState<QuizResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -140,6 +196,12 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   const [correctCount, setCorrectCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [finishMsg, setFinishMsg] = useState<string | null>(null);
+  const [answerLog, setAnswerLog] = useState<AnswerLogEntry[]>([]);
+
+  const [adModalOpen, setAdModalOpen] = useState(false);
+  const [adMessage, setAdMessage] = useState("");
+  const [adOutcome, setAdOutcome] = useState<"pending" | "success">("pending");
+  const [adReason, setAdReason] = useState<"wrong" | "timeout">("wrong");
 
   const [remaining, setRemaining] = useState<number>(QUESTION_TIME_SEC);
   const timerRef = useRef<number | null>(null);
@@ -177,12 +239,18 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
           : list.slice(0, TOTAL_QUESTIONS);
 
       setQuestions(pack);
+      setAnswerLog([]);
       // сброс состояния раунда
       setIdx(0);
       setSelected(null);
       setHasAnswered(false);
       setCorrectCount(0);
       setFinishMsg(null);
+      setAdModalOpen(false);
+      setAdMessage("");
+      setAdOutcome("pending");
+      setAdReason("wrong");
+      resetAds();
       setRemaining(QUESTION_TIME_SEC);
       onProgressChange?.({ current: 0, total: pack.length });
       onTimerChange?.({
@@ -193,7 +261,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       console.error("[Quiz] load error:", e);
       setError("Не удалось загрузить вопросы");
     }
-  }, [tokens, onProgressChange, onTimerChange]);
+  }, [tokens, onProgressChange, onTimerChange, resetAds]);
 
   useEffect(() => {
     void fetchQuestions();
@@ -205,6 +273,17 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   }, [questions, idx]);
 
   const total = questions?.length || TOTAL_QUESTIONS;
+
+  const recordAnswer = useCallback(
+    (question: QuizResponse, answer: string) => {
+      setAnswerLog((prev) => {
+        const next = prev.slice();
+        next[idx] = { questionId: question.id, selectedAnswer: answer };
+        return next;
+      });
+    },
+    [idx]
+  );
 
   // ===== Таймер логики (не UI) =====
   useEffect(() => {
@@ -225,7 +304,13 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
 
         if (clamped === 0) {
           window.clearInterval(id);
-          setHasAnswered(true); // таймер истёк — считаем как неверный
+          setHasAnswered(true);
+          recordAnswer(q, "");
+          setSelected(null);
+          setAdReason("timeout");
+          setAdOutcome("pending");
+          setAdMessage("Время вышло. Посмотрите рекламу, чтобы продолжить викторину.");
+          setAdModalOpen(true);
         }
         return clamped;
       });
@@ -236,7 +321,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       if (timerRef.current) window.clearInterval(timerRef.current);
       timerRef.current = null;
     };
-  }, [q, hasAnswered, onTimerChange]);
+  }, [q, hasAnswered, onTimerChange, recordAnswer]);
 
   // ===== Выбор ответа =====
   const handleSelect = (answerIndex: number) => {
@@ -244,7 +329,15 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     const isCorrect = answerIndex === q.correct_answer_index;
     setSelected(answerIndex);
     setHasAnswered(true);
+    const answerText = q.answers[answerIndex] ?? "";
+    recordAnswer(q, answerText);
     if (isCorrect) setCorrectCount((c) => c + 1);
+    else {
+      setAdReason("wrong");
+      setAdOutcome("pending");
+      setAdMessage("Неправильный ответ. Посмотрите рекламу, чтобы продолжить викторину.");
+      setAdModalOpen(true);
+    }
     if (timerRef.current) {
       window.clearInterval(timerRef.current);
       timerRef.current = null;
@@ -259,14 +352,35 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   };
 
   // ===== Следующий вопрос / Завершение =====
-  const handleNext = async () => {
-    if (!questions) return;
+  const finishQuiz = useCallback(
+    async (answers: AnswerLogEntry[]) => {
+      if (!tokens) {
+        setFinishMsg("Викторина завершена.");
+        return;
+      }
 
-    if (idx === questions.length - 1) {
-      if (!tokens) return;
+      const sanitized = answers.filter(
+        (entry): entry is AnswerLogEntry => Boolean(entry)
+      );
+
+      if (sanitized.length === 0) {
+        setFinishMsg("Викторина завершена.");
+        onTimerChange?.({ remaining: 0, total: QUESTION_TIME_SEC });
+        return;
+      }
+
       setSubmitting(true);
+      setAdModalOpen(false);
+      resetAds();
       try {
-        const payload = { mode: "quiz", correct: correctCount, total: total };
+        const payload = {
+          mode: "quiz",
+          answers: sanitized.map((entry) => ({
+            question_id: entry.questionId,
+            selected_answer: entry.selectedAnswer,
+          })),
+        };
+
         const resp = await request<{
           detail?: string;
           reward?: number;
@@ -286,24 +400,37 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
 
         const msg =
           resp?.detail ??
-          `Готово! Правильных: ${correctCount} из ${total}. Награда: ${
+          `Готово! Правильных: ${correctCount} из ${sanitized.length}. Награда: ${
             resp?.reward ?? 0
           }`;
         setFinishMsg(msg);
-        onTimerChange?.({ remaining: 0, total: QUESTION_TIME_SEC });
       } catch (e) {
         if (e instanceof ApiError) {
           setFinishMsg(
-            `Готово! Правильных: ${correctCount} из ${total}. (Ошибка отправки результата)`
+            `Готово! Правильных: ${correctCount} из ${sanitized.length}. (Ошибка отправки результата)`
           );
         } else {
           setFinishMsg(
-            `Готово! Правильных: ${correctCount} из ${total}. (Ошибка сети)`
+            `Готово! Правильных: ${correctCount} из ${sanitized.length}. (Ошибка сети)`
           );
         }
       } finally {
         setSubmitting(false);
+        onTimerChange?.({ remaining: 0, total: QUESTION_TIME_SEC });
       }
+    },
+    [correctCount, onTimerChange, resetAds, tokens]
+  );
+
+  const handleNext = async () => {
+    if (!questions) return;
+
+    const answersSoFar = answerLog.filter(
+      (entry): entry is AnswerLogEntry => Boolean(entry)
+    );
+
+    if (idx === questions.length - 1) {
+      await finishQuiz(answersSoFar);
       return;
     }
 
@@ -315,6 +442,56 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     onProgressChange?.({ current: next, total });
     onTimerChange?.({ remaining: QUESTION_TIME_SEC, total: QUESTION_TIME_SEC });
   };
+
+  const handleAdModalToggle = (value: boolean) => {
+    if (value) {
+      setAdOutcome("pending");
+      return;
+    }
+
+    setAdModalOpen(false);
+    resetAds();
+
+    if (adOutcome !== "success") {
+      const answersSoFar = answerLog.filter(
+        (entry): entry is AnswerLogEntry => Boolean(entry)
+      );
+      void finishQuiz(answersSoFar);
+    }
+  };
+
+  const handleWatchAd = async () => {
+    try {
+      await startAdFlow();
+      setAdOutcome("success");
+      setAdModalOpen(false);
+      setAdMessage("");
+      resetAds();
+      await handleNext();
+    } catch (error) {
+      setAdOutcome("pending");
+      if (error instanceof Error) {
+        setAdMessage(error.message);
+      } else {
+        setAdMessage("Не удалось воспроизвести рекламу.");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!adModalOpen) return;
+
+    if (adsStatus === "awaiting") {
+      setAdMessage("Запускаем рекламный показ Adsgram…");
+    } else if (adsStatus === "confirming") {
+      setAdMessage("Подтверждаем выполнение задания Adsgram…");
+    }
+  }, [adsStatus, adModalOpen]);
+
+  useEffect(() => {
+    if (!adModalOpen || !adsError) return;
+    setAdMessage(adsError);
+  }, [adsError, adModalOpen]);
 
   // ===== Рендер =====
   return (
@@ -361,7 +538,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
             <Controls>
               <NextButton
                 onClick={handleNext}
-                disabled={!hasAnswered || submitting}
+                disabled={!hasAnswered || submitting || adModalOpen}
               >
                 {idx === total - 1 ? "Завершить" : "Далее"}
               </NextButton>
@@ -371,6 +548,19 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
           <Placeholder>Вопрос не найден</Placeholder>
         )}
       </StyledContentWrapper>
+      {adModalOpen ? (
+        <ModalLayout isOpen={adModalOpen} setIsOpen={handleAdModalToggle}>
+          <ModalWindow
+            header={adReason === "timeout" ? "ВРЕМЯ ИСТЕКЛО" : "НЕПРАВИЛЬНЫЙ ОТВЕТ"}
+            text={adMessage}
+            btnContent={<ModalBtnContent status={adsStatus} />}
+            setOpenModal={handleAdModalToggle}
+            isOpenModal={adModalOpen}
+            onAction={handleWatchAd}
+            isActionLoading={isAdLoading}
+          />
+        </ModalLayout>
+      ) : null}
     </StyledWrapper>
   );
 }

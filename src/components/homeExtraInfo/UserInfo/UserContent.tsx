@@ -14,13 +14,15 @@ const StyledWrapper = styled.div`
   gap: 20px;
 `;
 export default function UserContent() {
-  const [isOpneModal, setIsOpenModal] = useState(false);
+  const [isPromoModalOpen, setPromoModalOpen] = useState(false);
   return (
     <StyledWrapper>
       <UserBalance />
       <UserStatistics />
-      {/* <Promocode handleOpenModal={setIsOpenModal}/>
-        {isOpneModal ? <PromoModal handleCloseModal={setIsOpenModal}/> : null} */}
+      <Promocode handleOpenModal={setPromoModalOpen} />
+      {isPromoModalOpen ? (
+        <PromoModal handleCloseModal={setPromoModalOpen} />
+      ) : null}
     </StyledWrapper>
   );
 }

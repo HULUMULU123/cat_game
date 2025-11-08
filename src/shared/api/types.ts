@@ -21,9 +21,11 @@ export type TaskAssignmentResponse = {
 
 // --- Quiz ---
 export type QuizResponse = {
+  id: number;
   question_text: string; // поле обновлено под актуальную модель
   answers: string[];
   correct_answer_index: number;
+  reward: number;
 };
 
 // --- Leaderboard ---
@@ -55,6 +57,13 @@ export type SimulationStartResponse = {
   detail: string;
   balance: number;
   cost: number;
+  duration_seconds: number;
+};
+
+export type SimulationAdRewardResponse = {
+  detail: string;
+  balance: number;
+  reward: number;
 };
 
 // --- Adsgram ---
@@ -95,6 +104,19 @@ export type FailureResponse = {
   name: string;
   start_time: string | null;
   end_time: string | null;
+  is_active: boolean;
+};
+
+export type FailureStartResponse = {
+  detail: string;
+  failure: FailureResponse;
+  duration_seconds: number;
+};
+
+export type FailureCompleteResponse = {
+  detail: string;
+  score: number;
+  failure: FailureResponse;
 };
 
 // --- Scores ---

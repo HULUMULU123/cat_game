@@ -16,12 +16,16 @@ const StyledContentWrapper = styled.div`
   justify-content: space-between;
   align-items: center;`
 
+interface FailrueHeaderProps {
+  timeLeft: number;
+  duration: number;
+}
 
-export default function FailrueHeader() {
+export default function FailrueHeader({ timeLeft, duration }: FailrueHeaderProps) {
   return (
     <StyledWrapper>
       <StyledContentWrapper>
-        <Timer duration={60} />
+        <Timer duration={duration} timeLeft={timeLeft} />
         <HeaderInfo />
       </StyledContentWrapper>
     </StyledWrapper>

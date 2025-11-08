@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import CoinCount from "../components/common/CoinCount";
 import SectionInfo from "../components/common/SectionInfo";
 import SectionContent from "../components/simulation/SectionContent";
 import SimulationRoadMap from "../components/simulation/SimulationRoadMap";
-import SimulationTimer from "../components/simulation/SimulationTimer";
 import ModalLayout from "../components/modalWindow/ModalLayout";
 import ModalWindow from "../components/modalWindow/ModalWindow";
 import black_advert from "../assets/icons/black_advert.svg";
@@ -12,12 +11,16 @@ import { request, ApiError } from "../shared/api/httpClient";
 import type {
   SimulationConfigResponse,
   SimulationStartResponse,
+  SimulationAdRewardResponse,
 } from "../shared/api/types";
-
 import useGlobalStore from "../shared/store/useGlobalStore";
 import useAdsgramAd, { AdsgramStatus } from "../shared/hooks/useAdsgramAd";
+import FailrueHeader from "../components/failure/header/FailrueHeader";
+import FailureFooter from "../components/failure/footer/FailureFooter";
+import Droplets from "../components/failure/droplets/Droplets";
 
 const StyledWrapper = styled.div`
+  position: relative;
   height: 100vh;
   width: 100%;
   backdrop-filter: blur(40px);
@@ -40,6 +43,47 @@ const StyledBtnContentText = styled.span`
   font-size: 12px;
   color: var(--color-main);
   text-transform: uppercase;
+`;
+
+const GameOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(0, 31, 25, 0.92) 0%, rgba(0, 9, 7, 0.96) 100%);
+`;
+
+const GameInner = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+`;
+
+const GameHeaderWrapper = styled.div`
+  position: absolute;
+  top: 16px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+`;
+
+const GameHeaderInner = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
+
+const GameFooterWrapper = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
 `;
 
 const btnLabelByStatus = (status: AdsgramStatus): string => {
@@ -70,7 +114,6 @@ const Simulation = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((state) => state.updateBalance);
   const balance = useGlobalStore((state) => state.balance);
-  const refreshBalance = useGlobalStore((state) => state.refreshBalance);
 
   const {
     startAdFlow,
@@ -85,6 +128,12 @@ const Simulation = () => {
   const [modalMessage, setModalMessage] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const [isGameRunning, setIsGameRunning] = useState(false);
+  const [gameDuration, setGameDuration] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [score, setScore] = useState(0);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+
   useEffect(() => {
     if (!tokens) return;
 
@@ -92,12 +141,13 @@ const Simulation = () => {
 
     const fetchConfig = async () => {
       try {
-        // ВАЖНО: бэк отдаёт attempt_cost и три уровня наград
         const data = await request<SimulationConfigResponse>("/simulation/", {
           headers: { Authorization: `Bearer ${tokens.access}` },
         });
         if (isMounted) {
           setConfig(data);
+          setGameDuration(data.duration_seconds ?? 60);
+          setTimeLeft(data.duration_seconds ?? 60);
         }
       } catch (error) {
         console.error("Failed to fetch simulation config", error);
@@ -111,11 +161,40 @@ const Simulation = () => {
     };
   }, [tokens]);
 
-  // "0 / <attempt_cost>" для шапки раздела
+  useEffect(() => {
+    if (!isGameRunning) return;
+
+    const interval = window.setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(interval);
+          setIsGameRunning(false);
+          setResultModalOpen(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isGameRunning]);
+
   const infoExtra = useMemo(() => {
     if (!config) return "";
     return `0 / ${config.attempt_cost}`;
   }, [config]);
+
+  const startGameSession = useCallback(
+    (duration: number) => {
+      const safeDuration = duration > 0 ? duration : 60;
+      setScore(0);
+      setGameDuration(safeDuration);
+      setTimeLeft(safeDuration);
+      setResultModalOpen(false);
+      setIsGameRunning(true);
+    },
+    []
+  );
 
   const handleStart = async () => {
     if (!tokens || !config) {
@@ -124,7 +203,6 @@ const Simulation = () => {
       return;
     }
 
-    // Проверяем баланс против attempt_cost
     if (balance < config.attempt_cost) {
       setModalState("insufficient");
       setModalMessage(
@@ -135,20 +213,15 @@ const Simulation = () => {
 
     setIsProcessing(true);
     try {
-      // Бэк сам спишет attempt_cost, вернёт новый баланс
-      const data = await request<SimulationStartResponse>(
-        "/simulation/start/",
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        }
-      );
+      const data = await request<SimulationStartResponse>("/simulation/start/", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
 
-      // обновим баланс из ответа
       updateBalance(data.balance);
-
-      setModalState("success");
-      setModalMessage(data.detail);
+      setModalState("");
+      setModalMessage("");
+      startGameSession(data.duration_seconds ?? config.duration_seconds ?? 60);
     } catch (error) {
       if (error instanceof ApiError) {
         try {
@@ -183,22 +256,57 @@ const Simulation = () => {
     }
   };
 
+  const handleResultModalToggle = (value: boolean) => {
+    if (!value) {
+      setResultModalOpen(false);
+      setScore(0);
+      setTimeLeft(config?.duration_seconds ?? gameDuration);
+    }
+  };
+
   const handleWatchAd = async () => {
+    if (!tokens) {
+      setModalMessage("Пожалуйста, авторизуйтесь, чтобы пополнить баланс.");
+      return;
+    }
+
     try {
       await startAdFlow();
+      const rewardResponse = await request<SimulationAdRewardResponse>(
+        "/simulation/ad-reward/",
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${tokens.access}` },
+        }
+      );
+      updateBalance(rewardResponse.balance);
       setModalState("success");
       setModalMessage(
-        "Спасибо! Реклама Adsgram просмотрена, баланс будет обновлён автоматически.",
+        `На баланс начислено ${rewardResponse.reward} CRASH за просмотр рекламы.`
       );
-      await refreshBalance();
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof ApiError) {
+        try {
+          const parsed = JSON.parse(error.message) as { detail?: string };
+          if (parsed.detail) {
+            setModalMessage(parsed.detail);
+          } else {
+            setModalMessage("Не удалось воспроизвести рекламу.");
+          }
+        } catch {
+          setModalMessage("Не удалось воспроизвести рекламу.");
+        }
+      } else if (error instanceof Error) {
         setModalState("insufficient");
         setModalMessage(error.message);
+        return;
       } else {
         setModalState("insufficient");
         setModalMessage("Не удалось воспроизвести рекламу.");
+        return;
       }
+
+      setModalState("insufficient");
     }
   };
 
@@ -218,6 +326,11 @@ const Simulation = () => {
     setModalMessage(adsError);
   }, [adsError]);
 
+  const handlePop = useCallback(() => {
+    if (!isGameRunning) return;
+    setScore((prev) => prev + 1);
+  }, [isGameRunning]);
+
   return (
     <>
       <StyledWrapper>
@@ -226,29 +339,43 @@ const Simulation = () => {
 
         <SectionContent
           description={config?.description ?? ""}
-          // показываем актуальную цену запуска
           cost={config?.attempt_cost ?? 0}
           onStart={handleStart}
-          isProcessing={isProcessing}
+          isDisabled={isProcessing || isGameRunning}
         />
 
-        {/* Дорожная карта наград: подтягиваем уровни с бэка */}
         <SimulationRoadMap
           attemptCost={config?.attempt_cost ?? 0}
           reward1={config?.reward_level_1 ?? 0}
           reward2={config?.reward_level_2 ?? 0}
           reward3={config?.reward_level_3 ?? 0}
         />
-
-        <SimulationTimer />
       </StyledWrapper>
+
+      {isGameRunning ? (
+        <GameOverlay>
+          <GameInner>
+            <GameHeaderWrapper>
+              <GameHeaderInner>
+                <FailrueHeader timeLeft={timeLeft} duration={gameDuration} />
+              </GameHeaderInner>
+            </GameHeaderWrapper>
+
+            <Droplets onPop={handlePop} />
+
+            <GameFooterWrapper>
+              <FailureFooter score={score} />
+            </GameFooterWrapper>
+          </GameInner>
+        </GameOverlay>
+      ) : null}
 
       {modalState ? (
         <ModalLayout isOpen={Boolean(modalState)} setIsOpen={handleModalToggle}>
           <ModalWindow
             header={
               modalState === "success"
-                ? "СИМУЛЯЦИЯ ЗАПУЩЕНА"
+                ? "БАЛАНС ПОПОЛНЕН"
                 : "НЕДОСТАТОЧНО CRASH"
             }
             text={modalMessage}
@@ -261,6 +388,20 @@ const Simulation = () => {
             isActionLoading={isAdLoading}
             isOpenModal={Boolean(modalState)}
             setOpenModal={handleModalToggle}
+          />
+        </ModalLayout>
+      ) : null}
+
+      {resultModalOpen ? (
+        <ModalLayout
+          isOpen={resultModalOpen}
+          setIsOpen={handleResultModalToggle}
+        >
+          <ModalWindow
+            header="СИМУЛЯЦИЯ ЗАВЕРШЕНА"
+            text={`Вы сбили ${score} капель. Результат не сохраняется — тренируйтесь ещё!`}
+            isOpenModal={resultModalOpen}
+            setOpenModal={handleResultModalToggle}
           />
         </ModalLayout>
       ) : null}
