@@ -22,10 +22,17 @@ class Migration(migrations.Migration):
             model_name="userprofile",
             name="referral_code",
             field=models.CharField(
+
                 blank=True,
                 default="",
                 editable=False,
                 max_length=12,
+
+                default=game.models.generate_referral_code,
+                editable=False,
+                max_length=12,
+                unique=True,
+
                 verbose_name="Реферальный код",
             ),
         ),
