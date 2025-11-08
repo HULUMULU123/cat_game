@@ -195,7 +195,7 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
 
     // время старта неизвестно
     if (isUpcoming && startMs === null) {
-      return "Скоро будет";
+      return "Поиск аномалий...";
     }
 
     // идёт: до конца, если он известен
