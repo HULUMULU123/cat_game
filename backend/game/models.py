@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import secrets
+import string
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -21,6 +24,33 @@ class TimestampedModel(models.Model):
 # User profile
 # ==============================
 
+def generate_referral_code() -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    # 8 символов дают 36^8 комбинаций, этого достаточно даже при случайном выборе
+    return "".join(secrets.choice(alphabet) for _ in range(8))
+
+
+def ensure_all_profiles_have_referral_code(apps, schema_editor) -> None:
+    UserProfile = apps.get_model("game", "UserProfile")
+    existing_codes = set(
+        UserProfile.objects.exclude(referral_code="").values_list("referral_code", flat=True)
+    )
+
+    for profile in UserProfile.objects.all():
+        if profile.referral_code:
+            continue
+
+        while True:
+            code = generate_referral_code()
+            if code in existing_codes:
+                continue
+
+            profile.referral_code = code
+            profile.save(update_fields=["referral_code"])
+            existing_codes.add(code)
+            break
+
+
 class UserProfile(TimestampedModel):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -29,6 +59,21 @@ class UserProfile(TimestampedModel):
         verbose_name="Пользователь",
     )
     balance = models.PositiveIntegerField(default=0, verbose_name="Баланс монет")
+    referral_code = models.CharField(
+        max_length=12,
+        unique=True,
+        default=generate_referral_code,
+        editable=False,
+        verbose_name="Реферальный код",
+    )
+    referred_by = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="referrals",
+        verbose_name="Пригласивший пользователь",
+    )
 
     class Meta:
         db_table = "профили_пользователей"
@@ -37,6 +82,16 @@ class UserProfile(TimestampedModel):
 
     def __str__(self):
         return f"Профиль {self.user.username}"
+
+    def save(self, *args, **kwargs):
+        if not self.referral_code:
+            # гарантируем уникальность, если код очищен вручную
+            while True:
+                code = generate_referral_code()
+                if not UserProfile.objects.filter(referral_code=code).exists():
+                    self.referral_code = code
+                    break
+        super().save(*args, **kwargs)
 
 
 # ==============================
@@ -272,3 +327,36 @@ class ScoreEntry(TimestampedModel):
 
     def __str__(self):
         return f"{self.profile.user.username}: {self.points} очков"
+
+
+# ==============================
+# Quiz attempts
+# ==============================
+
+
+class QuizAttempt(TimestampedModel):
+    profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="quiz_attempts",
+        verbose_name="Профиль",
+    )
+    mode = models.CharField(max_length=32, default="quiz", verbose_name="Режим")
+    correct_answers = models.PositiveIntegerField(
+        default=0, verbose_name="Количество правильных ответов"
+    )
+    total_questions = models.PositiveIntegerField(
+        default=0, verbose_name="Всего вопросов"
+    )
+    reward = models.PositiveIntegerField(default=0, verbose_name="Полученная награда")
+    completed_at = models.DateTimeField(
+        default=timezone.now, verbose_name="Дата завершения"
+    )
+
+    class Meta:
+        db_table = "попытки_викторины"
+        verbose_name = "Попытка викторины"
+        verbose_name_plural = "Попытки викторины"
+
+    def __str__(self):
+        return f"{self.profile.user.username}: {self.correct_answers}/{self.total_questions}"

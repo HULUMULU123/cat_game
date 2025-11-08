@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import styled from 'styled-components'
+
+import useGlobalStore from '../../../shared/store/useGlobalStore'
 
 const StyledStatisticsContent = styled.div`
 display: flex;
@@ -33,23 +35,35 @@ font-size: 20px;
 font-weight: 700;
 color: var(--color-white-text);
 `
+
 export default function UserStatisticsContent() {
+  const stats = useGlobalStore((state) => state.profileStats)
+
+  const formattedStats = useMemo(
+    () => ({
+      failures: stats.failuresCompleted.toLocaleString('ru-RU'),
+      quizzes: stats.quizzesCompleted.toLocaleString('ru-RU'),
+      tasks: stats.tasksCompleted.toLocaleString('ru-RU'),
+    }),
+    [stats.failuresCompleted, stats.quizzesCompleted, stats.tasksCompleted],
+  )
+
   return (
     <StyledStatisticsContent>
           <StyledStatisticsSpanWrapper>
             <StyledStatisticsSpan>СБОЕВ ПРОЙДЕНО</StyledStatisticsSpan>
             <StyledStatistcPoints></StyledStatistcPoints>
-            <StyledStatisticResultSpan>13</StyledStatisticResultSpan>
+            <StyledStatisticResultSpan>{formattedStats.failures}</StyledStatisticResultSpan>
           </StyledStatisticsSpanWrapper>
           <StyledStatisticsSpanWrapper>
             <StyledStatisticsSpan>ВИКТОРИН ПРОЙДЕНО</StyledStatisticsSpan>
             <StyledStatistcPoints></StyledStatistcPoints>
-            <StyledStatisticResultSpan>32</StyledStatisticResultSpan>
+            <StyledStatisticResultSpan>{formattedStats.quizzes}</StyledStatisticResultSpan>
           </StyledStatisticsSpanWrapper>
           <StyledStatisticsSpanWrapper>
             <StyledStatisticsSpan>ИНФО-УЗЛОВ ПРОЙДЕНО</StyledStatisticsSpan>
             <StyledStatistcPoints></StyledStatistcPoints>
-            <StyledStatisticResultSpan>50</StyledStatisticResultSpan>
+            <StyledStatisticResultSpan>{formattedStats.tasks}</StyledStatisticResultSpan>
           </StyledStatisticsSpanWrapper>
         </StyledStatisticsContent>
   )

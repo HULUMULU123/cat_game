@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import styled from 'styled-components'
+
 import avatar from '../../../assets/avatar.jpg'
+import useGlobalStore from '../../../shared/store/useGlobalStore'
 const StyledWrapper = styled.div`
 display: flex;
 width: 95%;
@@ -28,25 +30,44 @@ const StyledUsernameWrapper = styled.div`
 width: 70%;
 background: rgba(255,255,255,0.2);
 display: flex;
-align-items:center;
+flex-direction: column;
+justify-content: center;
 border-radius: 7px;
-height: 2.5rem;`
+padding: 8px 20px;
+gap: 2px;`
 
-const StyledUsernameSpan = styled.span`
+const StyledUsernameSpan = styled.span<{ $secondary?: boolean }>`
 color:#fff;
 font-family: 'Conthrax', sans-serif;
-font-weight: 700;
-margin-left: 20px;
-font-size: 16px;
+font-weight: ${({ $secondary }) => ($secondary ? 400 : 700)};
+font-size: ${({ $secondary }) => ($secondary ? '12px' : '16px')};
+opacity: ${({ $secondary }) => ($secondary ? 0.8 : 1)};
 `
 export default function UserInformation() {
+  const userData = useGlobalStore((state) => state.userData)
+
+  const displayName = useMemo(() => {
+    if (!userData) return '—'
+    const parts = [userData.first_name, userData.last_name]
+      .map((value) => (value || '').trim())
+      .filter(Boolean)
+    if (parts.length) return parts.join(' ')
+    if (userData.username) return `@${userData.username}`
+    return '—'
+  }, [userData])
+
   return (
     <StyledWrapper>
         <StyledImgWrapper>
-            <StyledImg src={avatar}/>
+            <StyledImg src={userData?.photo_url || avatar} alt="User avatar"/>
         </StyledImgWrapper>
         <StyledUsernameWrapper>
-            <StyledUsernameSpan>Alex</StyledUsernameSpan>
+            <StyledUsernameSpan>{displayName}</StyledUsernameSpan>
+            {userData?.username ? (
+              <StyledUsernameSpan $secondary>
+                @{userData.username}
+              </StyledUsernameSpan>
+            ) : null}
         </StyledUsernameWrapper>
     </StyledWrapper>
   )
