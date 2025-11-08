@@ -24,9 +24,6 @@ class Migration(migrations.Migration):
             field=models.CharField(
 
                 blank=True,
-                editable=False,
-                max_length=12,
-
                 default=game.models.generate_referral_code,
                 editable=False,
                 max_length=12,
