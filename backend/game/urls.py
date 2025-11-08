@@ -26,6 +26,10 @@ from .views import (
     # Очки и лидерборд
     ScoreListView,
     LeaderboardView,
+
+    # Adsgram
+    AdsgramAssignmentRequestView,
+    AdsgramAssignmentCompleteView,
 )
 
 urlpatterns = [
@@ -54,4 +58,8 @@ urlpatterns = [
     # Очки и лидерборд
     path("scores/", ScoreListView.as_view(), name="scores"),
     path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+
+    # Adsgram
+    path("adsgram/request/", AdsgramAssignmentRequestView.as_view(), name="adsgram-request"),
+    path("adsgram/complete/", AdsgramAssignmentCompleteView.as_view(), name="adsgram-complete"),
 ]

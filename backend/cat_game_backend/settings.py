@@ -15,6 +15,7 @@ ALLOWED_HOSTS: list[str] = [
 ]
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -111,3 +112,19 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
     "loggers": {"accounts": {"level": "DEBUG"}},
 }
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Cat Game Admin",
+    "site_header": "Cat Game",
+    "site_brand": "Cat Game",
+    "welcome_sign": "Добро пожаловать в панель управления Cat Game",
+    "copyright": "Cat Game",
+}
+
+ADSGRAM_API_BASE_URL = os.environ.get("ADSGRAM_API_BASE_URL", "")
+ADSGRAM_API_TOKEN = os.environ.get("ADSGRAM_API_TOKEN", "")
+ADSGRAM_APP_ID = os.environ.get("ADSGRAM_APP_ID", "")
+ADSGRAM_DEFAULT_PLACEMENT_ID = os.environ.get("ADSGRAM_DEFAULT_PLACEMENT_ID", "")
+ADSGRAM_REQUEST_PATH = os.environ.get("ADSGRAM_REQUEST_PATH", "/v1/tasks/request")
+ADSGRAM_COMPLETE_PATH = os.environ.get("ADSGRAM_COMPLETE_PATH", "/v1/tasks/complete")
+ADSGRAM_TIMEOUT = int(os.environ.get("ADSGRAM_TIMEOUT", "10"))

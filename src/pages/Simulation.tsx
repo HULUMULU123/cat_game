@@ -15,6 +15,7 @@ import type {
 } from "../shared/api/types";
 
 import useGlobalStore from "../shared/store/useGlobalStore";
+import useAdsgramAd, { AdsgramStatus } from "../shared/hooks/useAdsgramAd";
 
 const StyledWrapper = styled.div`
   height: 100vh;
@@ -25,18 +26,41 @@ const StyledWrapper = styled.div`
 const StyledBtnContentWrapper = styled.div`
   display: flex;
   margin: auto;
+  align-items: center;
+  gap: 8px;
+`;
+
+const StyledBtnContentImg = styled.img`
   width: 20px;
   height: 20px;
 `;
 
-const StyledBtnContentImg = styled.img`
-  width: 100%;
-  height: 100%;
+const StyledBtnContentText = styled.span`
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  color: var(--color-main);
+  text-transform: uppercase;
 `;
 
-const BtnContent = () => (
+const btnLabelByStatus = (status: AdsgramStatus): string => {
+  switch (status) {
+    case "awaiting":
+      return "Инициализация";
+    case "confirming":
+      return "Подтверждение";
+    case "completed":
+      return "Просмотрено";
+    case "requesting":
+      return "Запрос";
+    default:
+      return "Смотреть рекламу";
+  }
+};
+
+const BtnContent = ({ status }: { status: AdsgramStatus }) => (
   <StyledBtnContentWrapper>
     <StyledBtnContentImg src={black_advert} alt="advert" />
+    <StyledBtnContentText>{btnLabelByStatus(status)}</StyledBtnContentText>
   </StyledBtnContentWrapper>
 );
 
@@ -46,6 +70,15 @@ const Simulation = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((state) => state.updateBalance);
   const balance = useGlobalStore((state) => state.balance);
+  const refreshBalance = useGlobalStore((state) => state.refreshBalance);
+
+  const {
+    startAdFlow,
+    isLoading: isAdLoading,
+    status: adsStatus,
+    error: adsError,
+    reset: resetAds,
+  } = useAdsgramAd();
 
   const [config, setConfig] = useState<SimulationConfigResponse | null>(null);
   const [modalState, setModalState] = useState<ModalState>("");
@@ -143,8 +176,47 @@ const Simulation = () => {
   };
 
   const handleModalToggle = (value: boolean) => {
-    if (!value) setModalState("");
+    if (!value) {
+      setModalState("");
+      setModalMessage("");
+      resetAds();
+    }
   };
+
+  const handleWatchAd = async () => {
+    try {
+      await startAdFlow();
+      setModalState("success");
+      setModalMessage(
+        "Спасибо! Реклама Adsgram просмотрена, баланс будет обновлён автоматически.",
+      );
+      await refreshBalance();
+    } catch (error) {
+      if (error instanceof Error) {
+        setModalState("insufficient");
+        setModalMessage(error.message);
+      } else {
+        setModalState("insufficient");
+        setModalMessage("Не удалось воспроизвести рекламу.");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (modalState !== "insufficient") return;
+
+    if (adsStatus === "awaiting") {
+      setModalMessage("Запускаем рекламный показ Adsgram…");
+    } else if (adsStatus === "confirming") {
+      setModalMessage("Подтверждаем выполнение задания Adsgram…");
+    }
+  }, [adsStatus, modalState]);
+
+  useEffect(() => {
+    if (!adsError) return;
+    setModalState("insufficient");
+    setModalMessage(adsError);
+  }, [adsError]);
 
   return (
     <>
@@ -181,8 +253,12 @@ const Simulation = () => {
             }
             text={modalMessage}
             btnContent={
-              modalState === "insufficient" ? <BtnContent /> : undefined
+              modalState === "insufficient" ? (
+                <BtnContent status={adsStatus} />
+              ) : undefined
             }
+            onAction={modalState === "insufficient" ? handleWatchAd : undefined}
+            isActionLoading={isAdLoading}
             isOpenModal={Boolean(modalState)}
             setOpenModal={handleModalToggle}
           />

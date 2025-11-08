@@ -64,6 +64,18 @@ const StyledBtn = styled.button`
   align-items: center;
   border: none;
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const StyledLoadingText = styled.span`
+  margin: 0 auto;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  color: var(--color-main);
 `;
 
 const StyledCloseBtn = styled.button`
@@ -101,6 +113,8 @@ interface ModalWindowProps {
   mainText?: ReactNode;
   setOpenModal: (value: boolean) => void;
   isOpenModal: boolean;
+  onAction?: () => void | Promise<void>;
+  isActionLoading?: boolean;
 }
 
 const ModalWindow = ({
@@ -110,6 +124,8 @@ const ModalWindow = ({
   mainText,
   setOpenModal,
   isOpenModal,
+  onAction,
+  isActionLoading = false,
 }: ModalWindowProps) => {
   const [animate, setAnimate] = useState(false);
 
@@ -132,7 +148,24 @@ const ModalWindow = ({
         <StyledHeader>{header}</StyledHeader>
         <StyledLine />
         <StyledText>{text}</StyledText>
-        {btnContent ? <StyledBtn type="button">{btnContent}</StyledBtn> : null}
+        {btnContent ? (
+          <StyledBtn
+            type="button"
+            onClick={() => {
+              if (onAction) {
+                void onAction();
+              }
+            }}
+            disabled={isActionLoading || !onAction}
+            aria-busy={isActionLoading}
+          >
+            {isActionLoading ? (
+              <StyledLoadingText>Загрузка…</StyledLoadingText>
+            ) : (
+              btnContent
+            )}
+          </StyledBtn>
+        ) : null}
         {mainText ? <StyledMainText>{mainText}</StyledMainText> : null}
       </StyledContentWrapper>
     </StyledModalWidnow>
