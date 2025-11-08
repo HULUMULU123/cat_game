@@ -3,7 +3,31 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-import game.models
+import game.models  # используем generate_referral_code
+
+def fill_referral_codes(apps, schema_editor):
+    UserProfile = apps.get_model("game", "UserProfile")
+
+    # Соберём уже занятые значения (если вдруг были)
+    used = set(
+        UserProfile.objects.exclude(referral_code__isnull=True)
+                           .exclude(referral_code="")
+                           .values_list("referral_code", flat=True)
+    )
+
+    # Для всех пустых — сгенерируем уникальные коды
+    for p in UserProfile.objects.all():
+        if p.referral_code:
+            continue
+        for _ in range(50):  # перестраховка от коллизий
+            code = game.models.generate_referral_code()
+            if code and code not in used:
+                used.add(code)
+                p.referral_code = code
+                p.save(update_fields=["referral_code"])
+                break
+        else:
+            raise RuntimeError("Cannot generate unique referral_code for profile id=%s" % p.pk)
 
 
 class Migration(migrations.Migration):
@@ -13,25 +37,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # ---- 1) Поле link к Task (безопасно)
         migrations.AddField(
             model_name="task",
             name="link",
             field=models.URLField(blank=True, verbose_name="Ссылка (URL)"),
         ),
+
+        # ---- 2) referral_code: добавляем как nullable, без unique и без default
         migrations.AddField(
             model_name="userprofile",
             name="referral_code",
             field=models.CharField(
-
-                blank=True,
-                default=game.models.generate_referral_code,
-                editable=False,
                 max_length=12,
-                unique=True,
-
+                null=True,
+                blank=True,
+                editable=False,
                 verbose_name="Реферальный код",
             ),
         ),
+
+        # ---- 3) referred_by
         migrations.AddField(
             model_name="userprofile",
             name="referred_by",
@@ -44,6 +70,8 @@ class Migration(migrations.Migration):
                 verbose_name="Пригласивший пользователь",
             ),
         ),
+
+        # ---- 4) Модель QuizAttempt (как было)
         migrations.CreateModel(
             name="QuizAttempt",
             fields=[
@@ -113,18 +141,20 @@ class Migration(migrations.Migration):
                 "db_table": "попытки_викторины",
             },
         ),
-        migrations.RunPython(
-            code=game.models.ensure_all_profiles_have_referral_code,
-            reverse_code=migrations.RunPython.noop,
-        ),
+
+        # ---- 5) Заполняем referral_code уникальными значениями
+        migrations.RunPython(fill_referral_codes, migrations.RunPython.noop),
+
+        # ---- 6) Ужесточаем ограничения: теперь unique + not null
         migrations.AlterField(
             model_name="userprofile",
             name="referral_code",
             field=models.CharField(
-                default=game.models.generate_referral_code,
-                editable=False,
                 max_length=12,
                 unique=True,
+                null=False,
+                blank=False,
+                editable=False,
                 verbose_name="Реферальный код",
             ),
         ),
