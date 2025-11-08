@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
 const Wrapper = styled.div`
@@ -42,24 +42,20 @@ const CircleInner = styled.circle`
   stroke-width: 2.4; /* 2 * 1.2 */
 `;
 
-const TimerRing = ({ duration = 60 }) => {
-  const [timeLeft, setTimeLeft] = useState(duration);
+interface TimerRingProps {
+  duration: number;
+  timeLeft: number;
+}
 
+const TimerRing = ({ duration, timeLeft }: TimerRingProps) => {
+  const safeDuration = duration > 0 ? duration : 1;
+  const clampedTime = Math.max(0, Math.min(timeLeft, safeDuration));
   const radius = 48; // 40 * 1.2
   const circumference = 2 * Math.PI * radius;
 
-  useEffect(() => {
-    if (timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
+  const progress = (clampedTime / safeDuration) * circumference;
 
-  const elapsed = duration - timeLeft;
-  const progress = (duration - elapsed / duration) * circumference;
-
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(1, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
@@ -81,11 +77,11 @@ const TimerRing = ({ duration = 60 }) => {
           cy="66.5"
           r={radius}
           strokeDasharray={circumference}
-          strokeDashoffset={progress}
+          strokeDashoffset={circumference - progress}
         />
         <CircleInner cx="66.5" cy="66.5" r={36} /> {/* 30 * 1.2 */}
       </Svg>
-      <TimerText>{formatTime(timeLeft)}</TimerText>
+      <TimerText>{formatTime(clampedTime)}</TimerText>
     </Wrapper>
   );
 };

@@ -73,3 +73,10 @@ class ReferralCodeApplySerializer(serializers.Serializer):
 
     def validate_code(self, value: str) -> str:
         return value.strip().upper()
+
+
+class PromoCodeApplySerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=32)
+
+    def validate_code(self, value: str) -> str:
+        return value.strip().upper()

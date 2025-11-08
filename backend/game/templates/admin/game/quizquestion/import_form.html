@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo;
+    <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo;
+    <a href="{% url 'admin:game_quizquestion_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo;
+    Импорт из Excel
+  </div>
+{% endblock %}
+
+{% block content %}
+  <h1>Импорт вопросов из Excel</h1>
+  <p>Поддерживается формат XLSX с колонками: вопрос, правильный ответ, неправильные ответы (3 колонки), количество монет.</p>
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+    </table>
+    <div class="submit-row">
+      <input type="submit" value="Импортировать" class="default">
+      <a href="{% url 'admin:game_quizquestion_changelist' %}" class="button cancel-link">Отмена</a>
+    </div>
+  </form>
+{% endblock %}

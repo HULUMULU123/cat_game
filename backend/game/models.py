@@ -4,6 +4,7 @@ import secrets
 import string
 
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -194,6 +195,9 @@ class SimulationConfig(TimestampedModel):
     reward_level_1 = models.PositiveIntegerField(default=100, verbose_name="Награда 1 уровня")
     reward_level_2 = models.PositiveIntegerField(default=500, verbose_name="Награда 2 уровня")
     reward_level_3 = models.PositiveIntegerField(default=1000, verbose_name="Награда 3 уровня")
+    duration_seconds = models.PositiveSmallIntegerField(
+        default=60, verbose_name="Длительность тренировки (сек)"
+    )
     description = models.TextField(blank=True, verbose_name="Описание")
 
     class Meta:
@@ -287,6 +291,11 @@ class QuizQuestion(TimestampedModel):
     question_text = models.TextField(verbose_name="Вопрос")
     answers = models.JSONField(default=list, verbose_name="Список ответов")
     correct_answer_index = models.PositiveIntegerField(default=0, verbose_name="Правильный ответ (индекс)")
+    reward = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name="Награда за правильный ответ",
+    )
 
     class Meta:
         db_table = "вопросы"
@@ -325,6 +334,13 @@ class ScoreEntry(TimestampedModel):
         verbose_name = "Очки"
         verbose_name_plural = "Очки"
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=("profile", "failure"),
+                name="uniq_score_per_failure",
+            )
+        ]
+
     def __str__(self):
         return f"{self.profile.user.username}: {self.points} очков"
 
@@ -360,3 +376,87 @@ class QuizAttempt(TimestampedModel):
 
     def __str__(self):
         return f"{self.profile.user.username}: {self.correct_answers}/{self.total_questions}"
+
+
+# ==============================
+# Promo codes
+# ==============================
+
+
+def generate_promo_code(length: int = 10) -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+class PromoCode(TimestampedModel):
+    code = models.CharField(
+        max_length=32,
+        unique=True,
+        verbose_name="Промокод",
+    )
+    reward = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name="Количество монет",
+    )
+    max_redemptions = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        verbose_name="Максимум активаций",
+    )
+    redemptions_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Количество активаций",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+
+    class Meta:
+        db_table = "промокоды"
+        verbose_name = "Промокод"
+        verbose_name_plural = "Промокоды"
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.reward})"
+
+    def ensure_code(self) -> None:
+        if self.code:
+            return
+
+        while True:
+            candidate = generate_promo_code()
+            if not PromoCode.objects.filter(code=candidate).exists():
+                self.code = candidate
+                break
+
+    def save(self, *args, **kwargs):
+        self.ensure_code()
+        super().save(*args, **kwargs)
+
+    @property
+    def remaining_redemptions(self) -> int:
+        return max(self.max_redemptions - self.redemptions_count, 0)
+
+
+class PromoCodeRedemption(TimestampedModel):
+    promo_code = models.ForeignKey(
+        PromoCode,
+        on_delete=models.CASCADE,
+        related_name="redemptions",
+        verbose_name="Промокод",
+    )
+    profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="promo_redemptions",
+        verbose_name="Профиль",
+    )
+    redeemed_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата активации")
+
+    class Meta:
+        db_table = "активации_промокодов"
+        verbose_name = "Активация промокода"
+        verbose_name_plural = "Активации промокодов"
+        unique_together = ("promo_code", "profile")
+
+    def __str__(self) -> str:
+        return f"{self.promo_code.code} → {self.profile.user.username}"

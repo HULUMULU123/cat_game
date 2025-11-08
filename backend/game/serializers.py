@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import random
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
@@ -41,7 +44,33 @@ class TaskCompletionSerializer(serializers.ModelSerializer[TaskCompletion]):
 class QuizQuestionSerializer(serializers.ModelSerializer[QuizQuestion]):
     class Meta:
         model = QuizQuestion
-        fields = ("question_text", "answers", "correct_answer_index")
+        fields = ("id", "question_text", "answers", "correct_answer_index", "reward")
+
+    def to_representation(self, instance: QuizQuestion) -> dict[str, object]:
+        data = super().to_representation(instance)
+        answers = list(instance.answers or [])
+        if not answers:
+            data["answers"] = []
+            data["correct_answer_index"] = 0
+            return data
+
+        correct_idx = instance.correct_answer_index
+        try:
+            correct_answer = answers[correct_idx]
+        except IndexError:
+            correct_answer = answers[0]
+
+        shuffled = answers[:]
+        random.shuffle(shuffled)
+        try:
+            new_index = shuffled.index(correct_answer)
+        except ValueError:
+            shuffled = [correct_answer, *[ans for ans in shuffled if ans != correct_answer]]
+            new_index = 0
+
+        data["answers"] = shuffled
+        data["correct_answer_index"] = new_index
+        return data
 
 
 # ---------- Simulation ----------
@@ -49,7 +78,14 @@ class QuizQuestionSerializer(serializers.ModelSerializer[QuizQuestion]):
 class SimulationConfigSerializer(serializers.ModelSerializer[SimulationConfig]):
     class Meta:
         model = SimulationConfig
-        fields = ("attempt_cost", "reward_level_1", "reward_level_2", "reward_level_3", "description")
+        fields = (
+            "attempt_cost",
+            "reward_level_1",
+            "reward_level_2",
+            "reward_level_3",
+            "duration_seconds",
+            "description",
+        )
 
 
 # ---------- Rules ----------
@@ -80,9 +116,19 @@ class DailyRewardClaimSerializer(serializers.ModelSerializer[DailyRewardClaim]):
 # ---------- Failures ----------
 
 class FailureSerializer(serializers.ModelSerializer[Failure]):
+    is_active = serializers.SerializerMethodField()
+
     class Meta:
         model = Failure
-        fields = ("id", "name", "start_time", "end_time")
+        fields = ("id", "name", "start_time", "end_time", "is_active")
+
+    def get_is_active(self, obj: Failure) -> bool:
+        now = timezone.now()
+        if obj.start_time and obj.start_time > now:
+            return False
+        if obj.end_time and obj.end_time <= now:
+            return False
+        return True
 
 
 # ---------- Scores ----------
@@ -118,16 +164,37 @@ class LeaderboardRowSerializer(serializers.Serializer):
 
 
 # --- НОВОЕ: сериалайзеры для результата квиза ---
+class QuizAnswerSubmitSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    selected_answer = serializers.CharField(allow_blank=True)
+
+
 class QuizResultSubmitSerializer(serializers.Serializer):
     mode = serializers.CharField()
-    correct = serializers.IntegerField(min_value=0)
-    total = serializers.IntegerField(min_value=1)
+    answers = QuizAnswerSubmitSerializer(many=True)
+
+    def validate_answers(self, value: list[dict[str, object]]) -> list[dict[str, object]]:
+        if not value:
+            raise serializers.ValidationError("answers must not be empty")
+        if len(value) > 50:
+            raise serializers.ValidationError("answers list is too long")
+        return value
 
 
 class QuizResultResponseSerializer(serializers.Serializer):
     detail = serializers.CharField()
     reward = serializers.IntegerField()
     balance = serializers.IntegerField()
+
+
+class FailureStartSerializer(serializers.Serializer):
+    failure_id = serializers.IntegerField(required=False)
+
+
+class FailureCompleteSerializer(serializers.Serializer):
+    failure_id = serializers.IntegerField()
+    points = serializers.IntegerField(min_value=0)
+    duration_seconds = serializers.IntegerField(min_value=0, max_value=3600)
 
 
 # ---------- Adsgram ----------
