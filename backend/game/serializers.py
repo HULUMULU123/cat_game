@@ -134,21 +134,22 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
 # ---------- Scores ----------
 
 class ScoreEntrySerializer(serializers.ModelSerializer[ScoreEntry]):
+    """Простая выдача очков пользователя."""
+
     failure_id = serializers.IntegerField(source="failure.id", read_only=True)
     failure_name = serializers.CharField(source="failure.name", read_only=True)
+    score = serializers.IntegerField(source="points", read_only=True)
 
     class Meta:
         model = ScoreEntry
         fields = (
-            "position",
-            "username",
-            "first_name",
-            "last_name",
+            "id",
             "score",
-            # "duration_seconds",  # <- больше не используем в выдаче
-            "achieved_at",
+            "points",
+            "duration_seconds",
+            "earned_at",
             "failure_id",
-            "failure_title",
+            "failure_name",
         )
 
 

@@ -71,9 +71,61 @@ interface SectionContentProps {
   cost: number;
   onStart: () => void;
   isDisabled: boolean;
+  onPracticeStart?: () => void;
+  isPracticeDisabled?: boolean;
+  practiceLabel?: string;
 }
+const PracticeWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 18px;
+  gap: 8px;
+`;
 
-const SectionContent = ({ description, cost, onStart, isDisabled }: SectionContentProps) => (
+const PracticeHint = styled.span`
+  font-family: "Conthrax", sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(199, 247, 238, 0.72);
+  text-transform: uppercase;
+`;
+
+const PracticeButton = styled.button`
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-family: "Conthrax", sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0e4f45;
+  background: linear-gradient(216deg, rgba(76, 204, 181, 0.9) 0%, rgba(168, 244, 219, 0.7) 50%);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover:enabled {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(31, 255, 227, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+`;
+
+const SectionContent = ({
+  description,
+  cost,
+  onStart,
+  isDisabled,
+  onPracticeStart,
+  isPracticeDisabled,
+  practiceLabel = "Пробный сбой",
+}: SectionContentProps) => (
   <StyledWrapper>
     <StyledContentWrapper>
       <StyledTextP style={{ marginBottom: "5px" }}>
@@ -85,6 +137,19 @@ const SectionContent = ({ description, cost, onStart, isDisabled }: SectionConte
         <StyledCoinImg src={coin} alt="coin" />
         {cost}
       </StyledButton>
+
+      {onPracticeStart ? (
+        <PracticeWrapper>
+          <PracticeHint>Тренировка без списания монет</PracticeHint>
+          <PracticeButton
+            type="button"
+            onClick={onPracticeStart}
+            disabled={Boolean(isPracticeDisabled)}
+          >
+            {practiceLabel}
+          </PracticeButton>
+        </PracticeWrapper>
+      ) : null}
     </StyledContentWrapper>
   </StyledWrapper>
 );

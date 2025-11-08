@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import CoinCount from "../components/common/CoinCount";
 import SectionInfo from "../components/common/SectionInfo";
@@ -146,6 +146,10 @@ const Simulation = () => {
   const [timeLeft, setTimeLeft] = useState(60);
   const [score, setScore] = useState(0);
   const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [practiceModalOpen, setPracticeModalOpen] = useState(false);
+  const [practiceModalMessage, setPracticeModalMessage] = useState("");
+
+  const practiceWindowRef = useRef<Window | null>(null);
 
   useEffect(() => {
     if (!tokens) return;
@@ -205,6 +209,37 @@ const Simulation = () => {
     setResultModalOpen(false);
     setIsGameRunning(true);
   }, []);
+
+  const handlePracticeStart = useCallback(() => {
+    const durationSeconds = config?.duration_seconds ?? gameDuration ?? 60;
+    const origin = window.location.origin;
+    const practiceUrl = new URL("/simulation/practice/", origin);
+    practiceUrl.searchParams.set("duration", String(durationSeconds));
+
+    if (practiceWindowRef.current && !practiceWindowRef.current.closed) {
+      practiceWindowRef.current.close();
+    }
+
+    let win: Window | null = null;
+    try {
+      win = window.open(
+        practiceUrl.toString(),
+        "simulation_practice",
+        "noopener,noreferrer,width=480,height=780"
+      );
+    } catch (error) {
+      console.warn("[Simulation] failed to open practice window", error);
+    }
+
+    if (win) {
+      practiceWindowRef.current = win;
+      win.focus();
+      return;
+    }
+
+    // фолбэк: открываем в текущей вкладке, если popup заблокирован
+    window.location.href = practiceUrl.toString();
+  }, [config?.duration_seconds, gameDuration]);
 
   const handleStart = async () => {
     if (!tokens || !config) {
@@ -277,6 +312,13 @@ const Simulation = () => {
     }
   };
 
+  const handlePracticeModalToggle = (value: boolean) => {
+    if (!value) {
+      setPracticeModalOpen(false);
+      setPracticeModalMessage("");
+    }
+  };
+
   const handleWatchAd = async () => {
     if (!tokens) {
       setModalMessage("Пожалуйста, авторизуйтесь, чтобы пополнить баланс.");
@@ -344,6 +386,44 @@ const Simulation = () => {
     setScore((prev) => prev + 1);
   }, [isGameRunning]);
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent<PracticeWindowMessage>) => {
+      const data = event.data;
+      if (!data || typeof data !== "object") return;
+      if (data.source !== "simulation-practice") return;
+
+      if (data.type === "finished") {
+        practiceWindowRef.current = null;
+        const scoreValue = data.payload?.score ?? 0;
+        setPracticeModalMessage(`Тренировка завершена. Вы сбили ${scoreValue} капель.`);
+        setPracticeModalOpen(true);
+        return;
+      }
+
+      if (data.type === "closed") {
+        const interrupted = Boolean(data.payload?.interrupted);
+        practiceWindowRef.current = null;
+        if (interrupted) {
+          setPracticeModalMessage(
+            "Тренировка прервана. Результат не сохраняется — попробуйте ещё раз."
+          );
+          setPracticeModalOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (practiceWindowRef.current && !practiceWindowRef.current.closed) {
+        practiceWindowRef.current.close();
+      }
+    };
+  }, []);
+
   return (
     <>
       <StyledWrapper>
@@ -355,6 +435,8 @@ const Simulation = () => {
           cost={config?.attempt_cost ?? 0}
           onStart={handleStart}
           isDisabled={isProcessing || isGameRunning}
+          onPracticeStart={handlePracticeStart}
+          isPracticeDisabled={isProcessing || isGameRunning}
         />
 
         <SimulationRoadMap
@@ -415,6 +497,20 @@ const Simulation = () => {
             text={`Вы сбили ${score} капель. Результат не сохраняется — тренируйтесь ещё!`}
             isOpenModal={resultModalOpen}
             setOpenModal={handleResultModalToggle}
+          />
+        </ModalLayout>
+      ) : null}
+
+      {practiceModalOpen ? (
+        <ModalLayout
+          isOpen={practiceModalOpen}
+          setIsOpen={handlePracticeModalToggle}
+        >
+          <ModalWindow
+            header="ПРОБНЫЙ СБОЙ"
+            text={practiceModalMessage || "Тренировка завершена."}
+            isOpenModal={practiceModalOpen}
+            setOpenModal={handlePracticeModalToggle}
           />
         </ModalLayout>
       ) : null}
