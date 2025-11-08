@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 /** загрузочный экран */
 import StakanLoader from "../../shared/components/stakan/StakanLoader";
 import wordmark from "../../assets/STAKAN.svg";
+import useGlobalStore from "../../shared/store/useGlobalStore";
 
 /* --------------------------- Styled Components --------------------------- */
 
@@ -331,7 +332,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [manualHold, setManualHold] = useState(true); // короткий буфер от мерцаний
   const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
   const { active, progress } = useProgress();
-
+  const isBottomNavVisible = useGlobalStore(
+    (state) => state.isBottomNavVisible
+  );
   // Условия готовности Canvas (для его появления)
   useEffect(() => {
     const t = setTimeout(() => setManualHold(false), 300);
@@ -483,15 +486,17 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       )}
 
       {/* Кнопка громкости */}
-      <SoundFab
-        onClick={cycleVolume}
-        aria-label="Volume"
-        title="Volume"
-        $level={volumeIndex}
-      >
-        {currentIcon}
-        <LevelBadge>{levelLabel}</LevelBadge>
-      </SoundFab>
+      {isBottomNavVisible ? (
+        <SoundFab
+          onClick={cycleVolume}
+          aria-label="Volume"
+          title="Volume"
+          $level={volumeIndex}
+        >
+          {currentIcon}
+          <LevelBadge>{levelLabel}</LevelBadge>
+        </SoundFab>
+      ) : null}
 
       <Content>{children}</Content>
     </ModelWrapper>
