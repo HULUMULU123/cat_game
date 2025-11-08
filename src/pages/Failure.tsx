@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import FailrueHeader from "../components/failure/header/FailrueHeader";
+import FailureHeader from "../components/failure/header/FailureHeader";
 import Droplets from "../components/failure/droplets/Droplets";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 import ModalLayout from "../components/modalWindow/ModalLayout";
@@ -147,7 +147,7 @@ async function ensureStableReady(container: HTMLElement) {
 const HeaderMemo: React.FC<{ timeLeft: number; duration: number }> = React.memo(
   ({ timeLeft, duration }) => (
     <StyledHeaderWrapper>
-      <FailrueHeader timeLeft={timeLeft} duration={duration} />
+      <FailureHeader timeLeft={timeLeft} duration={duration} />
     </StyledHeaderWrapper>
   )
 );
@@ -256,7 +256,9 @@ export default function Failure() {
         if (current) {
           setDuration(60);
           setTimeLeft(60);
-          setStartMessage("У тебя 60 секунд. Кликай по каплям, чтобы набрать как можно больше очков.");
+          setStartMessage(
+            "У тебя 60 секунд. Кликай по каплям, чтобы набрать как можно больше очков."
+          );
         } else {
           setStartMessage("Активный сбой не найден.");
         }
@@ -265,7 +267,9 @@ export default function Failure() {
         }
       } catch (error) {
         if (!active) return;
-        setStartMessage(parseErrorDetail(error, "Не удалось загрузить данные сбоя."));
+        setStartMessage(
+          parseErrorDetail(error, "Не удалось загрузить данные сбоя.")
+        );
         if (!isGameRunning && !hasFinished) {
           setStartModalOpen(true);
         }
@@ -275,7 +279,8 @@ export default function Failure() {
     return () => {
       active = false;
     };
-  }, [tokens, parseErrorDetail, startModalOpen, isGameRunning, hasFinished]);
+    // убрал startModalOpen из зависимостей, чтобы не перетягивать данные при каждом открытии/закрытии модалки
+  }, [tokens, parseErrorDetail, isGameRunning, hasFinished, startModalOpen]);
 
   const handleStartGame = useCallback(async () => {
     if (!tokens) {
@@ -335,18 +340,21 @@ export default function Failure() {
     }
 
     try {
-      const response = await request<FailureCompleteResponse>("/failures/complete/", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokens.access}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          failure_id: failure.id,
-          points: score,
-          duration_seconds: duration,
-        }),
-      });
+      const response = await request<FailureCompleteResponse>(
+        "/failures/complete/",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            failure_id: failure.id,
+            points: score,
+            duration_seconds: duration,
+          }),
+        }
+      );
       setResultMessage(`${response.detail} Очки: ${response.score}`);
     } catch (error) {
       const message = parseErrorDetail(error, "Не удалось сохранить результат.");

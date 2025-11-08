@@ -15,7 +15,7 @@ import type {
 } from "../shared/api/types";
 import useGlobalStore from "../shared/store/useGlobalStore";
 import useAdsgramAd, { AdsgramStatus } from "../shared/hooks/useAdsgramAd";
-import FailrueHeader from "../components/failure/header/FailrueHeader";
+import FailureHeader from "../components/failure/header/FailureHeader";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 import Droplets from "../components/failure/droplets/Droplets";
 
@@ -108,7 +108,16 @@ const BtnContent = ({ status }: { status: AdsgramStatus }) => (
   </StyledBtnContentWrapper>
 );
 
-type ModalState = "" | "insufficient" | "success";
+type ModalState = "" | "insufficient" | "success" | "error";
+
+type PracticeWindowMessage = {
+  source: "simulation-practice";
+  type: "finished" | "closed";
+  payload?: {
+    score?: number;
+    interrupted?: boolean;
+  };
+};
 
 const Simulation = () => {
   const tokens = useGlobalStore((state) => state.tokens);
@@ -357,7 +366,7 @@ const Simulation = () => {
           <GameInner>
             <GameHeaderWrapper>
               <GameHeaderInner>
-                <FailrueHeader timeLeft={timeLeft} duration={gameDuration} />
+                <FailureHeader timeLeft={timeLeft} duration={gameDuration} />
               </GameHeaderInner>
             </GameHeaderWrapper>
 
@@ -410,3 +419,4 @@ const Simulation = () => {
 };
 
 export default Simulation;
+

@@ -398,6 +398,8 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
           useGlobalStore.getState().updateBalance(resp.balance);
         }
 
+        useGlobalStore.getState().incrementProfileStat("quizzes");
+
         const msg =
           resp?.detail ??
           `Готово! Правильных: ${correctCount} из ${sanitized.length}. Награда: ${

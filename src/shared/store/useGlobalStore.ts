@@ -65,6 +65,8 @@ interface GlobalState {
   setTokens: (t: AuthTokens | null) => void;
   logout: () => void;
 
+  incrementProfileStat: (stat: "failures" | "quizzes" | "tasks") => void;
+
   isLoading: boolean;
   startLoading: () => void;
   stopLoading: () => void;
@@ -261,6 +263,25 @@ const useGlobalStore = create<GlobalState>()(
         setBottomNavVisible: (visible) => set({ isBottomNavVisible: visible }),
 
         updateBalance: (balance) => set({ balance }),
+
+        incrementProfileStat: (stat) =>
+          set((state) => {
+            const keyMap = {
+              failures: "failuresCompleted",
+              quizzes: "quizzesCompleted",
+              tasks: "tasksCompleted",
+            } as const;
+
+            const key = keyMap[stat];
+            const current = state.profileStats[key] ?? 0;
+
+            return {
+              profileStats: {
+                ...state.profileStats,
+                [key]: current + 1,
+              },
+            };
+          }),
 
         refreshBalance: async () => {
           const { tokens } = get();

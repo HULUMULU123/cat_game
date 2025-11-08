@@ -10,6 +10,9 @@ const QuizPage = lazy(() => import("../../pages/Quiz"));
 const SimulationPage = lazy(() => import("../../pages/Simulation"));
 const PrizePage = lazy(() => import("../../pages/Prize"));
 const FailurePage = lazy(() => import("../../pages/Failure"));
+const SimulationPracticePage = lazy(
+  () => import("../../pages/SimulationPractice")
+);
 
 const AppRoutes = () => (
   <Suspense fallback={<StakanLoader wordmarkSrc={wordmark} subtitle="Гружу страницу…" />}>
@@ -22,6 +25,7 @@ const AppRoutes = () => (
         <Route path="prize/" element={<PrizePage />} />
         <Route path="failure/" element={<FailurePage />} />
       </Route>
+      <Route path="/simulation/practice/" element={<SimulationPracticePage />} />
     </Routes>
   </Suspense>
 );
