@@ -240,14 +240,20 @@ const useGlobalStore = create<GlobalState>((set, get) => {
       const user = parseTelegramUser(initData);
       if (!user) return;
 
-      // сохраним локально — пригодится даже без бэкенда
-      set({ userData: user });
+      const usernameForBackend =
+        user.username?.trim() || user.first_name?.trim() || "-";
 
+      // сохраним локально — пригодится даже без бэкенда
+      set({
+        userData: {
+          ...user,
+          username: usernameForBackend,
+        },
+      });
       if (!user.username) {
         console.warn(
-          "[store] setUserFromInitData: no username — skip backend auth",
+          "[store] setUserFromInitData: no username — fallback to first_name",
         );
-        return;
       }
 
       try {
@@ -257,7 +263,7 @@ const useGlobalStore = create<GlobalState>((set, get) => {
           refresh: string;
           user: ProfileResponse;
         }>("/auth/telegram/", {
-          username: user.username,
+          username: usernameForBackend,
           first_name: user.first_name,
           last_name: user.last_name,
         });
