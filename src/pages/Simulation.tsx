@@ -15,7 +15,7 @@ import type {
 } from "../shared/api/types";
 import useGlobalStore from "../shared/store/useGlobalStore";
 import useAdsgramAd, { AdsgramStatus } from "../shared/hooks/useAdsgramAd";
-import FailureHeader from "../components/failure/header/FailureHeader";
+import FailrueHeader from "../components/failure/header/FailrueHeader";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 import Droplets from "../components/failure/droplets/Droplets";
 
@@ -49,7 +49,11 @@ const GameOverlay = styled.div`
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: linear-gradient(180deg, rgba(0, 31, 25, 0.92) 0%, rgba(0, 9, 7, 0.96) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 31, 25, 0.92) 0%,
+    rgba(0, 9, 7, 0.96) 100%
+  );
 `;
 
 const GameInner = styled.div`
@@ -193,17 +197,14 @@ const Simulation = () => {
     return `0 / ${config.attempt_cost}`;
   }, [config]);
 
-  const startGameSession = useCallback(
-    (duration: number) => {
-      const safeDuration = duration > 0 ? duration : 60;
-      setScore(0);
-      setGameDuration(safeDuration);
-      setTimeLeft(safeDuration);
-      setResultModalOpen(false);
-      setIsGameRunning(true);
-    },
-    []
-  );
+  const startGameSession = useCallback((duration: number) => {
+    const safeDuration = duration > 0 ? duration : 60;
+    setScore(0);
+    setGameDuration(safeDuration);
+    setTimeLeft(safeDuration);
+    setResultModalOpen(false);
+    setIsGameRunning(true);
+  }, []);
 
   const handleStart = async () => {
     if (!tokens || !config) {
@@ -222,10 +223,13 @@ const Simulation = () => {
 
     setIsProcessing(true);
     try {
-      const data = await request<SimulationStartResponse>("/simulation/start/", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${tokens.access}` },
-      });
+      const data = await request<SimulationStartResponse>(
+        "/simulation/start/",
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${tokens.access}` },
+        }
+      );
 
       updateBalance(data.balance);
       setModalState("");
@@ -366,7 +370,7 @@ const Simulation = () => {
           <GameInner>
             <GameHeaderWrapper>
               <GameHeaderInner>
-                <FailureHeader timeLeft={timeLeft} duration={gameDuration} />
+                <FailrueHeader timeLeft={timeLeft} duration={gameDuration} />
               </GameHeaderInner>
             </GameHeaderWrapper>
 
@@ -419,4 +423,3 @@ const Simulation = () => {
 };
 
 export default Simulation;
-

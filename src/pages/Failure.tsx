@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import FailureHeader from "../components/failure/header/FailureHeader";
+import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 import ModalLayout from "../components/modalWindow/ModalLayout";
@@ -147,7 +147,7 @@ async function ensureStableReady(container: HTMLElement) {
 const HeaderMemo: React.FC<{ timeLeft: number; duration: number }> = React.memo(
   ({ timeLeft, duration }) => (
     <StyledHeaderWrapper>
-      <FailureHeader timeLeft={timeLeft} duration={duration} />
+      <FailrueHeader timeLeft={timeLeft} duration={duration} />
     </StyledHeaderWrapper>
   )
 );
@@ -357,7 +357,10 @@ export default function Failure() {
       );
       setResultMessage(`${response.detail} Очки: ${response.score}`);
     } catch (error) {
-      const message = parseErrorDetail(error, "Не удалось сохранить результат.");
+      const message = parseErrorDetail(
+        error,
+        "Не удалось сохранить результат."
+      );
       setResultMessage(`${message} Очки: ${score}`);
     } finally {
       setResultModalOpen(true);
@@ -445,10 +448,7 @@ export default function Failure() {
         ) : null}
 
         {resultModalOpen ? (
-          <ModalLayout
-            isOpen={resultModalOpen}
-            setIsOpen={setResultModalOpen}
-          >
+          <ModalLayout isOpen={resultModalOpen} setIsOpen={setResultModalOpen}>
             <ModalWindow
               header="Результат сбоя"
               text={resultMessage ?? `Вы набрали ${score} очков.`}
