@@ -312,8 +312,7 @@ const useGlobalStore = create<GlobalState>()(
           if (!user) return;
 
           const usernameForBackend = buildBackendUsername(user);
-          const displayUsername =
-            user.username?.trim() || user.first_name?.trim() || "-";
+          const displayUsername = user.username?.trim() || "-";
 
           // предварительно сохраним
           set({
