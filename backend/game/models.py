@@ -30,6 +30,27 @@ def generate_referral_code() -> str:
     return "".join(secrets.choice(alphabet) for _ in range(8))
 
 
+def ensure_all_profiles_have_referral_code(apps, schema_editor) -> None:
+    UserProfile = apps.get_model("game", "UserProfile")
+    existing_codes = set(
+        UserProfile.objects.exclude(referral_code="").values_list("referral_code", flat=True)
+    )
+
+    for profile in UserProfile.objects.all():
+        if profile.referral_code:
+            continue
+
+        while True:
+            code = generate_referral_code()
+            if code in existing_codes:
+                continue
+
+            profile.referral_code = code
+            profile.save(update_fields=["referral_code"])
+            existing_codes.add(code)
+            break
+
+
 class UserProfile(TimestampedModel):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

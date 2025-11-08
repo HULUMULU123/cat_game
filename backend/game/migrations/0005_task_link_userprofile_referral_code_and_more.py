@@ -22,10 +22,17 @@ class Migration(migrations.Migration):
             model_name="userprofile",
             name="referral_code",
             field=models.CharField(
+
+                blank=True,
+                default="",
+                editable=False,
+                max_length=12,
+
                 default=game.models.generate_referral_code,
                 editable=False,
                 max_length=12,
                 unique=True,
+
                 verbose_name="Реферальный код",
             ),
         ),
@@ -109,5 +116,20 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "Попытки викторины",
                 "db_table": "попытки_викторины",
             },
+        ),
+        migrations.RunPython(
+            code=game.models.ensure_all_profiles_have_referral_code,
+            reverse_code=migrations.RunPython.noop,
+        ),
+        migrations.AlterField(
+            model_name="userprofile",
+            name="referral_code",
+            field=models.CharField(
+                default=game.models.generate_referral_code,
+                editable=False,
+                max_length=12,
+                unique=True,
+                verbose_name="Реферальный код",
+            ),
         ),
     ]
