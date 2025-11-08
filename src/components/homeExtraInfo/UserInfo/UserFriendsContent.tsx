@@ -228,7 +228,7 @@ export default function UserFriendsContent() {
       </StyledStatisticsSpanWrapper>
 
       <StyledReferralBlock>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>
           <StyledLabel>Ваш реферальный код</StyledLabel>
           <StyledCodeRow>
             <StyledCode>{referralCode ?? "—"}</StyledCode>
