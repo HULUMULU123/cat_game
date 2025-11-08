@@ -103,8 +103,8 @@ const parseTelegramUser = (initData: string): TelegramUser | null => {
       typeof rawId === "number"
         ? rawId
         : typeof rawId === "string"
-          ? Number.parseInt(rawId, 10)
-          : NaN;
+        ? Number.parseInt(rawId, 10)
+        : NaN;
     const safeId = Number.isFinite(numericId) ? numericId : 0;
     return {
       id: safeId,
@@ -121,17 +121,14 @@ const parseTelegramUser = (initData: string): TelegramUser | null => {
 
 const buildBackendUsername = (user: TelegramUser): string => {
   const trimmed = user.username?.trim();
-  if (trimmed) return trimmed.slice(0, 150);
+  if (trimmed) return trimmed.slice(0, 50);
 
-  const displayName = user.first_name?.trim() || "-";
-  const normalized = displayName
-    .normalize("NFKD")
-    .replace(/[^\p{L}\p{N}._@+-]+/gu, "_")
-    .replace(/^_+|_+$/g, "")
-    .toLowerCase();
+  const displayName = "user";
+  const normalized = displayName;
 
-  const base = normalized && normalized !== "-" ? normalized : "user";
+  const base = normalized;
   const truncatedBase = base.slice(0, 100);
+  console.log(truncatedBase);
   return `${truncatedBase}_${user.id}`.slice(0, 150);
 };
 
@@ -141,7 +138,7 @@ async function authFetch(
   path: string,
   init: RequestInit,
   get: () => GlobalState,
-  set: (p: Partial<GlobalState>) => void,
+  set: (p: Partial<GlobalState>) => void
 ) {
   const { tokens } = get();
   const withAuth: RequestInit = {
@@ -180,14 +177,16 @@ async function authFetch(
   }
 
   if (!res.ok)
-    throw new Error((await res.text()) || `${init.method || "GET"} ${path} failed`);
+    throw new Error(
+      (await res.text()) || `${init.method || "GET"} ${path} failed`
+    );
   return res;
 }
 
 async function authGetJson<T>(
   path: string,
   get: () => GlobalState,
-  set: (p: Partial<GlobalState>) => void,
+  set: (p: Partial<GlobalState>) => void
 ): Promise<T> {
   const res = await authFetch(path, {}, get, set);
   return (await res.json()) as T;
@@ -197,7 +196,7 @@ async function authPostJson<T>(
   path: string,
   body: unknown,
   get: () => GlobalState,
-  set: (p: Partial<GlobalState>) => void,
+  set: (p: Partial<GlobalState>) => void
 ): Promise<T> {
   const res = await authFetch(
     path,
@@ -207,7 +206,7 @@ async function authPostJson<T>(
       body: JSON.stringify(body),
     },
     get,
-    set,
+    set
   );
   return (await res.json()) as T;
 }
@@ -266,7 +265,11 @@ const useGlobalStore = create<GlobalState>()(
           const { tokens } = get();
           if (!tokens) return;
           try {
-            const data = await authGetJson<ProfileResponse>("/auth/me/", get, set);
+            const data = await authGetJson<ProfileResponse>(
+              "/auth/me/",
+              get,
+              set
+            );
             applyProfileResponse(data);
           } catch (err) {
             console.error("[store] refreshBalance failed:", err);
@@ -278,14 +281,15 @@ const useGlobalStore = create<GlobalState>()(
           if (!trimmed) throw new Error("Введите реферальный код");
 
           const { tokens } = get();
-          if (!tokens) throw new Error("Не удалось подтвердить профиль пользователя");
+          if (!tokens)
+            throw new Error("Не удалось подтвердить профиль пользователя");
 
           try {
             const response = await authPostJson<ProfileResponse>(
               "/auth/referral/",
               { code: trimmed },
               get,
-              set,
+              set
             );
 
             applyProfileResponse(response);
@@ -349,7 +353,11 @@ const useGlobalStore = create<GlobalState>()(
           if (!tokens || hasHydratedProfile) return;
 
           try {
-            const data = await authGetJson<ProfileResponse>("/auth/me/", get, set);
+            const data = await authGetJson<ProfileResponse>(
+              "/auth/me/",
+              get,
+              set
+            );
             applyProfileResponse(data);
           } catch (err) {
             console.error("Failed to load profile", err);
@@ -387,9 +395,8 @@ const useGlobalStore = create<GlobalState>()(
         hasHydratedProfile: s.hasHydratedProfile,
       }),
       version: 1,
-    },
-  ),
+    }
+  )
 );
 
 export default useGlobalStore;
-
