@@ -5,6 +5,7 @@ import styled from "styled-components";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
 import FailureFooter from "../components/failure/footer/FailureFooter";
+import useGlobalStore from "../shared/store/useGlobalStore";
 
 const PageWrapper = styled.div`
   position: relative;
@@ -45,24 +46,55 @@ const FooterLayer = styled.div`
 
 const CloseButton = styled.button`
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
   border: none;
-  border-radius: 6px;
-  padding: 10px 16px;
-  font-family: "Conthrax", sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #c7f7ee;
+  border-radius: 50%;
   background: rgba(14, 94, 81, 0.92);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
   z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 2px;
+    border-radius: 1px;
+    background: #c7f7ee;
+    transition: background 0.2s ease;
+  }
+
+  &::before {
+    transform: rotate(45deg);
+  }
+
+  &::after {
+    transform: rotate(-45deg);
+  }
 
   &:hover {
     background: rgba(20, 132, 111, 0.96);
+    transform: translateY(-1px);
   }
+`;
+
+const CloseButtonLabel = styled.span`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 `;
 
 const ResultOverlay = styled.div`
@@ -132,6 +164,7 @@ const clampDuration = (value: number): number => {
 const SimulationPractice = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const setBottomNavVisible = useGlobalStore((state) => state.setBottomNavVisible);
 
   const requestedDuration = Number.parseInt(searchParams.get("duration") ?? "", 10);
   const duration = useMemo(() => clampDuration(requestedDuration), [requestedDuration]);
@@ -141,7 +174,7 @@ const SimulationPractice = () => {
   const [isRunning, setIsRunning] = useState(true);
   const [isFinished, setIsFinished] = useState(false);
 
-  const startRef = useRef<number | null>(null);
+  const endRef = useRef<number | null>(null);
   const runningRef = useRef(isRunning);
   const finishedRef = useRef(isFinished);
   const scoreRef = useRef(score);
@@ -162,15 +195,19 @@ const SimulationPractice = () => {
   useEffect(() => {
     document.title = "Тренировка сбоя";
     const prevOverflow = document.body.style.overflow;
+    const prevMargin = document.body.style.margin;
     document.body.style.margin = "0";
     document.body.style.overflow = "hidden";
+    setBottomNavVisible(false);
     return () => {
       document.body.style.overflow = prevOverflow;
+      document.body.style.margin = prevMargin;
+      setBottomNavVisible(true);
     };
-  }, []);
+  }, [setBottomNavVisible]);
 
   useEffect(() => {
-    startRef.current = Date.now();
+    endRef.current = Date.now() + duration * 1000;
     setTimeLeft(duration);
     setScore(0);
     setIsFinished(false);
@@ -181,21 +218,25 @@ const SimulationPractice = () => {
   useEffect(() => {
     if (!isRunning) return;
 
-    startRef.current = Date.now();
+    if (!endRef.current) {
+      endRef.current = Date.now() + duration * 1000;
+    }
 
     const tick = () => {
-      if (!startRef.current) return;
-      const elapsed = Math.floor((Date.now() - startRef.current) / 1000);
-      const remaining = Math.max(duration - elapsed, 0);
+      if (!endRef.current) return;
+      const diff = Math.max(endRef.current - Date.now(), 0);
+      const remaining = Math.max(Math.ceil(diff / 1000), 0);
       setTimeLeft(remaining);
+
       if (remaining === 0) {
+        endRef.current = null;
         setIsRunning(false);
         setIsFinished(true);
       }
     };
 
     tick();
-    const interval = window.setInterval(tick, 1000);
+    const interval = window.setInterval(tick, 250);
     return () => window.clearInterval(interval);
   }, [duration, isRunning]);
 
@@ -259,7 +300,9 @@ const SimulationPractice = () => {
         </HeaderInner>
       </HeaderLayer>
 
-      <CloseButton onClick={handleClose}>Закрыть</CloseButton>
+      <CloseButton onClick={handleClose} aria-label="Закрыть тренировку">
+        <CloseButtonLabel>Закрыть тренировку</CloseButtonLabel>
+      </CloseButton>
 
       {isRunning ? <Droplets onPop={handlePop} /> : null}
 

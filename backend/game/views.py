@@ -39,6 +39,7 @@ from .serializers import (
     FailureCompleteSerializer,
     ScoreEntrySerializer,
     LeaderboardRowSerializer,
+    QuizResultSubmitSerializer,
     QuizResultResponseSerializer,
     AdsgramAssignmentSerializer,
     AdsgramAssignmentRequestSerializer,
@@ -153,70 +154,6 @@ class QuizRandomBatchView(APIView):
         return Response(serializer.data)
 
 
-# --- НОВОЕ: приём результата квиза на /scores/ (POST) ---
-class ScoreListView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get(self, request: Request) -> Response:
-        # оставьте вашу текущую реализацию списка очков/статистики, если была
-        return Response({"detail": "OK"})
-
-    @transaction.atomic
-    def post(self, request: Request) -> Response:
-        submit_ser = QuizResultSubmitSerializer(data=request.data)
-        submit_ser.is_valid(raise_exception=True)
-
-        answers_payload = submit_ser.validated_data["answers"]
-        mode = submit_ser.validated_data["mode"]
-
-        question_ids = [entry["question_id"] for entry in answers_payload]
-        questions = {
-            q.id: q
-            for q in QuizQuestion.objects.filter(id__in=question_ids)
-        }
-
-        correct = 0
-        total = len(answers_payload)
-        reward = 0
-
-        for entry in answers_payload:
-            question = questions.get(entry["question_id"])
-            if not question:
-                continue
-
-            answers = list(question.answers or [])
-            try:
-                correct_text = answers[question.correct_answer_index]
-            except IndexError:
-                correct_text = answers[0] if answers else ""
-
-            selected = (entry.get("selected_answer") or "").strip()
-            if answers and selected == correct_text.strip():
-                correct += 1
-                reward += int(question.reward or 0)
-
-        profile = request.user.userprofile
-        if reward:
-            profile.balance = F("balance") + reward
-            profile.save(update_fields=["balance", "updated_at"])
-            profile.refresh_from_db(fields=["balance"])
-
-        QuizAttempt.objects.create(
-            profile=profile,
-            mode=mode,
-            correct_answers=correct,
-            total_questions=total,
-            reward=reward,
-        )
-
-        resp = QuizResultResponseSerializer(
-            {
-                "detail": f"Результат сохранён ({mode}). Награда: {reward}",
-                "reward": reward,
-                "balance": profile.balance,
-            }
-        )
-        return Response(resp.data, status=status.HTTP_200_OK)
 # ---------- Simulation ----------
 
 class SimulationConfigView(APIView):
@@ -593,13 +530,80 @@ class AdsgramAssignmentCompleteView(APIView):
 # ---------- Scores & Leaderboard ----------
 
 class ScoreListView(APIView):
-    """Список очков текущего пользователя (с привязкой к сбоям)."""
+    """Список очков текущего пользователя и приём результатов квиза."""
+
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request: Request) -> Response:
         profile = request.user.profile
-        scores = ScoreEntry.objects.filter(profile=profile).select_related("failure").order_by("-earned_at")
+        scores = (
+            ScoreEntry.objects.filter(profile=profile)
+            .select_related("failure")
+            .order_by("-earned_at", "-id")
+        )
         return Response(ScoreEntrySerializer(scores, many=True).data)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        submit_ser = QuizResultSubmitSerializer(data=request.data)
+        submit_ser.is_valid(raise_exception=True)
+
+        answers_payload = submit_ser.validated_data["answers"]
+        mode_raw = submit_ser.validated_data["mode"]
+        mode = str(mode_raw or "quiz")
+
+        question_ids = [entry["question_id"] for entry in answers_payload]
+        questions = {
+            q.id: q for q in QuizQuestion.objects.filter(id__in=question_ids)
+        }
+
+        correct = 0
+        total = len(answers_payload)
+        reward = 0
+
+        for entry in answers_payload:
+            question = questions.get(entry["question_id"])
+            if not question:
+                continue
+
+            answers = list(question.answers or [])
+            try:
+                correct_index = int(question.correct_answer_index)
+            except (TypeError, ValueError):
+                correct_index = 0
+
+            try:
+                correct_text = answers[correct_index]
+            except IndexError:
+                correct_text = answers[0] if answers else ""
+
+            selected = (entry.get("selected_answer") or "").strip()
+            if answers and selected == correct_text.strip():
+                correct += 1
+                reward += int(question.reward or 0)
+
+        profile = request.user.profile
+        if reward:
+            profile.balance = F("balance") + reward
+            profile.save(update_fields=["balance", "updated_at"])
+            profile.refresh_from_db(fields=["balance"])
+
+        QuizAttempt.objects.create(
+            profile=profile,
+            mode=mode,
+            correct_answers=correct,
+            total_questions=total,
+            reward=reward,
+        )
+
+        resp = QuizResultResponseSerializer(
+            {
+                "detail": f"Результат сохранён ({mode}). Награда: {reward}",
+                "reward": reward,
+                "balance": profile.balance,
+            }
+        )
+        return Response(resp.data, status=status.HTTP_200_OK)
 
 
 class LeaderboardView(APIView):
