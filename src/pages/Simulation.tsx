@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import CoinCount from "../components/common/CoinCount";
 import SectionInfo from "../components/common/SectionInfo";
@@ -15,6 +15,9 @@ import type {
 } from "../shared/api/types";
 import useGlobalStore from "../shared/store/useGlobalStore";
 import useAdsgramAd, { AdsgramStatus } from "../shared/hooks/useAdsgramAd";
+import FailureHeader from "../components/failure/header/FailureHeader";
+import FailureFooter from "../components/failure/footer/FailureFooter";
+import Droplets from "../components/failure/droplets/Droplets";
 
 const StyledWrapper = styled.div`
   position: relative;
@@ -40,6 +43,47 @@ const StyledBtnContentText = styled.span`
   font-size: 12px;
   color: var(--color-main);
   text-transform: uppercase;
+`;
+
+const GameOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(0, 31, 25, 0.92) 0%, rgba(0, 9, 7, 0.96) 100%);
+`;
+
+const GameInner = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+`;
+
+const GameHeaderWrapper = styled.div`
+  position: absolute;
+  top: 16px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+`;
+
+const GameHeaderInner = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
+
+const GameFooterWrapper = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
 `;
 
 const btnLabelByStatus = (status: AdsgramStatus): string => {
@@ -94,113 +138,10 @@ const Simulation = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [isGameRunning, setIsGameRunning] = useState(false);
+  const [gameDuration, setGameDuration] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [score, setScore] = useState(0);
   const [resultModalOpen, setResultModalOpen] = useState(false);
-  const practiceWindowRef = useRef<Window | null>(null);
-
-  const closePracticeWindow = useCallback(() => {
-    const win = practiceWindowRef.current;
-    if (win && !win.closed) {
-      win.close();
-    }
-    practiceWindowRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      closePracticeWindow();
-    };
-  }, [closePracticeWindow]);
-
-  const handlePracticeClosed = useCallback(
-    (interrupted: boolean) => {
-      setIsGameRunning(false);
-      if (interrupted) {
-        setScore(0);
-        setResultModalOpen(false);
-      }
-      closePracticeWindow();
-    },
-    [closePracticeWindow]
-  );
-
-  const handlePracticeFinished = useCallback((finalScore: number) => {
-    setScore(finalScore);
-    setIsGameRunning(false);
-    setResultModalOpen(true);
-  }, []);
-
-  const preparePracticeWindow = useCallback(() => {
-    closePracticeWindow();
-
-    const width = 420;
-    const height = 780;
-    const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
-    const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
-    const features = [
-      `width=${width}`,
-      `height=${height}`,
-      `left=${left}`,
-      `top=${top}`,
-      "menubar=no",
-      "toolbar=no",
-      "location=no",
-      "status=no",
-      "resizable=yes",
-      "scrollbars=no",
-    ].join(",");
-
-    const win = window.open("", "simulation_practice", features);
-    if (!win) {
-      return null;
-    }
-
-    try {
-      win.document.title = "Тренировка сбоя";
-      win.document.body.innerHTML = "";
-      win.document.body.style.margin = "0";
-      win.document.body.style.background =
-        "linear-gradient(180deg, rgba(0, 31, 25, 0.92) 0%, rgba(0, 9, 7, 0.96) 100%)";
-      win.document.body.style.display = "flex";
-      win.document.body.style.alignItems = "center";
-      win.document.body.style.justifyContent = "center";
-
-      const placeholder = win.document.createElement("div");
-      placeholder.style.fontFamily = '"Conthrax", sans-serif';
-      placeholder.style.fontSize = "14px";
-      placeholder.style.color = "rgba(199, 247, 238, 0.92)";
-      placeholder.style.padding = "24px";
-      placeholder.style.textAlign = "center";
-      placeholder.textContent = "Подготавливаем тренировку…";
-      win.document.body.appendChild(placeholder);
-    } catch (error) {
-      console.warn("Не удалось подготовить окно симуляции", error);
-    }
-
-    practiceWindowRef.current = win;
-    return win;
-  }, [closePracticeWindow]);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const data = event.data;
-      if (!data || typeof data !== "object") return;
-      const message = data as Partial<PracticeWindowMessage>;
-      if (message?.source !== "simulation-practice") return;
-
-      if (message.type === "finished") {
-        const rawScore = message.payload?.score;
-        const parsed = Number(rawScore ?? 0);
-        handlePracticeFinished(Number.isFinite(parsed) ? parsed : 0);
-      } else if (message.type === "closed") {
-        const interrupted = Boolean(message.payload?.interrupted);
-        handlePracticeClosed(interrupted);
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [handlePracticeClosed, handlePracticeFinished]);
 
   useEffect(() => {
     if (!tokens) return;
@@ -214,6 +155,8 @@ const Simulation = () => {
         });
         if (isMounted) {
           setConfig(data);
+          setGameDuration(data.duration_seconds ?? 60);
+          setTimeLeft(data.duration_seconds ?? 60);
         }
       } catch (error) {
         console.error("Failed to fetch simulation config", error);
@@ -227,10 +170,40 @@ const Simulation = () => {
     };
   }, [tokens]);
 
+  useEffect(() => {
+    if (!isGameRunning) return;
+
+    const interval = window.setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(interval);
+          setIsGameRunning(false);
+          setResultModalOpen(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isGameRunning]);
+
   const infoExtra = useMemo(() => {
     if (!config) return "";
     return `0 / ${config.attempt_cost}`;
   }, [config]);
+
+  const startGameSession = useCallback(
+    (duration: number) => {
+      const safeDuration = duration > 0 ? duration : 60;
+      setScore(0);
+      setGameDuration(safeDuration);
+      setTimeLeft(safeDuration);
+      setResultModalOpen(false);
+      setIsGameRunning(true);
+    },
+    []
+  );
 
   const handleStart = async () => {
     if (!tokens || !config) {
@@ -247,17 +220,7 @@ const Simulation = () => {
       return;
     }
 
-    const practiceWindow = preparePracticeWindow();
-    if (!practiceWindow) {
-      setModalState("error");
-      setModalMessage(
-        "Разрешите открытие нового окна тренировки сбоя в настройках браузера."
-      );
-      return;
-    }
-
     setIsProcessing(true);
-    let launched = false;
     try {
       const data = await request<SimulationStartResponse>("/simulation/start/", {
         method: "POST",
@@ -267,21 +230,8 @@ const Simulation = () => {
       updateBalance(data.balance);
       setModalState("");
       setModalMessage("");
-      const safeDuration =
-        data.duration_seconds ?? config.duration_seconds ?? 60;
-      const practiceUrl = new URL(
-        "/simulation/practice/",
-        window.location.origin
-      );
-      practiceUrl.searchParams.set("duration", String(safeDuration));
-      practiceWindow.location.replace(practiceUrl.toString());
-      practiceWindow.focus();
-      launched = true;
-      setScore(0);
-      setResultModalOpen(false);
-      setIsGameRunning(true);
+      startGameSession(data.duration_seconds ?? config.duration_seconds ?? 60);
     } catch (error) {
-      closePracticeWindow();
       if (error instanceof ApiError) {
         try {
           const parsed = JSON.parse(error.message) as {
@@ -303,9 +253,6 @@ const Simulation = () => {
         setModalMessage("Не удалось запустить симуляцию.");
       }
     } finally {
-      if (!launched) {
-        closePracticeWindow();
-      }
       setIsProcessing(false);
     }
   };
@@ -322,6 +269,7 @@ const Simulation = () => {
     if (!value) {
       setResultModalOpen(false);
       setScore(0);
+      setTimeLeft(config?.duration_seconds ?? gameDuration);
     }
   };
 
@@ -387,6 +335,11 @@ const Simulation = () => {
     setModalMessage(adsError);
   }, [adsError]);
 
+  const handlePop = useCallback(() => {
+    if (!isGameRunning) return;
+    setScore((prev) => prev + 1);
+  }, [isGameRunning]);
+
   return (
     <>
       <StyledWrapper>
@@ -408,14 +361,30 @@ const Simulation = () => {
         />
       </StyledWrapper>
 
+      {isGameRunning ? (
+        <GameOverlay>
+          <GameInner>
+            <GameHeaderWrapper>
+              <GameHeaderInner>
+                <FailureHeader timeLeft={timeLeft} duration={gameDuration} />
+              </GameHeaderInner>
+            </GameHeaderWrapper>
+
+            <Droplets onPop={handlePop} />
+
+            <GameFooterWrapper>
+              <FailureFooter score={score} />
+            </GameFooterWrapper>
+          </GameInner>
+        </GameOverlay>
+      ) : null}
+
       {modalState ? (
         <ModalLayout isOpen={Boolean(modalState)} setIsOpen={handleModalToggle}>
           <ModalWindow
             header={
               modalState === "success"
                 ? "БАЛАНС ПОПОЛНЕН"
-                : modalState === "error"
-                ? "ОШИБКА"
                 : "НЕДОСТАТОЧНО CRASH"
             }
             text={modalMessage}
@@ -450,3 +419,4 @@ const Simulation = () => {
 };
 
 export default Simulation;
+
