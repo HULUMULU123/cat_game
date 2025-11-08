@@ -9,6 +9,7 @@ type AuthTokens = {
 };
 
 export type TelegramUser = {
+  id: number;
   first_name: string;
   last_name?: string;
   username?: string;
@@ -120,8 +121,19 @@ const parseTelegramUser = (initData: string): TelegramUser | null => {
 
   try {
     const decoded = decodeURIComponent(rawUser);
-    const parsed = JSON.parse(decoded) as Partial<TelegramUser>;
+    const parsed = JSON.parse(decoded) as Partial<TelegramUser> & {
+      id?: number | string;
+    };
+    const rawId = parsed.id;
+    const numericId =
+      typeof rawId === "number"
+        ? rawId
+        : typeof rawId === "string"
+          ? Number.parseInt(rawId, 10)
+          : NaN;
+    const safeId = Number.isFinite(numericId) ? numericId : 0;
     return {
+      id: safeId,
       first_name: parsed.first_name ?? "",
       last_name: parsed.last_name ?? "",
       username: parsed.username ?? "",
@@ -133,15 +145,35 @@ const parseTelegramUser = (initData: string): TelegramUser | null => {
   }
 };
 
+const buildBackendUsername = (user: TelegramUser): string => {
+  const trimmed = user.username?.trim();
+  if (trimmed) return trimmed;
+
+  const displayName = user.first_name?.trim() || "-";
+  if (!user.id) return displayName;
+
+  const normalized = displayName
+    .normalize("NFKD")
+    .replace(/[^\p{L}\p{N}._@+-]+/gu, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+
+  const usableNormalized = normalized === "-" ? "" : normalized;
+  const base = usableNormalized || "user";
+  const truncatedBase = base.slice(0, 100);
+  return `${truncatedBase}_${user.id}`;
+};
+
 /* ---------------- store ---------------- */
 
 const useGlobalStore = create<GlobalState>((set, get) => {
   const applyProfileResponse = (payload: ProfileResponse) => {
     set((state) => ({
       userData: {
+        id: state.userData?.id ?? 0,
         first_name: payload.first_name,
         last_name: payload.last_name,
-        username: payload.username,
+        username: state.userData?.username ?? payload.username,
         photo_url: state.userData?.photo_url ?? "",
       },
       balance: payload.balance,
@@ -240,14 +272,21 @@ const useGlobalStore = create<GlobalState>((set, get) => {
       const user = parseTelegramUser(initData);
       if (!user) return;
 
-      // сохраним локально — пригодится даже без бэкенда
-      set({ userData: user });
+      const usernameForBackend = buildBackendUsername(user);
+      const displayUsername =
+        user.username?.trim() || user.first_name?.trim() || "-";
 
+      // сохраним локально — пригодится даже без бэкенда
+      set({
+        userData: {
+          ...user,
+          username: displayUsername,
+        },
+      });
       if (!user.username) {
         console.warn(
-          "[store] setUserFromInitData: no username — skip backend auth",
+          "[store] setUserFromInitData: no username — generated fallback",
         );
-        return;
       }
 
       try {
@@ -257,7 +296,7 @@ const useGlobalStore = create<GlobalState>((set, get) => {
           refresh: string;
           user: ProfileResponse;
         }>("/auth/telegram/", {
-          username: user.username,
+          username: usernameForBackend,
           first_name: user.first_name,
           last_name: user.last_name,
         });
