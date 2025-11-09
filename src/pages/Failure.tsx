@@ -281,7 +281,7 @@ export default function Failure() {
     return () => {
       active = false;
     };
-    // ВАЖНО: не зависим от startModalOpen, чтобы не перезапускать загрузку
+    // не зависим от startModalOpen, чтобы не перезапускать загрузку
   }, [tokens, parseErrorDetail, isGameRunning, hasFinished]);
 
   const handleStartGame = useCallback(async () => {
@@ -374,7 +374,7 @@ export default function Failure() {
     }
   }, [duration, failure, hasFinished, parseErrorDetail, score, tokens]);
 
-  // стабильный таймер по метке окончания
+  // таймер по метке окончания
   useEffect(() => {
     if (!isGameRunning) return;
 
@@ -398,6 +398,23 @@ export default function Failure() {
     const id = window.setInterval(tick, 250);
     return () => window.clearInterval(id);
   }, [isGameRunning, duration, finishGame]);
+
+  // Закрытие стартовой модалки -> запускаем игру
+  const handleStartModalToggle = useCallback(
+    (value: boolean) => {
+      setStartModalOpen(value);
+      if (
+        !value && // модалку закрыли
+        !isGameRunning && // игра ещё не идёт
+        !hasFinished && // не завершена
+        failure?.is_active // есть активный сбой
+      ) {
+        // запускаем после закрытия
+        void handleStartGame();
+      }
+    },
+    [failure?.is_active, hasFinished, isGameRunning, handleStartGame]
+  );
 
   // Когда лоадер полностью скрылся — размонтируем портал
   const onLoaderTransitionEnd = useCallback(() => {
@@ -434,27 +451,22 @@ export default function Failure() {
         <FooterMemo score={score} />
 
         {startModalOpen ? (
-          <ModalLayout isOpen={startModalOpen} setIsOpen={setStartModalOpen}>
+          <ModalLayout
+            isOpen={startModalOpen}
+            setIsOpen={handleStartModalToggle}
+          >
             <ModalWindow
               header={failure?.name ?? "СБОЙ"}
               text={
                 startMessage ??
                 "Участвуй в сбое: у тебя 60 секунд, чтобы набрать как можно больше очков."
               }
-              btnContent={
-                failure?.is_active && !hasFinished ? (
-                  <span>Начать!</span>
-                ) : (
-                  <span>Закрыть</span>
-                )
-              }
-              setOpenModal={(value) => setStartModalOpen(value)}
+              // всегда «Закрыть», т.к. именно закрытие запускает отсчёт
+              btnContent={<span>Закрыть</span>}
+              setOpenModal={handleStartModalToggle}
               isOpenModal={startModalOpen}
-              onAction={
-                failure?.is_active && !hasFinished
-                  ? handleStartGame
-                  : () => setStartModalOpen(false)
-              }
+              // нажали кнопку «Закрыть» -> закрываем модалку (это запустит игру)
+              onAction={() => handleStartModalToggle(false)}
               isActionLoading={isStarting}
             />
           </ModalLayout>
