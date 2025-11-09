@@ -9,7 +9,7 @@ import type { AdvertisementButtonResponse } from "../../shared/api/types";
 
 const StyledWrapper = styled.div`
   display: grid;
-  grid-template-columns: 50px 1fr 50px; /* левая и правая колонки фиксированные */
+  grid-template-columns: 70px 1fr 70px; /* левая и правая колонки фиксированные */
   align-items: start;
   width: 95%;
   margin: 0 auto;

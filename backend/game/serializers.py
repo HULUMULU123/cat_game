@@ -155,7 +155,7 @@ class RuleCategorySerializer(serializers.ModelSerializer[RuleCategory]):
 
     def get_icon(self, obj: RuleCategory) -> str | None:
         request = self.context.get("request")
-        return _absolute_url(request, obj.icon)
+        return _file_to_url(request, obj.icon)
 
 
 # ---------- Daily rewards ----------
