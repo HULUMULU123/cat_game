@@ -17,7 +17,11 @@ const PageWrapper = styled.div`
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(0, 31, 25, 0.92) 0%, rgba(0, 9, 7, 0.96) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 31, 25, 0.92) 0%,
+    rgba(0, 9, 7, 0.96) 100%
+  );
 `;
 
 const HeaderLayer = styled.div`
@@ -141,7 +145,11 @@ const ResultButton = styled.button`
   font-size: 12px;
   text-transform: uppercase;
   color: #0e4f45;
-  background: linear-gradient(216deg, rgba(76, 204, 181, 0.9) 0%, rgba(168, 244, 219, 0.7) 50%);
+  background: linear-gradient(
+    216deg,
+    rgba(76, 204, 181, 0.9) 0%,
+    rgba(168, 244, 219, 0.7) 50%
+  );
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
@@ -187,10 +195,18 @@ const clampDuration = (value: number): number => {
 const SimulationPractice = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const setBottomNavVisible = useGlobalStore((state) => state.setBottomNavVisible);
+  const setBottomNavVisible = useGlobalStore(
+    (state) => state.setBottomNavVisible
+  );
 
-  const requestedDuration = Number.parseInt(searchParams.get("duration") ?? "", 10);
-  const duration = useMemo(() => clampDuration(requestedDuration), [requestedDuration]);
+  const requestedDuration = Number.parseInt(
+    searchParams.get("duration") ?? "",
+    10
+  );
+  const duration = useMemo(
+    () => clampDuration(requestedDuration),
+    [requestedDuration]
+  );
 
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((state) => state.updateBalance);
@@ -200,9 +216,10 @@ const SimulationPractice = () => {
   const [score, setScore] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [isFinished, setIsFinished] = useState(false);
-  const [banner, setBanner] = useState<{ message: string; error?: boolean } | null>(
-    null
-  );
+  const [banner, setBanner] = useState<{
+    message: string;
+    error?: boolean;
+  } | null>(null);
 
   const endRef = useRef<number | null>(null);
   const runningRef = useRef(isRunning);
@@ -392,13 +409,10 @@ const SimulationPractice = () => {
     return () => window.clearInterval(interval);
   }, [duration, isRunning]);
 
-  const postMessageToOpener = useCallback(
-    (message: PracticeMessagePayload) => {
-      if (!window.opener || window.opener.closed) return;
-      window.opener.postMessage(message, "*");
-    },
-    []
-  );
+  const postMessageToOpener = useCallback((message: PracticeMessagePayload) => {
+    if (!window.opener || window.opener.closed) return;
+    window.opener.postMessage(message, "*");
+  }, []);
 
   useEffect(() => {
     if (!isFinished || notifiedRef.current) return;
@@ -459,9 +473,9 @@ const SimulationPractice = () => {
         </HeaderInner>
       </HeaderLayer>
 
-      <CloseButton onClick={handleClose} aria-label="Закрыть тренировку">
+      {/* <CloseButton onClick={handleClose} aria-label="Закрыть тренировку">
         <CloseButtonLabel>Закрыть тренировку</CloseButtonLabel>
-      </CloseButton>
+      </CloseButton> */}
 
       {isRunning ? <Droplets onPop={handlePop} /> : null}
 
@@ -472,7 +486,9 @@ const SimulationPractice = () => {
       {isFinished ? (
         <ResultOverlay>
           <ResultTitle>Тренировка завершена</ResultTitle>
-          <ResultText>Вы сбили {scoreRef.current} капель. Продолжайте тренировки!</ResultText>
+          <ResultText>
+            Вы сбили {scoreRef.current} капель. Продолжайте тренировки!
+          </ResultText>
           <ResultButton onClick={handleClose}>Закрыть тренировку</ResultButton>
         </ResultOverlay>
       ) : null}

@@ -55,6 +55,7 @@ const StyledText = styled.p`
 
 const StyledBtn = styled.button`
   background: #fff;
+  padding: 5px 10px;
   width: 40%;
   margin: 0 auto;
   margin-top: 20px;
@@ -140,7 +141,10 @@ const ModalWindow = ({
   }, [isOpenModal]);
 
   return (
-    <StyledModalWidnow className={animate ? "open" : ""} onClick={(event) => event.stopPropagation()}>
+    <StyledModalWidnow
+      className={animate ? "open" : ""}
+      onClick={(event) => event.stopPropagation()}
+    >
       <StyledCloseBtn onClick={() => setOpenModal(false)}>
         <StyledCloseBtnImg src={cancel} alt="close" />
       </StyledCloseBtn>

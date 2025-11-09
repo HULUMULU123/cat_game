@@ -40,7 +40,7 @@ const StyledBtnContentImg = styled.img`
 
 const StyledBtnContentText = styled.span`
   font-family: "Conthrax", sans-serif;
-  font-size: 12px;
+  font-size: 8px;
   color: var(--color-main);
   text-transform: uppercase;
 `;
