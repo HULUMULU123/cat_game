@@ -210,15 +210,23 @@ const Simulation = () => {
     setIsGameRunning(true);
   }, []);
 
-  const handlePracticeStart = useCallback(() => {
-    const durationSeconds = config?.duration_seconds ?? gameDuration ?? 60;
-    const origin = window.location.origin;
-    const practiceUrl = new URL("/simulation/practice/", origin);
-    practiceUrl.searchParams.set("duration", String(durationSeconds));
+  // Открывает практику в текущей вкладке (без popup).
+  const handlePracticeStart = useCallback(
+    (durationOverride?: number) => {
+      const durationSeconds =
+        typeof durationOverride === "number"
+          ? durationOverride
+          : config?.duration_seconds ?? gameDuration ?? 60;
 
-    // Просто переходим на страницу практики в этой же вкладке
-    window.location.href = practiceUrl.toString();
-  }, [config?.duration_seconds, gameDuration]);
+      const origin = window.location.origin;
+      const practiceUrl = new URL("/simulation/practice/", origin);
+      practiceUrl.searchParams.set("duration", String(durationSeconds));
+
+      // Переход в текущей вкладке (никаких новых окон)
+      window.location.assign(practiceUrl.toString());
+    },
+    [config?.duration_seconds, gameDuration]
+  );
 
   const handleStart = async () => {
     if (!tokens || !config) {
@@ -237,9 +245,9 @@ const Simulation = () => {
 
     setIsProcessing(true);
     try {
-      // Делаем запрос, чтобы сервер списал монеты и вернул баланс
+      // ВАЖНО: ведущий слэш в пути
       const data = await request<SimulationStartResponse>(
-        "simulation/practice/",
+        "/simulation/start/",
         {
           method: "POST",
           headers: { Authorization: `Bearer ${tokens.access}` },
@@ -249,12 +257,13 @@ const Simulation = () => {
       // Обновляем баланс после списания
       updateBalance(data.balance);
 
-      // Очищаем модалку
+      // Чистим модалку
       setModalState("");
       setModalMessage("");
 
-      // Открываем страницу практики
-      handlePracticeStart();
+      // Открываем страницу практики в этой же вкладке
+      const duration = data.duration_seconds ?? config.duration_seconds ?? 60;
+      handlePracticeStart(duration);
     } catch (error) {
       if (error instanceof ApiError) {
         try {
