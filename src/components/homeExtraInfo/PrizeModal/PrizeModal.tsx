@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import Header from "../common/Header";
 import SectionInfo from "../../common/SectionInfo";
@@ -62,7 +62,6 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
     if (!tokens) return;
     void refreshBalance();
   }, [refreshBalance, tokens]);
-
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -151,9 +150,7 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
     ? `Главный приз сбоя «${failure.name}»`
     : null;
 
-  const authError = !tokens
-    ? "Авторизуйтесь, чтобы увидеть призы"
-    : null;
+  const authError = !tokens ? "Авторизуйтесь, чтобы увидеть призы" : null;
 
   return (
     <StyledWrapper>

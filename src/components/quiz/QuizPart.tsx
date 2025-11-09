@@ -23,7 +23,7 @@ const StyledContentWrapper = styled.div`
 
 const StyledQuestionSpan = styled.span`
   margin: 0 auto;
-  font-size: 12px;
+  font-size: 8px;
   font-weight: 700;
   font-family: "Conthrax", sans-serif;
   color: rgb(224, 255, 251);
@@ -325,7 +325,9 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
           setSelected(null);
           setAdReason("timeout");
           setAdOutcome("pending");
-          setAdMessage("Время вышло. Посмотрите рекламу, чтобы продолжить викторину.");
+          setAdMessage(
+            "Время вышло. Посмотрите рекламу, чтобы продолжить викторину."
+          );
           setAdModalOpen(true);
         }
         return clamped;
@@ -351,7 +353,9 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     else {
       setAdReason("wrong");
       setAdOutcome("pending");
-      setAdMessage("Неправильный ответ. Посмотрите рекламу, чтобы продолжить викторину.");
+      setAdMessage(
+        "Неправильный ответ. Посмотрите рекламу, чтобы продолжить викторину."
+      );
       setAdModalOpen(true);
     }
     if (timerRef.current) {
@@ -375,8 +379,8 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
         return;
       }
 
-      const sanitized = answers.filter(
-        (entry): entry is AnswerLogEntry => Boolean(entry)
+      const sanitized = answers.filter((entry): entry is AnswerLogEntry =>
+        Boolean(entry)
       );
 
       if (sanitized.length === 0) {
@@ -418,9 +422,9 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
 
         const msg =
           resp?.detail ??
-          `Готово! Правильных: ${correctCount} из ${sanitized.length}. Награда: ${
-            resp?.reward ?? 0
-          }`;
+          `Готово! Правильных: ${correctCount} из ${
+            sanitized.length
+          }. Награда: ${resp?.reward ?? 0}`;
         setFinishMsg(msg);
       } catch (e) {
         if (e instanceof ApiError) {
@@ -443,8 +447,8 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   const handleNext = async () => {
     if (!questions) return;
 
-    const answersSoFar = answerLog.filter(
-      (entry): entry is AnswerLogEntry => Boolean(entry)
+    const answersSoFar = answerLog.filter((entry): entry is AnswerLogEntry =>
+      Boolean(entry)
     );
 
     if (idx === questions.length - 1) {
@@ -471,8 +475,8 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     resetAds();
 
     if (adOutcome !== "success") {
-      const answersSoFar = answerLog.filter(
-        (entry): entry is AnswerLogEntry => Boolean(entry)
+      const answersSoFar = answerLog.filter((entry): entry is AnswerLogEntry =>
+        Boolean(entry)
       );
       void finishQuiz(answersSoFar);
     }
@@ -581,7 +585,9 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       {adModalOpen ? (
         <ModalLayout isOpen={adModalOpen} setIsOpen={handleAdModalToggle}>
           <ModalWindow
-            header={adReason === "timeout" ? "ВРЕМЯ ИСТЕКЛО" : "НЕПРАВИЛЬНЫЙ ОТВЕТ"}
+            header={
+              adReason === "timeout" ? "ВРЕМЯ ИСТЕКЛО" : "НЕПРАВИЛЬНЫЙ ОТВЕТ"
+            }
             text={adMessage}
             btnContent={<ModalBtnContent status={adsStatus} />}
             setOpenModal={handleAdModalToggle}
