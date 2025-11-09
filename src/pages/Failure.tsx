@@ -299,6 +299,7 @@ export default function Failure() {
     setIsStarting(true);
     try {
       const payload = { failure_id: failure.id };
+      console.log(payload);
       const response = await request<FailureStartResponse>("/failures/start/", {
         method: "POST",
         headers: {

@@ -326,6 +326,7 @@ class FailureStartView(APIView):
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
+        print(request.data)
         serializer = FailureStartSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
