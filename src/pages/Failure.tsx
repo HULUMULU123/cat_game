@@ -180,8 +180,8 @@ export default function Failure() {
 
   // Покадровый сценарий загрузки
   const [contentVisible, setContentVisible] = useState(false);
-  const [loaderVisible, setLoaderVisible] = useState(true); // видимость (фейд)
-  const [showLoaderNode, setShowLoaderNode] = useState(true); // наличие узла портала
+  const [loaderVisible, setLoaderVisible] = useState(true);
+  const [showLoaderNode, setShowLoaderNode] = useState(true);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -281,7 +281,7 @@ export default function Failure() {
     return () => {
       active = false;
     };
-    // не зависим от startModalOpen, чтобы не перезапускать загрузку
+    // важно: не зависим от startModalOpen
   }, [tokens, parseErrorDetail, isGameRunning, hasFinished]);
 
   const handleStartGame = useCallback(async () => {
@@ -308,22 +308,27 @@ export default function Failure() {
         body: JSON.stringify(payload),
       });
 
-      setDuration(response.duration_seconds);
-      setTimeLeft(response.duration_seconds);
+      const dur = response.duration_seconds ?? 60;
+
+      setDuration(dur);
+      setTimeLeft(dur);
       setScore(0);
       setHasFinished(false);
       setResultMessage(null);
       setResultModalOpen(false);
 
       // фиксируем момент окончания
-      endAtRef.current = Date.now() + response.duration_seconds * 1000;
+      endAtRef.current = Date.now() + dur * 1000;
 
       setIsGameRunning(true);
       setStartModalOpen(false);
     } catch (error) {
       const message = parseErrorDetail(error, "Не удалось начать сбой.");
       setStartMessage(message);
-      setHasFinished(message.toLowerCase().includes("уже"));
+      setHasFinished(
+        message.toLowerCase().includes("уже участвовали") ||
+          message.toLowerCase().includes("уже")
+      );
     } finally {
       setIsStarting(false);
     }
@@ -374,7 +379,7 @@ export default function Failure() {
     }
   }, [duration, failure, hasFinished, parseErrorDetail, score, tokens]);
 
-  // таймер по метке окончания
+  // стабильный таймер по метке окончания
   useEffect(() => {
     if (!isGameRunning) return;
 
@@ -390,7 +395,7 @@ export default function Failure() {
 
       if (secLeft <= 0) {
         endAtRef.current = null;
-        finishGame();
+        void finishGame();
       }
     };
 
@@ -401,15 +406,9 @@ export default function Failure() {
 
   // Закрытие стартовой модалки -> запускаем игру
   const handleStartModalToggle = useCallback(
-    (value: boolean) => {
-      setStartModalOpen(value);
-      if (
-        !value && // модалку закрыли
-        !isGameRunning && // игра ещё не идёт
-        !hasFinished && // не завершена
-        failure?.is_active // есть активный сбой
-      ) {
-        // запускаем после закрытия
+    (open: boolean) => {
+      setStartModalOpen(open);
+      if (!open && !isGameRunning && !hasFinished && failure?.is_active) {
         void handleStartGame();
       }
     },
@@ -461,11 +460,10 @@ export default function Failure() {
                 startMessage ??
                 "Участвуй в сбое: у тебя 60 секунд, чтобы набрать как можно больше очков."
               }
-              // всегда «Закрыть», т.к. именно закрытие запускает отсчёт
+              // по ТЗ таймер стартует при закрытии модалки
               btnContent={<span>Закрыть</span>}
               setOpenModal={handleStartModalToggle}
               isOpenModal={startModalOpen}
-              // нажали кнопку «Закрыть» -> закрываем модалку (это запустит игру)
               onAction={() => handleStartModalToggle(false)}
               isActionLoading={isStarting}
             />
