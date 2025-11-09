@@ -139,10 +139,10 @@ export default function QuizInfo({
               );
             })}
             <StyledItem>
-              <StyledPrize>
+              {/* <StyledPrize>
                 <StyledPrizeSpan>{rewardPreview}</StyledPrizeSpan>
                 <MyIcon fill="#fff" width={25} height={23} />
-              </StyledPrize>
+              </StyledPrize> */}
             </StyledItem>
           </StyledList>
         </StyledRoadWrapper>
