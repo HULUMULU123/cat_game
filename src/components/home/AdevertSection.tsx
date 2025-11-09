@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import styled from "styled-components";
 
 import advertFallback from "../../assets/icons/advert.svg";
 import { request } from "../../shared/api/httpClient";
 import type { AdvertisementButtonResponse } from "../../shared/api/types";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
 /* ======== СТИЛИ ======== */
 
@@ -91,35 +93,26 @@ const toImgSrc = (raw?: string) => {
 };
 
 export default function AdvertSection() {
-  const [buttons, setButtons] = useState<AdvertisementButtonResponse[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const data = await request<AdvertisementButtonResponse[]>(
-          "/home/advert-buttons/"
-        );
-        if (!mounted) return;
-        setButtons(data);
-        setError(null);
-      } catch (e) {
-        console.error("[AdvertSection] failed to load", e);
-        if (!mounted) return;
-        setButtons([]);
-        setError("Не удалось загрузить рекламные предложения");
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const {
+    data: buttons = [],
+    isLoading,
+    isError,
+  } = useQuery<AdvertisementButtonResponse[]>({
+    queryKey: ["home", "advert-buttons"],
+    queryFn: () => request<AdvertisementButtonResponse[]>("/home/advert-buttons/"),
+  });
 
   const content = useMemo(() => {
-    if (error) return <Placeholder>{error}</Placeholder>;
+    if (isLoading)
+      return (
+        <Placeholder>
+          <LoadingSpinner label="Загружаем предложения" />
+        </Placeholder>
+      );
+    if (isError)
+      return (
+        <Placeholder>Не удалось загрузить рекламные предложения</Placeholder>
+      );
     if (!buttons.length)
       return <Placeholder>Рекламные предложения скоро появятся</Placeholder>;
 
@@ -165,7 +158,7 @@ export default function AdvertSection() {
         </Column>
       </StyledWrapper>
     );
-  }, [buttons, error]);
+  }, [buttons, isError, isLoading]);
 
   return content;
 }

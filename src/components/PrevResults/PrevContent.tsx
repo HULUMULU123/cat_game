@@ -10,6 +10,7 @@ import type {
   LeaderboardResponse,
 } from '../../shared/api/types'
 import useGlobalStore from '../../shared/store/useGlobalStore'
+import { useQuery } from 'react-query'
 
 const Wrapper = styled.div`
   display: flex;
@@ -57,109 +58,103 @@ const formatAchievedTime = (iso?: string | null) => {
 
 export default function PrevContent() {
   const tokens = useGlobalStore((state) => state.tokens)
-  const [failures, setFailures] = useState<FailureResponse[]>([])
   const [selectedFailureId, setSelectedFailureId] = useState<number | null>(null)
-  const [entries, setEntries] = useState<LeaderboardEntryResponse[]>([])
-  const [currentUser, setCurrentUser] = useState<LeaderboardEntryResponse | null>(null)
-  const [loadingFailures, setLoadingFailures] = useState(false)
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    data: failuresData,
+    isLoading: isFailuresLoading,
+    isError: isFailuresError,
+    error: failuresError,
+  } = useQuery<FailureResponse[]>({
+    queryKey: ['prev-results', 'failures', tokens?.access ?? null],
+    enabled: Boolean(tokens),
+    queryFn: async () => {
+      if (!tokens) throw new Error('missing tokens')
+      const data = await request<FailureResponse[]>(`/failures/`, {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      })
+      return data
+        .filter((failure) => !failure.is_active && failure.end_time)
+        .sort((a, b) => {
+          if (!a.end_time) return 1
+          if (!b.end_time) return -1
+          return new Date(b.end_time).getTime() - new Date(a.end_time).getTime()
+        })
+    },
+  })
 
   useEffect(() => {
-    if (!tokens) return
-
-    let isMounted = true
-    setLoadingFailures(true)
-
-    ;(async () => {
-      try {
-        const data = await request<FailureResponse[]>(`/failures/`, {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        })
-        if (!isMounted) return
-
-        const completed = data
-          .filter((failure) => !failure.is_active && failure.end_time)
-          .sort((a, b) => {
-            if (!a.end_time) return 1
-            if (!b.end_time) return -1
-            return new Date(b.end_time).getTime() - new Date(a.end_time).getTime()
-          })
-
-        setFailures(completed)
-        setSelectedFailureId((prev) => {
-          if (prev && completed.some((f) => f.id === prev)) {
-            return prev
-          }
-          return completed.length ? completed[0].id : null
-        })
-      } catch (err) {
-        if (!isMounted) return
-        setFailures([])
-        setSelectedFailureId(null)
-      } finally {
-        if (isMounted) {
-          setLoadingFailures(false)
-        }
-      }
-    })()
-
-    return () => {
-      isMounted = false
+    if (isFailuresError && failuresError) {
+      console.error('Failed to load failures', failuresError)
     }
-  }, [tokens])
+  }, [failuresError, isFailuresError])
+
+  const failures = failuresData ?? []
 
   useEffect(() => {
-    if (!tokens || !selectedFailureId) {
-      setEntries([])
-      setCurrentUser(null)
+    if (!failures.length) {
+      setSelectedFailureId(null)
       return
     }
 
-    let isMounted = true
-    setLoadingLeaderboard(true)
+    setSelectedFailureId((prev) => {
+      if (prev && failures.some((failure) => failure.id === prev)) {
+        return prev
+      }
+      return failures[0]?.id ?? null
+    })
+  }, [failures])
 
-    ;(async () => {
-      try {
+  const {
+    data: leaderboardData,
+    isLoading: isLeaderboardLoading,
+    isError: isLeaderboardError,
+    error: leaderboardError,
+  } = useQuery<{ entries: LeaderboardEntryResponse[]; currentUser: LeaderboardEntryResponse | null }>(
+    {
+      queryKey: [
+        'prev-results',
+        'leaderboard',
+        tokens?.access ?? null,
+        selectedFailureId ?? null,
+      ],
+      enabled: Boolean(tokens && selectedFailureId),
+      queryFn: async () => {
+        if (!tokens || !selectedFailureId) throw new Error('missing context')
         const data = await request<LeaderboardResponse>(
           `/leaderboard/?failure=${selectedFailureId}`,
           {
             headers: { Authorization: `Bearer ${tokens.access}` },
           }
         )
-        if (!isMounted) return
 
-        const mapped = (data.entries || []).map((entry) => ({
+        const mappedEntries = (data.entries || []).map((entry) => ({
           ...entry,
           display_time: formatAchievedTime((entry as any).achieved_at),
         })) as LeaderboardEntryResponse[]
 
-        setEntries(mapped)
-        setCurrentUser(
-          data.current_user
-            ? ({
-                ...data.current_user,
-                display_time: formatAchievedTime((data.current_user as any).achieved_at),
-              } as LeaderboardEntryResponse)
-            : null
-        )
-        setError(null)
-      } catch (err) {
-        if (!isMounted) return
-        setEntries([])
-        setCurrentUser(null)
-        setError('Не удалось загрузить результаты сбоя')
-      } finally {
-        if (isMounted) {
-          setLoadingLeaderboard(false)
-        }
-      }
-    })()
+        const mappedCurrent = data.current_user
+          ? ({
+              ...data.current_user,
+              display_time: formatAchievedTime((data.current_user as any).achieved_at),
+            } as LeaderboardEntryResponse)
+          : null
 
-    return () => {
-      isMounted = false
+        return { entries: mappedEntries, currentUser: mappedCurrent }
+      },
     }
-  }, [selectedFailureId, tokens])
+  )
+
+  useEffect(() => {
+    if (isLeaderboardError && leaderboardError) {
+      console.error('Failed to load leaderboard', leaderboardError)
+    }
+  }, [isLeaderboardError, leaderboardError])
+
+  const entries = leaderboardData?.entries ?? []
+  const currentUser = leaderboardData?.currentUser ?? null
+  const leaderboardErrorMessage = isLeaderboardError
+    ? 'Не удалось загрузить результаты сбоя'
+    : null
 
   const options = useMemo(
     () =>
@@ -183,12 +178,12 @@ export default function PrevContent() {
             options={options}
             selectedValue={selectedFailureId ? selectedFailureId.toString() : null}
             onSelect={handleSelect}
-            isLoading={loadingFailures}
+            isLoading={isFailuresLoading}
           />
           <UsersList
             entries={entries}
-            isLoading={loadingLeaderboard}
-            error={error}
+            isLoading={isLeaderboardLoading}
+            error={leaderboardErrorMessage}
           />
         </StyledContentWrapper>
       </StyledWrapper>

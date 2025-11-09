@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import styled from 'styled-components'
 import UsersItem from './UsersItem'
 import type { LeaderboardEntryResponse } from '../../shared/api/types'
+import LoadingSpinner from '../../shared/components/LoadingSpinner'
 
 const StyledList = styled.ul`
     display: flex;
@@ -35,6 +36,11 @@ const StyledList = styled.ul`
 
 const Placeholder = styled.div`
   margin: 24px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   text-align: center;
   font-family: 'Conthrax', sans-serif;
   font-size: 12px;
@@ -50,7 +56,11 @@ interface UsersListProps {
 export default function UsersList({ entries, isLoading, error }: UsersListProps) {
   const content = useMemo(() => {
     if (isLoading) {
-      return <Placeholder>Загрузка...</Placeholder>
+      return (
+        <Placeholder>
+          <LoadingSpinner label="Загрузка результатов" />
+        </Placeholder>
+      )
     }
 
     if (error) {

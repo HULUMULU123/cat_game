@@ -7,6 +7,8 @@ import ModalLayout from "../modalWindow/ModalLayout";
 import ModalWindow from "../modalWindow/ModalWindow";
 import black_advert from "../../assets/icons/black_advert.svg";
 import useAdsgramAd, { AdsgramStatus } from "../../shared/hooks/useAdsgramAd";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
 const StyledWrapper = styled.div`
   width: 95%;
@@ -187,9 +189,6 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     reset: resetAds,
   } = useAdsgramAd();
 
-  const [questions, setQuestions] = useState<QuizResponse[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
@@ -207,13 +206,19 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   const timerRef = useRef<number | null>(null);
 
   // ===== Загрузка 5 вопросов =====
-  const fetchQuestions = useCallback(async () => {
-    if (!tokens) return;
-
-    try {
-      setError(null);
-
-      // 1) основной путь — пачка
+  const {
+    data: fetchedQuestions,
+    isLoading: questionsLoading,
+    isError: questionsError,
+    error: questionsErrorRaw,
+    refetch: refetchQuestions,
+    isFetching: isFetchingQuestions,
+  } = useQuery<QuizResponse[]>({
+    queryKey: ["quiz-questions", tokens?.access ?? null],
+    enabled: Boolean(tokens),
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      if (!tokens) return [];
       let data: QuizResponse[] | QuizResponse = await request<any>(
         "/quiz/random/",
         {
@@ -221,51 +226,62 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
         }
       );
 
-      // 2) фолбэк — 5 одиночных вызовов
       if (!Array.isArray(data)) {
         const calls = Array.from({ length: TOTAL_QUESTIONS }).map(() =>
           request<QuizResponse>("/quiz/", {
             headers: { Authorization: `Bearer ${tokens.access}` },
           })
         );
-        const results = await Promise.all(calls);
-        data = results;
+        data = await Promise.all(calls);
       }
 
       const list = data as QuizResponse[];
-      const pack =
-        list.length >= TOTAL_QUESTIONS
-          ? shuffle(list).slice(0, TOTAL_QUESTIONS)
-          : list.slice(0, TOTAL_QUESTIONS);
-
-      setQuestions(pack);
-      setAnswerLog([]);
-      // сброс состояния раунда
-      setIdx(0);
-      setSelected(null);
-      setHasAnswered(false);
-      setCorrectCount(0);
-      setFinishMsg(null);
-      setAdModalOpen(false);
-      setAdMessage("");
-      setAdOutcome("pending");
-      setAdReason("wrong");
-      resetAds();
-      setRemaining(QUESTION_TIME_SEC);
-      onProgressChange?.({ current: 0, total: pack.length });
-      onTimerChange?.({
-        remaining: QUESTION_TIME_SEC,
-        total: QUESTION_TIME_SEC,
-      });
-    } catch (e) {
-      console.error("[Quiz] load error:", e);
-      setError("Не удалось загрузить вопросы");
-    }
-  }, [tokens, onProgressChange, onTimerChange, resetAds]);
+      if (list.length === 0) return [];
+      if (list.length >= TOTAL_QUESTIONS) {
+        return shuffle(list).slice(0, TOTAL_QUESTIONS);
+      }
+      return list.slice(0, TOTAL_QUESTIONS);
+    },
+  });
 
   useEffect(() => {
-    void fetchQuestions();
-  }, [fetchQuestions]);
+    if (!fetchedQuestions || fetchedQuestions.length === 0) {
+      return;
+    }
+    setAnswerLog([]);
+    setIdx(0);
+    setSelected(null);
+    setHasAnswered(false);
+    setCorrectCount(0);
+    setFinishMsg(null);
+    setAdModalOpen(false);
+    setAdMessage("");
+    setAdOutcome("pending");
+    setAdReason("wrong");
+    resetAds();
+    setRemaining(QUESTION_TIME_SEC);
+    onProgressChange?.({ current: 0, total: fetchedQuestions.length });
+    onTimerChange?.({
+      remaining: QUESTION_TIME_SEC,
+      total: QUESTION_TIME_SEC,
+    });
+  }, [fetchedQuestions, onProgressChange, onTimerChange, resetAds]);
+
+  const questions = fetchedQuestions ?? null;
+
+  useEffect(() => {
+    if (questionsError && questionsErrorRaw) {
+      console.error("[Quiz] load error:", questionsErrorRaw);
+    }
+  }, [questionsError, questionsErrorRaw]);
+
+  const isLoadingQuestions = questionsLoading || isFetchingQuestions;
+
+  const errorMessage = useMemo(() => {
+    if (!tokens) return "Авторизуйтесь, чтобы пройти викторину";
+    if (questionsError) return "Не удалось загрузить вопросы";
+    return null;
+  }, [questionsError, tokens]);
 
   const q = useMemo(() => {
     if (!questions) return null;
@@ -499,13 +515,25 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   return (
     <StyledWrapper>
       <StyledContentWrapper>
-        {!questions ? (
-          <Placeholder>{error ?? "Готовим вопросы..."}</Placeholder>
+        {isLoadingQuestions ? (
+          <Placeholder>
+            <LoadingSpinner label="Готовим вопросы..." />
+          </Placeholder>
+        ) : errorMessage ? (
+          <Placeholder>{errorMessage}</Placeholder>
+        ) : !questions || questions.length === 0 ? (
+          <Placeholder>Вопросы скоро появятся</Placeholder>
         ) : finishMsg ? (
           <>
             <StyledQuestionSpan>{finishMsg}</StyledQuestionSpan>
             <Controls>
-              <NextButton onClick={fetchQuestions} disabled={submitting}>
+              <NextButton
+                onClick={() => {
+                  if (!tokens) return;
+                  void refetchQuestions();
+                }}
+                disabled={submitting}
+              >
                 Пройти ещё раз
               </NextButton>
             </Controls>

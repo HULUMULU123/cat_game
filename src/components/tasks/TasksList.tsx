@@ -5,6 +5,8 @@ import advert from "../../assets/icons/advert.svg";
 import { request } from "../../shared/api/httpClient";
 import type { TaskAssignmentResponse } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
+import { useQuery, useQueryClient } from "react-query";
+import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
 const StyledContentWrapper = styled.div`
   margin: 0 auto;
@@ -108,36 +110,31 @@ const openInNewTabSafe = (href: string): "win" | "a" | "none" => {
 
 const TasksList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
-  const [tasks, setTasks] = useState<TaskAssignmentResponse[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
+  const queryClient = useQueryClient();
 
-  const fetchTasks = useCallback(async () => {
-    if (!tokens) {
-      console.warn("[Tasks] no tokens, skip fetch");
-      return;
-    }
-    setLoading(true);
-    try {
+  const {
+    data: tasks = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery<TaskAssignmentResponse[]>({
+    queryKey: ["tasks", tokens?.access ?? null],
+    enabled: Boolean(tokens),
+    queryFn: async () => {
+      if (!tokens) return [];
       console.log("[Tasks] GET /tasks/");
-      const data = await request<TaskAssignmentResponse[]>("/tasks/", {
+      return request<TaskAssignmentResponse[]>("/tasks/", {
         headers: { Authorization: `Bearer ${tokens.access}` },
       });
-      console.log("[Tasks] fetched:", data);
-      setTasks(data);
-      setError(null);
-    } catch (e) {
-      console.error("[Tasks] fetch error:", e);
-      setError("Не удалось загрузить задания");
-    } finally {
-      setLoading(false);
-    }
-  }, [tokens]);
+    },
+  });
 
   useEffect(() => {
-    void fetchTasks();
-  }, [fetchTasks]);
+    if (isError && error) {
+      console.error("[Tasks] fetch error:", error);
+    }
+  }, [error, isError]);
 
   // открыть ссылку и отметить выполненным
   const handleOpenAndComplete = useCallback(
@@ -195,10 +192,14 @@ const TasksList = () => {
         );
         console.log("[Tasks] toggle resp:", resp);
 
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.task_id === taskId ? { ...t, is_completed: resp.is_completed } : t
-          )
+        queryClient.setQueryData<TaskAssignmentResponse[] | undefined>(
+          ["tasks", tokens?.access ?? null],
+          (prev) =>
+            (prev ?? []).map((t) =>
+              t.task_id === taskId
+                ? { ...t, is_completed: resp.is_completed }
+                : t
+            )
         );
       } catch (e) {
         console.error("[Tasks] toggle error:", e);
@@ -210,12 +211,20 @@ const TasksList = () => {
         });
       }
     },
-    [tokens]
+    [queryClient, tokens]
   );
 
   const listContent = useMemo(() => {
-    if (error) return <Placeholder>{error}</Placeholder>;
-    if (loading) return <Placeholder>Загрузка заданий...</Placeholder>;
+    if (!tokens)
+      return <Placeholder>Авторизуйтесь, чтобы увидеть задания</Placeholder>;
+    if (isLoading)
+      return (
+        <Placeholder>
+          <LoadingSpinner label="Загружаем задания" />
+        </Placeholder>
+      );
+    if (isError)
+      return <Placeholder>Не удалось загрузить задания</Placeholder>;
     if (!tasks.length) return <Placeholder>Заданий пока нет</Placeholder>;
 
     return tasks.map((task) => (
@@ -231,7 +240,7 @@ const TasksList = () => {
         disabled={pendingIds.has(task.task_id)}
       />
     ));
-  }, [tasks, error, loading, pendingIds, handleOpenAndComplete]);
+  }, [tasks, isError, isLoading, pendingIds, handleOpenAndComplete, tokens]);
 
   return (
     <StyledContentWrapper>

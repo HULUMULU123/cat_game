@@ -18,12 +18,23 @@ import useAdsgramAd, { AdsgramStatus } from "../shared/hooks/useAdsgramAd";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 import Droplets from "../components/failure/droplets/Droplets";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../shared/components/LoadingSpinner";
 
 const StyledWrapper = styled.div`
   position: relative;
   height: 100vh;
   width: 100%;
   backdrop-filter: blur(40px);
+`;
+
+const Placeholder = styled.div`
+  width: 92%;
+  margin: 32px auto 0;
+  text-align: center;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  color: var(--color-white-text);
 `;
 
 const StyledBtnContentWrapper = styled.div`
@@ -136,7 +147,6 @@ const Simulation = () => {
     reset: resetAds,
   } = useAdsgramAd();
 
-  const [config, setConfig] = useState<SimulationConfigResponse | null>(null);
   const [modalState, setModalState] = useState<ModalState>("");
   const [modalMessage, setModalMessage] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -151,32 +161,33 @@ const Simulation = () => {
 
   const practiceWindowRef = useRef<Window | null>(null);
 
+  const {
+    data: config,
+    isLoading: configLoading,
+    isError: isConfigError,
+    error: configError,
+  } = useQuery<SimulationConfigResponse>({
+    queryKey: ["simulation-config", tokens?.access ?? null],
+    enabled: Boolean(tokens),
+    queryFn: async () => {
+      if (!tokens) throw new Error("missing tokens");
+      return request<SimulationConfigResponse>("/simulation/", {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+    },
+  });
+
   useEffect(() => {
-    if (!tokens) return;
+    if (isConfigError && configError) {
+      console.error("Failed to fetch simulation config", configError);
+    }
+  }, [configError, isConfigError]);
 
-    let isMounted = true;
-
-    const fetchConfig = async () => {
-      try {
-        const data = await request<SimulationConfigResponse>("/simulation/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        });
-        if (isMounted) {
-          setConfig(data);
-          setGameDuration(data.duration_seconds ?? 60);
-          setTimeLeft(data.duration_seconds ?? 60);
-        }
-      } catch (error) {
-        console.error("Failed to fetch simulation config", error);
-      }
-    };
-
-    void fetchConfig();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [tokens]);
+  useEffect(() => {
+    if (!config) return;
+    setGameDuration(config.duration_seconds ?? 60);
+    setTimeLeft(config.duration_seconds ?? 60);
+  }, [config]);
 
   useEffect(() => {
     if (!isGameRunning) return;
@@ -200,6 +211,12 @@ const Simulation = () => {
     if (!config) return "";
     return `0 / ${config.reward_threshold_3 ?? config.attempt_cost}`;
   }, [config]);
+
+  const configErrorMessage = useMemo(() => {
+    if (!tokens) return "Авторизуйтесь, чтобы запустить симуляцию";
+    if (isConfigError) return "Не удалось загрузить данные симуляции";
+    return null;
+  }, [isConfigError, tokens]);
 
   const startGameSession = useCallback((duration: number) => {
     const safeDuration = duration > 0 ? duration : 60;
@@ -426,27 +443,37 @@ const Simulation = () => {
         <CoinCount />
         <SectionInfo InfoName="СИМУЛЯЦИЯ" InfoExtra={infoExtra} />
 
-        <SectionContent
-          description={config?.description ?? ""}
-          cost={config?.attempt_cost ?? 0}
-          onStart={handleStart}
-          isDisabled={isProcessing || isGameRunning}
-          onPracticeStart={handlePracticeStart}
-          isPracticeDisabled={isProcessing || isGameRunning}
-        />
+        {configLoading ? (
+          <Placeholder>
+            <LoadingSpinner label="Загружаем симуляцию" />
+          </Placeholder>
+        ) : configErrorMessage ? (
+          <Placeholder>{configErrorMessage}</Placeholder>
+        ) : (
+          <>
+            <SectionContent
+              description={config?.description ?? ""}
+              cost={config?.attempt_cost ?? 0}
+              onStart={handleStart}
+              isDisabled={isProcessing || isGameRunning}
+              onPracticeStart={handlePracticeStart}
+              isPracticeDisabled={isProcessing || isGameRunning}
+            />
 
-        <SimulationRoadMap
-          thresholds={[
-            config?.reward_threshold_1 ?? 0,
-            config?.reward_threshold_2 ?? 0,
-            config?.reward_threshold_3 ?? 0,
-          ]}
-          rewards={[
-            config?.reward_amount_1 ?? config?.reward_level_1 ?? 0,
-            config?.reward_amount_2 ?? config?.reward_level_2 ?? 0,
-            config?.reward_amount_3 ?? config?.reward_level_3 ?? 0,
-          ]}
-        />
+            <SimulationRoadMap
+              thresholds={[
+                config?.reward_threshold_1 ?? 0,
+                config?.reward_threshold_2 ?? 0,
+                config?.reward_threshold_3 ?? 0,
+              ]}
+              rewards={[
+                config?.reward_amount_1 ?? config?.reward_level_1 ?? 0,
+                config?.reward_amount_2 ?? config?.reward_level_2 ?? 0,
+                config?.reward_amount_3 ?? config?.reward_level_3 ?? 0,
+              ]}
+            />
+          </>
+        )}
       </StyledWrapper>
 
       {isGameRunning ? (

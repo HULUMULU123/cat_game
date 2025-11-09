@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import styled from "styled-components";
 import UsersItem from "./UsersItem";
 import UserResult from "./UserResult";
@@ -9,6 +9,8 @@ import type {
   FailureResponse,
 } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
 const StyledWrapper = styled.div`
   width: 95%;
@@ -91,62 +93,77 @@ const formatAchievedTime = (iso?: string | null) => {
 
 const UsersList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
-  const [entries, setEntries] = useState<LeaderboardEntryResponse[]>([]);
-  const [currentUser, setCurrentUser] =
-    useState<LeaderboardEntryResponse | null>(null);
-  const [failure, setFailure] = useState<FailureResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: leaderboard,
+    isLoading,
+    isError,
+    error: leaderboardError,
+  } = useQuery<LeaderboardResponse>({
+    queryKey: ["leaderboard", tokens?.access ?? null],
+    queryFn: async () => {
+      if (!tokens) {
+        return {
+          entries: [],
+          failure: null,
+          current_user: null,
+        } as LeaderboardResponse;
+      }
+      return request<LeaderboardResponse>("/leaderboard/", {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+    },
+    enabled: Boolean(tokens),
+  });
 
   useEffect(() => {
-    if (!tokens) return;
-    let isMounted = true;
+    if (isError && leaderboardError) {
+      console.error("[UsersList] leaderboard fetch error", leaderboardError);
+    }
+  }, [isError, leaderboardError]);
 
-    const fetchLeaderboard = async () => {
-      try {
-        // Если нужно конкретный сбой — добавьте ?failure=<id>
-        const data = await request<LeaderboardResponse>("/leaderboard/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        });
+  const entries = useMemo(() => {
+    const rawEntries = leaderboard?.entries ?? [];
+    const filtered = rawEntries.filter((entry) => (entry.score ?? 0) > 0);
+    return filtered.map((entry) => ({
+      ...entry,
+      display_time: formatAchievedTime((entry as any).achieved_at),
+    })) as LeaderboardEntryResponse[];
+  }, [leaderboard?.entries]);
 
-        if (!isMounted) return;
-
-        // фронтовая подстраховка (бэкенд уже фильтрует score>0):
-        const filtered = (data.entries || []).filter((e) => (e.score ?? 0) > 0);
-
-        // добавляем display_time, чтобы UsersItem/Result могли отрисовать время результата
-        const enhanced = filtered.map((e) => ({
-          ...e,
-          display_time: formatAchievedTime((e as any).achieved_at),
-        })) as LeaderboardEntryResponse[];
-
-        setEntries(enhanced);
-        setFailure(data.failure ?? null);
-        setCurrentUser(
-          data.current_user
-            ? ({
-                ...data.current_user,
-                display_time: formatAchievedTime(
-                  (data.current_user as any).achieved_at
-                ),
-              } as LeaderboardEntryResponse)
-            : null
-        );
-        setError(null);
-      } catch (err) {
-        if (!isMounted) return;
-        setError("Не удалось загрузить таблицу лидеров");
-      }
+  const currentUser = useMemo(() => {
+    if (!leaderboard?.current_user) return null;
+    const entry = leaderboard.current_user as LeaderboardEntryResponse & {
+      achieved_at?: string | null;
     };
+    return {
+      ...entry,
+      display_time: formatAchievedTime(entry.achieved_at),
+    } as LeaderboardEntryResponse;
+  }, [leaderboard?.current_user]);
 
-    void fetchLeaderboard();
-    return () => {
-      isMounted = false;
-    };
-  }, [tokens]);
+  const failure: FailureResponse | null = leaderboard?.failure ?? null;
 
   const listContent = useMemo(() => {
-    if (error) {
-      return <Placeholder>{error}</Placeholder>;
+    if (!tokens) {
+      return (
+        <Placeholder>
+          Авторизуйтесь, чтобы увидеть таблицу лидеров
+        </Placeholder>
+      );
+    }
+
+    if (isLoading) {
+      return (
+        <Placeholder>
+          <LoadingSpinner label="Загружаем участников" />
+        </Placeholder>
+      );
+    }
+
+    if (isError) {
+      return (
+        <Placeholder>Не удалось загрузить таблицу лидеров</Placeholder>
+      );
     }
 
     if (!entries.length) {
@@ -156,7 +173,7 @@ const UsersList = () => {
     return entries.map((entry) => (
       <UsersItem key={`${entry.username}-${entry.position}`} entry={entry} />
     ));
-  }, [entries, error]);
+  }, [entries, isError, isLoading, tokens]);
 
   const failureName = failure?.name ?? "Активный сбой не найден";
   const failureEnd = useMemo(() => {

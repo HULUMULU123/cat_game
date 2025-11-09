@@ -17,6 +17,8 @@ import wordmark from "../../assets/STAKAN.svg";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 import { request } from "../../shared/api/httpClient";
 import type { FrontendConfigResponse } from "../../shared/api/types";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
 /* --------------------------- Styled Components --------------------------- */
 
@@ -50,6 +52,14 @@ const Content = styled.div`
   align-items: center;
   flex-direction: column;
   z-index: 1;
+`;
+
+const ConfigSpinnerWrapper = styled.div`
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
 `;
 
 /* === Кнопка громкости (FAB) === */
@@ -341,25 +351,28 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     (state) => state.isBottomNavVisible
   );
   const [screenTexture, setScreenTexture] = useState(DEFAULT_SCREEN_TEXTURE);
+  const {
+    data: frontendConfig,
+    isLoading: isConfigLoading,
+    isError: isConfigError,
+    error: configError,
+  } = useQuery<FrontendConfigResponse>({
+    queryKey: ["frontend-config"],
+    queryFn: () => request<FrontendConfigResponse>("/frontend/config/"),
+  });
+
   useEffect(() => {
-    let cancelled = false;
+    if (isConfigError && configError) {
+      console.error("[Model] screen texture load error", configError);
+    }
+  }, [isConfigError, configError]);
 
-    (async () => {
-      try {
-        const data = await request<FrontendConfigResponse>("/frontend/config/");
-        if (cancelled) return;
-        const incoming = data.screen_texture?.trim();
-        console.log("incoming", incoming);
-        if (incoming) setScreenTexture(incoming);
-      } catch (error) {
-        console.error("[Model] screen texture load error", error);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  useEffect(() => {
+    const incoming = frontendConfig?.screen_texture?.trim();
+    if (incoming) {
+      setScreenTexture(incoming);
+    }
+  }, [frontendConfig]);
   // Условия готовности Canvas (для его появления)
   useEffect(() => {
     const t = setTimeout(() => setManualHold(false), 300);
@@ -527,7 +540,14 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         </SoundFab>
       ) : null}
 
-      <Content>{children}</Content>
+      <Content>
+        {isConfigLoading ? (
+          <ConfigSpinnerWrapper>
+            <LoadingSpinner label="Обновляем сцену" />
+          </ConfigSpinnerWrapper>
+        ) : null}
+        {children}
+      </Content>
     </ModelWrapper>
   );
 };

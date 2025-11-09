@@ -12,6 +12,7 @@ import type {
   DailyRewardConfigResponse,
 } from "../../../../shared/api/types";
 import useGlobalStore from "../../../../shared/store/useGlobalStore";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
 const StyledWrapper = styled.div`
   width: 100%;
@@ -25,66 +26,66 @@ export default function RewardModal({ handleClose }: RewardModalProps) {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((state) => state.updateBalance);
 
-  const [config, setConfig] = useState<DailyRewardConfigResponse | null>(null);
   const [claimResult, setClaimResult] =
     useState<DailyRewardClaimResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setClaimResult(null);
+    setClaimError(null);
+  }, [tokens]);
+
+  const {
+    data: config,
+    isLoading: configLoading,
+    isError: isConfigError,
+    error: configError,
+  } = useQuery<DailyRewardConfigResponse>({
+    queryKey: ["daily-rewards", tokens?.access ?? null],
+    enabled: Boolean(tokens),
+    queryFn: async () => {
+      if (!tokens) {
+        throw new Error("missing tokens");
+      }
+      return request<DailyRewardConfigResponse>("/daily-rewards/", {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (isConfigError && configError) {
+      console.error("[DailyRewardModal] load error", configError);
+    }
+  }, [isConfigError, configError]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (!tokens) return;
-    let mounted = true;
-    setLoading(true);
-
-    (async () => {
-      try {
-        const data = await request<DailyRewardConfigResponse>("/daily-rewards/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        });
-        if (!mounted) return;
-        setConfig(data);
-        setError(null);
-      } catch (err) {
-        console.error("[DailyRewardModal] load error", err);
-        if (!mounted) return;
-        setConfig(null);
-        setError("Не удалось загрузить ежедневные награды");
-      } finally {
-        if (mounted) setLoading(false);
+  const claimMutation = useMutation<DailyRewardClaimResponse, Error>({
+    mutationFn: async () => {
+      if (!tokens) {
+        throw new Error("missing tokens");
       }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [tokens]);
-
-  useEffect(() => {
-    if (!tokens || !config || config.today_claimed || claimResult) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const resp = await request<DailyRewardClaimResponse>(
-          "/daily-rewards/claim/",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${tokens.access}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (cancelled) return;
-        setClaimResult(resp);
-        setConfig((prev) =>
+      return request<DailyRewardClaimResponse>("/daily-rewards/claim/", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokens.access}`,
+          "Content-Type": "application/json",
+        },
+      });
+    },
+    onSuccess: (resp) => {
+      setClaimResult(resp);
+      setClaimError(null);
+      updateBalance(resp.balance);
+      queryClient.setQueryData<DailyRewardConfigResponse | undefined>(
+        ["daily-rewards", tokens?.access ?? null],
+        (prev) =>
           prev
             ? {
                 ...prev,
@@ -95,18 +96,19 @@ export default function RewardModal({ handleClose }: RewardModalProps) {
                 last_claim_date: resp.claim.claimed_for_date,
               }
             : prev
-        );
-        updateBalance(resp.balance);
-      } catch (err) {
-        console.error("[DailyRewardModal] claim error", err);
-        if (!cancelled) setError("Не удалось получить ежедневную награду");
-      }
-    })();
+      );
+    },
+    onError: (err) => {
+      console.error("[DailyRewardModal] claim error", err);
+      setClaimError("Не удалось получить ежедневную награду");
+    },
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [tokens, config, claimResult, updateBalance]);
+  useEffect(() => {
+    if (!tokens || !config || config.today_claimed || claimResult) return;
+    if (claimMutation.isLoading) return;
+    claimMutation.mutate(undefined as void);
+  }, [claimMutation, claimMutation.isLoading, claimResult, config, tokens]);
 
   const rewards = config?.rewards ?? [];
   const nextDay = claimResult?.next_day ?? config?.next_day ?? 1;
@@ -138,6 +140,12 @@ export default function RewardModal({ handleClose }: RewardModalProps) {
     return `До обновления награды: ${hours} ч ${mm} м`;
   }, [now]);
 
+  const errorMessage = useMemo(() => {
+    if (!tokens) return "Авторизуйтесь, чтобы увидеть награды";
+    if (isConfigError) return "Не удалось загрузить ежедневные награды";
+    return claimError;
+  }, [claimError, isConfigError, tokens]);
+
   return (
     <StyledWrapper>
       <Header infoType="reward" handleClose={handleClose} />
@@ -146,8 +154,8 @@ export default function RewardModal({ handleClose }: RewardModalProps) {
         rewards={rewards}
         claimedCount={claimedCount}
         nextDay={nextDay}
-        loading={loading}
-        error={error}
+        loading={configLoading}
+        error={errorMessage}
         nextUpdateHint={nextUpdateHint}
       />
       <SpecialRewards

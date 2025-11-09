@@ -11,6 +11,8 @@ import {
   SimulationConfigResponse,
   SimulationRewardClaimResponse,
 } from "../shared/api/types";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../shared/components/LoadingSpinner";
 
 const PageWrapper = styled.div`
   position: relative;
@@ -177,6 +179,16 @@ const RewardBanner = styled.div<{ $error?: boolean }>`
   z-index: 3;
 `;
 
+const LoadingOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 9, 7, 0.78);
+  z-index: 5;
+`;
+
 type PracticeMessagePayload = {
   source: "simulation-practice";
   type: "finished" | "closed";
@@ -211,7 +223,6 @@ const SimulationPractice = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((state) => state.updateBalance);
 
-  const [config, setConfig] = useState<SimulationConfigResponse | null>(null);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [score, setScore] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
@@ -260,30 +271,27 @@ const SimulationPractice = () => {
     };
   }, [setBottomNavVisible]);
 
+  const {
+    data: config,
+    isLoading: isConfigLoading,
+    isError: isConfigError,
+    error: configError,
+  } = useQuery<SimulationConfigResponse>({
+    queryKey: ["simulation-config", tokens?.access ?? null],
+    enabled: Boolean(tokens),
+    queryFn: async () => {
+      if (!tokens) throw new Error("missing tokens");
+      return request<SimulationConfigResponse>("/simulation/", {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+    },
+  });
+
   useEffect(() => {
-    let cancelled = false;
-    if (!tokens) {
-      setConfig(null);
-      return;
+    if (isConfigError && configError) {
+      console.error("Failed to load simulation config", configError);
     }
-
-    (async () => {
-      try {
-        const data = await request<SimulationConfigResponse>("/simulation/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        });
-        if (!cancelled) {
-          setConfig(data);
-        }
-      } catch (error) {
-        console.error("Failed to load simulation config", error);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tokens]);
+  }, [configError, isConfigError]);
 
   const thresholdValues = useMemo(() => {
     const raw = config
@@ -482,6 +490,12 @@ const SimulationPractice = () => {
       <FooterLayer>
         <FailureFooter score={score} />
       </FooterLayer>
+
+      {isConfigLoading && !config ? (
+        <LoadingOverlay>
+          <LoadingSpinner label="Загрузка тренировки..." />
+        </LoadingOverlay>
+      ) : null}
 
       {isFinished ? (
         <ResultOverlay>
