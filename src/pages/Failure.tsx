@@ -65,7 +65,6 @@ const LoaderTopLayer = styled.div<{ $visible: boolean }>`
   opacity: ${(p) => (p.$visible ? 1 : 0)};
   transition: opacity 420ms ease;
   pointer-events: ${(p) => (p.$visible ? "auto" : "none")};
-  /* избегаем неожиданных пересчётов layout */
   background: transparent;
 `;
 
@@ -176,6 +175,9 @@ export default function Failure() {
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
 
+  // фиксированная метка окончания раунда
+  const endAtRef = useRef<number | null>(null);
+
   // Покадровый сценарий загрузки
   const [contentVisible, setContentVisible] = useState(false);
   const [loaderVisible, setLoaderVisible] = useState(true); // видимость (фейд)
@@ -279,8 +281,8 @@ export default function Failure() {
     return () => {
       active = false;
     };
-    // убрал startModalOpen из зависимостей, чтобы не перетягивать данные при каждом открытии/закрытии модалки
-  }, [tokens, parseErrorDetail, isGameRunning, hasFinished, startModalOpen]);
+    // ВАЖНО: не зависим от startModalOpen, чтобы не перезапускать загрузку
+  }, [tokens, parseErrorDetail, isGameRunning, hasFinished]);
 
   const handleStartGame = useCallback(async () => {
     if (!tokens) {
@@ -312,6 +314,10 @@ export default function Failure() {
       setHasFinished(false);
       setResultMessage(null);
       setResultModalOpen(false);
+
+      // фиксируем момент окончания
+      endAtRef.current = Date.now() + response.duration_seconds * 1000;
+
       setIsGameRunning(true);
       setStartModalOpen(false);
     } catch (error) {
@@ -332,6 +338,7 @@ export default function Failure() {
     setHasFinished(true);
     setIsGameRunning(false);
     setTimeLeft(0);
+    endAtRef.current = null;
 
     if (!tokens || !failure) {
       setResultMessage(`Результат не сохранён. Очки: ${score}`);
@@ -367,24 +374,30 @@ export default function Failure() {
     }
   }, [duration, failure, hasFinished, parseErrorDetail, score, tokens]);
 
+  // стабильный таймер по метке окончания
   useEffect(() => {
     if (!isGameRunning) return;
 
-    const startedAt = Date.now();
+    if (!endAtRef.current) {
+      endAtRef.current = Date.now() + duration * 1000;
+    }
 
     const tick = () => {
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      const remaining = Math.max(duration - elapsed, 0);
-      setTimeLeft(remaining);
-      if (remaining === 0) {
+      const endAt = endAtRef.current!;
+      const msLeft = Math.max(0, endAt - Date.now());
+      const secLeft = Math.ceil(msLeft / 1000);
+      setTimeLeft(secLeft);
+
+      if (secLeft <= 0) {
+        endAtRef.current = null;
         finishGame();
       }
     };
 
     tick();
-    const interval = window.setInterval(tick, 1000);
-    return () => window.clearInterval(interval);
-  }, [duration, finishGame, isGameRunning]);
+    const id = window.setInterval(tick, 250);
+    return () => window.clearInterval(id);
+  }, [isGameRunning, duration, finishGame]);
 
   // Когда лоадер полностью скрылся — размонтируем портал
   const onLoaderTransitionEnd = useCallback(() => {
