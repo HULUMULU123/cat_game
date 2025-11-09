@@ -1,4 +1,4 @@
-import { MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { MouseEvent, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import gift from "../../assets/icons/gift.svg";
@@ -92,38 +92,21 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
   const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
 
-  const lastTokenRef = useRef<string | null>(null); // помним, для какого access уже дергали
-  const inflightRef = useRef<AbortController | null>(null);
-
   // ---- fetch gift ----
   useEffect(() => {
-    const access = tokens?.access;
-    if (!access) return;
-
-    // если уже запрашивали с тем же access — не дергаем снова
-    if (lastTokenRef.current === access) return;
-    lastTokenRef.current = access;
-
-    // отменяем предыдущий запрос (если был)
-    inflightRef.current?.abort();
-    const ac = new AbortController();
-    inflightRef.current = ac;
-
+    if (!tokens) return;
     let mounted = true;
 
     (async () => {
       try {
         const data = await request<GiftResponse>("/gift/", {
-          headers: { Authorization: `Bearer ${access}` },
-          // @ts-ignore — если request не принимает signal, можно добавить поддержку
-          signal: ac.signal,
+          headers: { Authorization: `Bearer ${tokens.access}` },
         });
         if (mounted) {
           setGiftInfo(data);
           setGiftError(null);
         }
-      } catch (e) {
-        if (ac.signal.aborted) return; // игнор отменённого
+      } catch {
         if (mounted) {
           setGiftInfo(null);
           setGiftError("Время неизвестно...");
@@ -133,9 +116,8 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
 
     return () => {
       mounted = false;
-      ac.abort();
     };
-  }, [tokens?.access]); //  завись только от строкового токена
+  }, [tokens]);
 
   // ---- fetch current failure (берём последний созданный) ----
   useEffect(() => {
