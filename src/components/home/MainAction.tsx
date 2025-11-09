@@ -94,19 +94,33 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
 
   // ---- fetch gift ----
   useEffect(() => {
-    if (!tokens) return;
+    const access = tokens?.access;
+    if (!access) return;
+
+    // если уже запрашивали с тем же access — не дергаем снова
+    if (lastTokenRef.current === access) return;
+    lastTokenRef.current = access;
+
+    // отменяем предыдущий запрос (если был)
+    inflightRef.current?.abort();
+    const ac = new AbortController();
+    inflightRef.current = ac;
+
     let mounted = true;
 
     (async () => {
       try {
         const data = await request<GiftResponse>("/gift/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
+          headers: { Authorization: `Bearer ${access}` },
+          // @ts-ignore — если request не принимает signal, можно добавить поддержку
+          signal: ac.signal,
         });
         if (mounted) {
           setGiftInfo(data);
           setGiftError(null);
         }
-      } catch {
+      } catch (e) {
+        if (ac.signal.aborted) return; // игнор отменённого
         if (mounted) {
           setGiftInfo(null);
           setGiftError("Время неизвестно...");
@@ -116,8 +130,9 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
 
     return () => {
       mounted = false;
+      ac.abort();
     };
-  }, [tokens]);
+  }, [tokens?.access]); //  завись только от строкового токена
 
   // ---- fetch current failure (берём последний созданный) ----
   useEffect(() => {

@@ -284,29 +284,36 @@ export default function Failure() {
     // важно: не зависим от startModalOpen
   }, [tokens, parseErrorDetail, isGameRunning, hasFinished]);
 
+  const startRequestedRef = useRef(false);
+
   const handleStartGame = useCallback(async () => {
-    if (!tokens) {
+    // защита от двойного клика/двух источников старта
+    if (isStarting || isGameRunning || startRequestedRef.current) return;
+
+    const access = tokens?.access;
+    const failureId = typeof failure?.id === "number" ? failure.id : null;
+
+    if (!access) {
       setStartMessage("Необходимо авторизоваться для участия в сбое.");
       setStartModalOpen(true);
       return;
     }
-
-    if (!failure || !failure.is_active) {
+    if (!failure || !failure.is_active || failureId === null) {
       setStartMessage("Сбой недоступен.");
       return;
     }
 
+    startRequestedRef.current = true;
     setIsStarting(true);
+
     try {
-      const payload = { failure_id: failure.id };
-      console.log(payload);
       const response = await request<FailureStartResponse>("/failures/start/", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${tokens.access}`,
+          Authorization: `Bearer ${access}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ failure_id: failureId }),
       });
 
       const dur = response.duration_seconds ?? 60;
@@ -326,14 +333,25 @@ export default function Failure() {
     } catch (error) {
       const message = parseErrorDetail(error, "Не удалось начать сбой.");
       setStartMessage(message);
-      setHasFinished(
+
+      // если «уже участвовали» — фиксируем, чтобы автозапуска больше не было
+      if (
         message.toLowerCase().includes("уже участвовали") ||
-          message.toLowerCase().includes("уже")
-      );
+        message.toLowerCase().includes("уже")
+      ) {
+        setHasFinished(true);
+      }
     } finally {
       setIsStarting(false);
+      startRequestedRef.current = false;
     }
-  }, [failure, parseErrorDetail, tokens]);
+  }, [
+    tokens?.access,
+    failure?.id,
+    failure?.is_active,
+    isGameRunning,
+    parseErrorDetail,
+  ]);
 
   const finishGame = useCallback(async () => {
     if (hasFinished) {
