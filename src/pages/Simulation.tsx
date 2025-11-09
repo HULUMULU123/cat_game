@@ -281,6 +281,14 @@ const Simulation = () => {
     }
   };
 
+  const handleModalToggle = (value: boolean) => {
+    if (!value) {
+      setModalState("");
+      setModalMessage("");
+      resetAds();
+    }
+  };
+
   const handleResultModalToggle = (value: boolean) => {
     if (!value) {
       setResultModalOpen(false);
