@@ -5,12 +5,20 @@ import advertFallback from "../../assets/icons/advert.svg";
 import { request } from "../../shared/api/httpClient";
 import type { AdvertisementButtonResponse } from "../../shared/api/types";
 
+/* ======== СТИЛИ ======== */
+
 const StyledWrapper = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-  gap: 12px;
+  grid-template-columns: 50px 1fr 50px; /* левая и правая колонки фиксированные */
+  align-items: start;
   width: 95%;
   margin: 0 auto;
+`;
+
+const Column = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 `;
 
 const StyledButton = styled.a`
@@ -28,7 +36,6 @@ const StyledButton = styled.a`
     rgba(150, 238, 172, 0.08) 100%
   );
   box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
-  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   transition: transform 0.12s ease-in-out, opacity 0.12s ease-in-out;
 
@@ -65,6 +72,8 @@ const Placeholder = styled.div`
   text-align: center;
 `;
 
+/* ======== ЛОГИКА ======== */
+
 const normalizeLink = (link: string): string => {
   const trimmed = link.trim();
   if (!trimmed) return "#";
@@ -72,7 +81,16 @@ const normalizeLink = (link: string): string => {
   return `https://${trimmed}`;
 };
 
-export default function AdevertSection() {
+const toImgSrc = (raw?: string) => {
+  if (!raw) return advertFallback;
+  const s = raw.trim();
+  if (!s) return advertFallback;
+  if (s.startsWith("http")) return s;
+  if (s.startsWith("/")) return s;
+  return `/media/${s.replace(/^media\/?/, "")}`;
+};
+
+export default function AdvertSection() {
   const [buttons, setButtons] = useState<AdvertisementButtonResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,23 +123,46 @@ export default function AdevertSection() {
     if (!buttons.length)
       return <Placeholder>Рекламные предложения скоро появятся</Placeholder>;
 
+    // Делим кнопки на левую и правую колонку
+    const half = Math.ceil(buttons.length / 2);
+    const leftButtons = buttons.slice(0, half);
+    const rightButtons = buttons.slice(half);
+
     return (
       <StyledWrapper>
-        {buttons.map((button) => {
-          const img = button.image?.trim() || advertFallback;
-          console.log("img_src", img);
-          return (
-            <StyledButton
-              key={button.id}
-              href={normalizeLink(button.link)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <StyledButtonImg src={img} alt="" />
-              <StyledButtonSpan>{button.title}</StyledButtonSpan>
-            </StyledButton>
-          );
-        })}
+        <Column>
+          {leftButtons.map((button) => {
+            const img = toImgSrc(button.image);
+            return (
+              <StyledButton
+                key={button.id}
+                href={normalizeLink(button.link)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <StyledButtonImg src={img} alt={button.title} />
+                <StyledButtonSpan>{button.title}</StyledButtonSpan>
+              </StyledButton>
+            );
+          })}
+        </Column>
+        <div /> {/* пустой центр */}
+        <Column>
+          {rightButtons.map((button) => {
+            const img = toImgSrc(button.image);
+            return (
+              <StyledButton
+                key={button.id}
+                href={normalizeLink(button.link)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <StyledButtonImg src={img} alt={button.title} />
+                <StyledButtonSpan>{button.title}</StyledButtonSpan>
+              </StyledButton>
+            );
+          })}
+        </Column>
       </StyledWrapper>
     );
   }, [buttons, error]);

@@ -322,7 +322,12 @@ class FrontendConfig(TimestampedModel):
 class RuleCategory(TimestampedModel):
     category = models.CharField(max_length=255, verbose_name="Категория")
     rule_text = models.TextField(verbose_name="Правило")
-    icon = models.URLField(blank=True, verbose_name="Иконка (URL)")
+    icon = models.ImageField(
+    upload_to="icons/",
+    blank=True,
+    null=True,
+    verbose_name="Иконка"
+)
 
     class Meta:
         db_table = "правила_по_категориям"
