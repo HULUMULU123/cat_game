@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useWebApp } from "@vkruglikov/react-telegram-web-app";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 
@@ -7,8 +7,12 @@ const useTelegramInit = () => {
   const setUserFromInitData = useGlobalStore((s) => s.setUserFromInitData);
   const stopLoading = useGlobalStore((s) => s.stopLoading);
 
+  // защита от повторного запуска
+  const ranRef = useRef(false);
+
   useEffect(() => {
-    if (!webApp) return;
+    if (!webApp || ranRef.current) return;
+    ranRef.current = true;
 
     // обозначаем готовность веб-приложения Telegram
     webApp.ready();
