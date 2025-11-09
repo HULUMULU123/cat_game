@@ -216,6 +216,8 @@ async function authPostJson<T>(
 
 /* ---------------- store ---------------- */
 
+let loadProfilePromise: Promise<void> | null = null;
+
 const useGlobalStore = create<GlobalState>()(
   persist(
     (set, get) => {
@@ -402,16 +404,26 @@ const useGlobalStore = create<GlobalState>()(
           const { tokens, hasHydratedProfile } = get();
           if (!tokens || hasHydratedProfile) return;
 
-          try {
-            const data = await authGetJson<ProfileResponse>(
-              "/auth/me/",
-              get,
-              set
-            );
-            applyProfileResponse(data);
-          } catch (err) {
-            console.error("Failed to load profile", err);
+          if (loadProfilePromise) {
+            return loadProfilePromise;
           }
+
+          loadProfilePromise = (async () => {
+            try {
+              const data = await authGetJson<ProfileResponse>(
+                "/auth/me/",
+                get,
+                set
+              );
+              applyProfileResponse(data);
+            } catch (err) {
+              console.error("Failed to load profile", err);
+            } finally {
+              loadProfilePromise = null;
+            }
+          })();
+
+          return loadProfilePromise;
         },
 
         setTokens: (t) => set({ tokens: t }),
