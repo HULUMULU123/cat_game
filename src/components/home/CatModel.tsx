@@ -13,6 +13,15 @@ const modelUrls = [
 // Предзагрузка всех моделей
 modelUrls.forEach((url) => useGLTF.preload(url));
 
+function getRandomIndex(length: number, exclude?: number) {
+  if (length <= 1) return 0;
+  let idx = exclude ?? -1;
+  while (idx === exclude) {
+    idx = Math.floor(Math.random() * length);
+  }
+  return idx;
+}
+
 export default function CatModel() {
   const models = modelUrls.map((url) => useGLTF(url));
 
@@ -26,17 +35,21 @@ export default function CatModel() {
   const mixer = useRef<THREE.AnimationMixer>();
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentAction = useRef<THREE.AnimationAction | null>(null);
-  const nextAction = useRef<THREE.AnimationAction | null>(null);
 
-  // Инициализация миксера и первой анимации
+  // Инициализация миксера и старт со случайной анимации
   useEffect(() => {
     if (!scene || animations.length === 0) return;
 
     if (!mixer.current) mixer.current = new THREE.AnimationMixer(scene);
 
-    const clip = animations[currentIndex];
+    const startIndex = getRandomIndex(animations.length);
+    setCurrentIndex(startIndex);
+
+    const clip = animations[startIndex];
     const action = mixer.current.clipAction(clip);
     action.reset();
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
     action.play();
     currentAction.current = action;
 
@@ -45,29 +58,30 @@ export default function CatModel() {
     };
   }, [scene, animations]);
 
-  // Логика переключения анимаций
+  // Случайное переключение по завершению текущего клипа
   useEffect(() => {
     if (!mixer.current || animations.length === 0) return;
-
     const mixerInstance = mixer.current;
 
     const handleFinished = () => {
-      const nextIndex = (currentIndex + 1) % animations.length;
+      const nextIndex = getRandomIndex(animations.length, currentIndex);
       const nextClip = animations[nextIndex];
 
-      nextAction.current = mixerInstance.clipAction(nextClip);
-      nextAction.current.reset().play();
+      const nextAction = mixerInstance.clipAction(nextClip);
+      nextAction.reset();
+      nextAction.setLoop(THREE.LoopOnce, 1);
+      nextAction.clampWhenFinished = true;
+      nextAction.play();
 
       if (currentAction.current) {
-        currentAction.current.crossFadeTo(nextAction.current, 0.6, false);
+        currentAction.current.crossFadeTo(nextAction, 0.6, false);
       }
 
-      currentAction.current = nextAction.current;
+      currentAction.current = nextAction;
       setCurrentIndex(nextIndex);
     };
 
     mixerInstance.addEventListener("finished", handleFinished);
-
     return () => {
       mixerInstance.removeEventListener("finished", handleFinished);
     };

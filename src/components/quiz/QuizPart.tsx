@@ -23,7 +23,7 @@ const StyledContentWrapper = styled.div`
 
 const StyledQuestionSpan = styled.span`
   margin: 0 auto;
-  font-size: 8px;
+  font-size: 16px;
   font-weight: 700;
   font-family: "Conthrax", sans-serif;
   color: rgb(224, 255, 251);
