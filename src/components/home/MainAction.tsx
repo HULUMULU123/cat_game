@@ -1,4 +1,4 @@
-import { MouseEvent, useEffect, useMemo, useState } from "react";
+import { MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import gift from "../../assets/icons/gift.svg";
@@ -91,6 +91,9 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
 
   const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
+
+  const lastTokenRef = useRef<string | null>(null); // помним, для какого access уже дергали
+  const inflightRef = useRef<AbortController | null>(null);
 
   // ---- fetch gift ----
   useEffect(() => {
