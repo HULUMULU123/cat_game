@@ -241,7 +241,7 @@ const Simulation = () => {
     window.location.href = practiceUrl.toString();
   }, [config?.duration_seconds, gameDuration]);
 
-  const handleStart = async () => {
+  const handleStart = useCallback(() => {
     if (!tokens || !config) {
       setModalState("insufficient");
       setModalMessage("Пожалуйста, авторизуйтесь, чтобы начать симуляцию.");
@@ -258,43 +258,17 @@ const Simulation = () => {
 
     setIsProcessing(true);
     try {
-      const data = await request<SimulationStartResponse>(
-        "/simulation/start/",
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        }
-      );
-
-      updateBalance(data.balance);
+      // очищаем модалку и открываем практику
       setModalState("");
       setModalMessage("");
-      startGameSession(data.duration_seconds ?? config.duration_seconds ?? 60);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        try {
-          const parsed = JSON.parse(error.message) as {
-            detail?: string;
-            balance?: number;
-            required?: number;
-          };
-          setModalState("insufficient");
-          setModalMessage(parsed.detail ?? "Недостаточно средств для запуска.");
-          if (typeof parsed.balance === "number") {
-            updateBalance(parsed.balance);
-          }
-        } catch {
-          setModalState("insufficient");
-          setModalMessage("Не удалось запустить симуляцию.");
-        }
-      } else {
-        setModalState("insufficient");
-        setModalMessage("Не удалось запустить симуляцию.");
-      }
+      handlePracticeStart(); // откроет окно/вкладку или сделает fallback
+    } catch (e) {
+      setModalState("insufficient");
+      setModalMessage("Не удалось открыть страницу практики.");
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [tokens, config, balance, handlePracticeStart]);
 
   const handleModalToggle = (value: boolean) => {
     if (!value) {
@@ -395,7 +369,9 @@ const Simulation = () => {
       if (data.type === "finished") {
         practiceWindowRef.current = null;
         const scoreValue = data.payload?.score ?? 0;
-        setPracticeModalMessage(`Тренировка завершена. Вы сбили ${scoreValue} капель.`);
+        setPracticeModalMessage(
+          `Тренировка завершена. Вы сбили ${scoreValue} капель.`
+        );
         setPracticeModalOpen(true);
         return;
       }
