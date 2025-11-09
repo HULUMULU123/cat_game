@@ -109,6 +109,7 @@ export default function AdevertSection() {
       <StyledWrapper>
         {buttons.map((button) => {
           const img = button.image?.trim() || advertFallback;
+          console.log("img_src", img);
           return (
             <StyledButton
               key={button.id}

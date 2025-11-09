@@ -29,6 +29,28 @@ from .models import (
 User = get_user_model()
 
 
+def _file_to_url(request: Request | None, value) -> str | None:
+    """
+    Принимает FieldFile или строку. Возвращает:
+    - абсолютный URL, если есть request и путь относительный;
+    - относительный URL (/media/...), если request не передан.
+    """
+    if not value:
+        return None
+    # Если это FieldFile (ImageField/FileField)
+    url = None
+    try:
+        url = getattr(value, "url", None)
+    except Exception:
+        url = None
+    if not url:
+        # может быть строка из БД (например "icons/a.png" или "/media/icons/a.png")
+        url = str(value).strip()
+    if not url:
+        return None
+    return _absolute_url(request, url)
+
+
 def _absolute_url(request: Request | None, raw: str | None) -> str | None:
     if not raw:
         return None
@@ -58,7 +80,8 @@ class TaskCompletionSerializer(serializers.ModelSerializer[TaskCompletion]):
 
     def get_icon(self, obj: TaskCompletion) -> str | None:
         request = self.context.get("request")
-        return _absolute_url(request, getattr(obj.task, "icon", None))
+        # obj.task.icon может быть ImageField или строка
+        return _file_to_url(request, getattr(obj.task, "icon", None))
 
 
 
@@ -172,7 +195,7 @@ class AdvertisementButtonSerializer(serializers.ModelSerializer[AdvertisementBut
 
     def get_image(self, obj: AdvertisementButton) -> str | None:
         request = self.context.get("request")
-        return _absolute_url(request, obj.image)
+        return _file_to_url(request, obj.image)
 
 
 class FrontendConfigSerializer(serializers.ModelSerializer[FrontendConfig]):
@@ -184,7 +207,7 @@ class FrontendConfigSerializer(serializers.ModelSerializer[FrontendConfig]):
 
     def get_screen_texture(self, obj: FrontendConfig) -> str | None:
         request = self.context.get("request")
-        return _absolute_url(request, obj.screen_texture)
+        return _file_to_url(request, obj.screen_texture)
 
 
 # ---------- Failures ----------
@@ -237,7 +260,7 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
 
     def get_main_prize_image(self, obj: Failure) -> str | None:
         request = self.context.get("request")
-        return _absolute_url(request, obj.main_prize_image)
+        return _file_to_url(request, obj.main_prize_image)
 
 
 class FailureBonusPurchaseSerializer(serializers.Serializer):

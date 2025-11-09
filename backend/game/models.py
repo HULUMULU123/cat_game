@@ -295,7 +295,11 @@ class FrontendConfig(TimestampedModel):
         default="default",
         verbose_name="Идентификатор конфигурации",
     )
-    screen_texture = models.URLField(blank=True, verbose_name="Текстура экрана (URL)")
+    screen_texture = models.ImageField(
+        upload_to="textures/",
+        blank=True,
+        verbose_name="Текстура экрана"
+    )
 
     class Meta:
         db_table = "настройки_фронтенда"
