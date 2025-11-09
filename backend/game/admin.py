@@ -1,6 +1,3 @@
-from typing import TYPE_CHECKING
-from django.contrib import admin
-
 import io
 import re
 import string
@@ -16,9 +13,11 @@ from django.template.response import TemplateResponse
 from django.urls import path
 
 from .models import (
+    AdvertisementButton,
     AdsgramAssignment,
     DailyReward,
     DailyRewardClaim,
+    FrontendConfig,
     Failure,
     FailureBonusPurchase,
     PromoCode,
@@ -38,9 +37,11 @@ from .models import generate_promo_code
 if TYPE_CHECKING:
     from django.contrib.admin import ModelAdmin as _ModelAdmin
 
+    AdvertisementButtonAdminBase = _ModelAdmin[AdvertisementButton]  # type: ignore[index]
     AdsgramAssignmentAdminBase = _ModelAdmin[AdsgramAssignment]  # type: ignore[index]
     DailyRewardAdminBase = _ModelAdmin[DailyReward]  # type: ignore[index]
     DailyRewardClaimAdminBase = _ModelAdmin[DailyRewardClaim]  # type: ignore[index]
+    FrontendConfigAdminBase = _ModelAdmin[FrontendConfig]  # type: ignore[index]
     FailureAdminBase = _ModelAdmin[Failure]  # type: ignore[index]
     FailureBonusPurchaseAdminBase = _ModelAdmin[FailureBonusPurchase]  # type: ignore[index]
     PromoCodeAdminBase = _ModelAdmin[PromoCode]  # type: ignore[index]
@@ -54,9 +55,11 @@ if TYPE_CHECKING:
     TaskCompletionAdminBase = _ModelAdmin[TaskCompletion]  # type: ignore[index]
     UserProfileAdminBase = _ModelAdmin[UserProfile]  # type: ignore[index]
 else:
+    AdvertisementButtonAdminBase = admin.ModelAdmin
     AdsgramAssignmentAdminBase = admin.ModelAdmin
     DailyRewardAdminBase = admin.ModelAdmin
     DailyRewardClaimAdminBase = admin.ModelAdmin
+    FrontendConfigAdminBase = admin.ModelAdmin
     FailureAdminBase = admin.ModelAdmin
     FailureBonusPurchaseAdminBase = admin.ModelAdmin
     PromoCodeAdminBase = admin.ModelAdmin
@@ -164,16 +167,34 @@ def _read_xlsx_rows(payload: bytes) -> list[list[str]]:
 
 @admin.register(UserProfile)
 class UserProfileAdmin(UserProfileAdminBase):
-    list_display = ("user", "balance", "created_at", "updated_at")
+    list_display = (
+        "user",
+        "balance",
+        "daily_reward_streak",
+        "daily_reward_last_claimed_at",
+        "created_at",
+        "updated_at",
+    )
     search_fields = ("user__username",)
     readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("user", "balance", "daily_reward_streak", "daily_reward_last_claimed_at")}),
+        ("Реферальная программа", {"fields": ("referral_code", "referred_by")}),
+        ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
 
 
 @admin.register(Task)
 class TaskAdmin(TaskAdminBase):
-    list_display = ("name", "reward", "created_at", "updated_at")
+    list_display = ("name", "reward", "link", "created_at", "updated_at")
     search_fields = ("name",)
     readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("name", "description", "reward")}),
+        ("Оформление", {"fields": ("icon",)}),
+        ("Ссылка", {"fields": ("link",)}),
+        ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
 
 
 @admin.register(TaskCompletion)
@@ -244,18 +265,26 @@ class RuleCategoryAdmin(RuleCategoryAdminBase):
     list_display = ("category", "created_at", "updated_at")
     search_fields = ("category",)
     readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("category", "rule_text", "icon")}),
+        ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
 
 
 @admin.register(DailyReward)
 class DailyRewardAdmin(DailyRewardAdminBase):
     list_display = ("day_number", "reward_amount", "created_at", "updated_at")
     readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("day_number", "reward_amount")}),
+        ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
 
 
 @admin.register(DailyRewardClaim)
 class DailyRewardClaimAdmin(DailyRewardClaimAdminBase):
-    list_display = ("profile", "reward", "claimed_at")
-    list_filter = ("reward__day_number",)
+    list_display = ("profile", "reward", "sequence_day", "claimed_for_date", "claimed_at")
+    list_filter = ("sequence_day", "claimed_for_date")
     search_fields = ("profile__user__username",)
     readonly_fields = ("claimed_at", "created_at", "updated_at")
 
@@ -306,6 +335,7 @@ class FailureAdmin(FailureAdminBase):
                 )
             },
         ),
+        ("Главный приз", {"fields": ("main_prize_title", "main_prize_image")}),
         ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
 
@@ -316,6 +346,25 @@ class FailureBonusPurchaseAdmin(FailureBonusPurchaseAdminBase):
     list_filter = ("bonus_type", "failure")
     search_fields = ("profile__user__username", "failure__name")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(AdvertisementButton)
+class AdvertisementButtonAdmin(AdvertisementButtonAdminBase):
+    list_display = ("title", "link", "order", "created_at", "updated_at")
+    list_editable = ("order",)
+    search_fields = ("title",)
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(FrontendConfig)
+class FrontendConfigAdmin(FrontendConfigAdminBase):
+    list_display = ("name", "screen_texture", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
+
+    def has_add_permission(self, request: HttpRequest) -> bool:  # pragma: no cover - admin guard
+        if FrontendConfig.objects.exists():
+            return False
+        return super().has_add_permission(request)
 
 
 @admin.register(QuizQuestion)

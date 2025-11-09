@@ -15,6 +15,8 @@ import { createPortal } from "react-dom";
 import StakanLoader from "../../shared/components/stakan/StakanLoader";
 import wordmark from "../../assets/STAKAN.svg";
 import useGlobalStore from "../../shared/store/useGlobalStore";
+import { request } from "../../shared/api/httpClient";
+import type { FrontendConfigResponse } from "../../shared/api/types";
 
 /* --------------------------- Styled Components --------------------------- */
 
@@ -115,6 +117,7 @@ const LevelBadge = styled.span`
 const modelCache = new Map<string, any>();
 const textureCache = new Map<string, THREE.Texture>();
 const videoCache = new Map<string, HTMLVideoElement>();
+const DEFAULT_SCREEN_TEXTURE = "/textures/screen_image.jpeg";
 
 /* ------------------------- Уведомление о первом кадре -------------------- */
 
@@ -193,9 +196,11 @@ const IconSpeakerHigh = () => (
 function RoomWithCat({
   url,
   onLoaded,
+  screenTexture,
 }: {
   url: string;
   onLoaded?: () => void;
+  screenTexture: string;
 }) {
   const { scene } = useMemo(() => {
     if (modelCache.has(url)) return modelCache.get(url);
@@ -234,7 +239,7 @@ function RoomWithCat({
     const waiters: Promise<any>[] = [];
 
     if (screenMesh) {
-      const textureURL = "/textures/screen_image.jpeg";
+      const textureURL = screenTexture || DEFAULT_SCREEN_TEXTURE;
       if (textureCache.has(textureURL)) {
         screenMesh.material = new THREE.MeshBasicMaterial({
           map: textureCache.get(textureURL)!,
@@ -309,7 +314,7 @@ function RoomWithCat({
     }
 
     Promise.all(waiters).then(() => onLoaded?.());
-  }, [scene, onLoaded]);
+  }, [scene, onLoaded, screenTexture]);
 
   return (
     <>
@@ -335,6 +340,25 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const isBottomNavVisible = useGlobalStore(
     (state) => state.isBottomNavVisible
   );
+  const [screenTexture, setScreenTexture] = useState(DEFAULT_SCREEN_TEXTURE);
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await request<FrontendConfigResponse>("/frontend/config/");
+        if (cancelled) return;
+        const incoming = data.screen_texture?.trim();
+        if (incoming) setScreenTexture(incoming);
+      } catch (error) {
+        console.error("[Model] screen texture load error", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   // Условия готовности Canvas (для его появления)
   useEffect(() => {
     const t = setTimeout(() => setManualHold(false), 300);
@@ -447,7 +471,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           </mesh>
 
           <Suspense fallback={null}>
-            <RoomWithCat url="/models/stakan_room.glb" onLoaded={() => {}} />
+            <RoomWithCat
+              url="/models/stakan_room.glb"
+              onLoaded={() => {}}
+              screenTexture={screenTexture}
+            />
             {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
             {!showLoader && <Environment preset="forest" background />}
           </Suspense>

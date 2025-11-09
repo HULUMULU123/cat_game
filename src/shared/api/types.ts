@@ -103,6 +103,7 @@ export type RuleCategoryResponse = {
   id: number;
   category: string;
   rule_text: string;
+  icon: string | null;
 };
 
 // --- Daily rewards ---
@@ -111,11 +112,30 @@ export type DailyRewardResponse = {
   reward_amount: number;
 };
 
-export type DailyRewardClaimResponse = {
+export type DailyRewardConfigResponse = {
+  rewards: DailyRewardResponse[];
+  streak: number;
+  last_claim_date: string | null;
+  today_claimed: boolean;
+  next_day: number;
+  current_day: number;
+};
+
+export type DailyRewardClaimEntry = {
   day_number: number;
   reward_amount: number;
+  sequence_day: number;
+  claimed_for_date: string;
   claimed_at: string;
-  balance?: number;
+};
+
+export type DailyRewardClaimResponse = {
+  detail: string;
+  claim: DailyRewardClaimEntry;
+  balance: number;
+  streak: number;
+  next_day: number;
+  current_day: number;
 };
 
 // --- Failures (Сбои) ---
@@ -133,6 +153,8 @@ export type FailureResponse = {
   bombs_max_count: number;
   max_bonuses_per_run: number;
   bonus_prices: Record<FailureBonusType, number>;
+  main_prize_title?: string | null;
+  main_prize_image?: string | null;
 };
 
 export type FailureStartResponse = {
@@ -159,6 +181,20 @@ export type FailureBonusPurchaseResponse = {
   purchased_bonuses: FailureBonusType[];
   balance: number;
   max_bonuses_per_run: number;
+};
+
+// --- Advertisements ---
+export type AdvertisementButtonResponse = {
+  id: number;
+  title: string;
+  link: string;
+  order: number;
+  image: string | null;
+};
+
+// --- Frontend config ---
+export type FrontendConfigResponse = {
+  screen_texture: string | null;
 };
 
 // --- Scores ---

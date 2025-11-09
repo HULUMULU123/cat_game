@@ -226,6 +226,7 @@ const TasksList = () => {
         img={task.icon || advert}
         url={task.link || undefined}
         done={task.is_completed}
+        reward={task.reward}
         onOpenAndComplete={handleOpenAndComplete}
         disabled={pendingIds.has(task.task_id)}
       />

@@ -5,10 +5,7 @@ import SectionInfo from "../../common/SectionInfo";
 import PrizeCard from "./PrizeCard";
 import PrizeDescription from "./PrizeDescription";
 import { request } from "../../../shared/api/httpClient";
-import type {
-  FailureResponse,
-  GiftResponse,
-} from "../../../shared/api/types";
+import type { FailureResponse } from "../../../shared/api/types";
 import useGlobalStore from "../../../shared/store/useGlobalStore";
 
 const StyledWrapper = styled.div`
@@ -25,8 +22,6 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
   const refreshBalance = useGlobalStore((state) => state.refreshBalance);
   const completedFailures = useGlobalStore((state) => state.completedFailures);
 
-  const [giftInfo, setGiftInfo] = useState<GiftResponse | null>(null);
-  const [giftError, setGiftError] = useState<string | null>(null);
   const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
 
@@ -34,32 +29,6 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
     if (!tokens) return;
     void refreshBalance();
   }, [refreshBalance, tokens]);
-
-  useEffect(() => {
-    if (!tokens) return;
-    let mounted = true;
-
-    (async () => {
-      try {
-        const data = await request<GiftResponse>("/gift/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        });
-        if (mounted) {
-          setGiftInfo(data);
-          setGiftError(null);
-        }
-      } catch {
-        if (mounted) {
-          setGiftInfo(null);
-          setGiftError("Время неизвестно...");
-        }
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [tokens]);
 
   useEffect(() => {
     if (!tokens) return;
@@ -158,11 +127,17 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
     ? "Вы уже прошли текущий сбой"
     : null;
 
-  const displayTimerValue = timerValue || giftError || "";
+  const displayTimerValue = timerValue || "";
   const currentDate = useMemo(
     () => new Date(now).toLocaleDateString("ru-RU"),
     [now]
   );
+
+  const mainPrizeTitle = failure?.main_prize_title ?? null;
+  const mainPrizeImage = failure?.main_prize_image ?? null;
+  const descriptionText = failure?.name
+    ? `Главный приз сбоя «${failure.name}»`
+    : null;
 
   return (
     <StyledWrapper>
@@ -173,15 +148,16 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
       />
       <SectionInfo InfoName={"НАГРАДЫ ТЕКУЩЕГО СБОЯ"} />
       <PrizeCard
-        gift={giftInfo}
+        mainPrizeTitle={mainPrizeTitle}
+        mainPrizeImage={mainPrizeImage}
         timerLabel={timerLabel}
         timerValue={displayTimerValue}
         completionNote={completionNote}
       />
       <PrizeDescription
-        description={giftInfo?.description ?? null}
+        description={descriptionText}
         currentDate={currentDate}
-        rewardCoins={giftInfo?.coins ?? null}
+        rewardCoins={null}
       />
     </StyledWrapper>
   );

@@ -4,7 +4,7 @@ import secrets
 import string
 
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -75,6 +75,16 @@ class UserProfile(TimestampedModel):
         related_name="referrals",
         verbose_name="Пригласивший пользователь",
     )
+    daily_reward_streak = models.PositiveSmallIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(8)],
+        verbose_name="Серия ежедневных наград",
+    )
+    daily_reward_last_claimed_at = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Дата последней ежедневной награды",
+    )
 
     class Meta:
         db_table = "профили_пользователей"
@@ -103,7 +113,7 @@ class Task(TimestampedModel):
     name = models.CharField(max_length=255, verbose_name="Название задания")
     description = models.TextField(blank=True, verbose_name="Описание")
     reward = models.PositiveIntegerField(default=0, verbose_name="Награда (монеты)")
-    icon = models.URLField(blank=True, verbose_name="Иконка (URL)")
+    icon = models.URLField(blank=True, verbose_name="Изображение (URL)")
     link = models.URLField(blank=True, verbose_name="Ссылка (URL)")  # ← добавили
 
     class Meta:
@@ -248,12 +258,57 @@ class SimulationRewardClaim(TimestampedModel):
 
 
 # ==============================
+# Advertisements & frontend config
+# ==============================
+
+
+class AdvertisementButton(TimestampedModel):
+    title = models.CharField(max_length=100, verbose_name="Подпись кнопки")
+    link = models.URLField(verbose_name="Ссылка")
+    image = models.URLField(verbose_name="Изображение (URL)")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="Порядок отображения")
+
+    class Meta:
+        db_table = "рекламные_кнопки"
+        verbose_name = "Рекламная кнопка"
+        verbose_name_plural = "Рекламные кнопки"
+        ordering = ("order", "id")
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class FrontendConfig(TimestampedModel):
+    name = models.CharField(
+        max_length=50,
+        unique=True,
+        default="default",
+        verbose_name="Идентификатор конфигурации",
+    )
+    screen_texture = models.URLField(blank=True, verbose_name="Текстура экрана (URL)")
+
+    class Meta:
+        db_table = "настройки_фронтенда"
+        verbose_name = "Настройки фронтенда"
+        verbose_name_plural = "Настройки фронтенда"
+
+    def __str__(self) -> str:
+        return f"Конфигурация {self.name}"
+
+    @classmethod
+    def get_active(cls) -> "FrontendConfig":
+        config, _ = cls.objects.get_or_create(name="default")
+        return config
+
+
+# ==============================
 # Rules by category
 # ==============================
 
 class RuleCategory(TimestampedModel):
     category = models.CharField(max_length=255, verbose_name="Категория")
     rule_text = models.TextField(verbose_name="Правило")
+    icon = models.URLField(blank=True, verbose_name="Иконка (URL)")
 
     class Meta:
         db_table = "правила_по_категориям"
@@ -269,7 +324,10 @@ class RuleCategory(TimestampedModel):
 # ==============================
 
 class DailyReward(TimestampedModel):
-    day_number = models.PositiveSmallIntegerField(verbose_name="Номер дня (1–7)")
+    day_number = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(8)],
+        verbose_name="Номер дня (1–8)",
+    )
     reward_amount = models.PositiveIntegerField(default=0, verbose_name="Награда (монеты)")
 
     class Meta:
@@ -295,12 +353,26 @@ class DailyRewardClaim(TimestampedModel):
         verbose_name="Награда",
     )
     claimed_at = models.DateTimeField(default=timezone.now, verbose_name="Дата получения")
+    claimed_for_date = models.DateField(
+        default=timezone.localdate,
+        verbose_name="Дата награды",
+    )
+    sequence_day = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(8)],
+        verbose_name="День последовательности",
+    )
 
     class Meta:
-        unique_together = ("profile", "reward")
         db_table = "полученные_награды"
         verbose_name = "Полученная награда"
         verbose_name_plural = "Полученные награды"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("profile", "claimed_for_date"),
+                name="unique_daily_reward_claim_per_day",
+            ),
+        )
 
 
 # ==============================
@@ -329,6 +401,15 @@ class Failure(TimestampedModel):
     bonus_price_freeze = models.PositiveIntegerField(default=0, verbose_name="Цена бонуса заморозка")
     bonus_price_no_bombs = models.PositiveIntegerField(
         default=0, verbose_name="Цена бонуса отключение бомб"
+    )
+    main_prize_title = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Название главного приза",
+    )
+    main_prize_image = models.URLField(
+        blank=True,
+        verbose_name="Изображение главного приза (URL)",
     )
 
     class Meta:

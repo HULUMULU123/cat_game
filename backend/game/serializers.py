@@ -5,8 +5,10 @@ import random
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.request import Request
 
 from .models import (
+    AdvertisementButton,
     UserProfile,
     Task,
     TaskCompletion,
@@ -21,9 +23,23 @@ from .models import (
     ScoreEntry,
     AdsgramAssignment,
     SimulationRewardClaim,
+    FrontendConfig,
 )
 
 User = get_user_model()
+
+
+def _absolute_url(request: Request | None, raw: str | None) -> str | None:
+    if not raw:
+        return None
+    url = str(raw).strip()
+    if not url:
+        return None
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    if request is None:
+        return url
+    return request.build_absolute_uri(url)
 
 
 # ---------- Tasks ----------
@@ -33,12 +49,16 @@ class TaskCompletionSerializer(serializers.ModelSerializer[TaskCompletion]):
     name = serializers.CharField(source="task.name", read_only=True)
     description = serializers.CharField(source="task.description", read_only=True)
     reward = serializers.IntegerField(source="task.reward", read_only=True)
-    icon = serializers.CharField(source="task.icon", read_only=True)
+    icon = serializers.SerializerMethodField()
     link = serializers.CharField(source="task.link", read_only=True)  # ← добавили
 
     class Meta:
         model = TaskCompletion
         fields = ("task_id", "name", "description", "reward", "icon", "link", "is_completed")
+
+    def get_icon(self, obj: TaskCompletion) -> str | None:
+        request = self.context.get("request")
+        return _absolute_url(request, getattr(obj.task, "icon", None))
 
 
 
@@ -104,9 +124,15 @@ class SimulationRewardClaimSerializer(serializers.Serializer):
 # ---------- Rules ----------
 
 class RuleCategorySerializer(serializers.ModelSerializer[RuleCategory]):
+    icon = serializers.SerializerMethodField()
+
     class Meta:
         model = RuleCategory
-        fields = ("id", "category", "rule_text")
+        fields = ("id", "category", "rule_text", "icon")
+
+    def get_icon(self, obj: RuleCategory) -> str | None:
+        request = self.context.get("request")
+        return _absolute_url(request, obj.icon)
 
 
 # ---------- Daily rewards ----------
@@ -120,10 +146,45 @@ class DailyRewardSerializer(serializers.ModelSerializer[DailyReward]):
 class DailyRewardClaimSerializer(serializers.ModelSerializer[DailyRewardClaim]):
     day_number = serializers.IntegerField(source="reward.day_number", read_only=True)
     reward_amount = serializers.IntegerField(source="reward.reward_amount", read_only=True)
+    claimed_for_date = serializers.DateField(read_only=True)
+    sequence_day = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = DailyRewardClaim
-        fields = ("day_number", "reward_amount", "claimed_at")
+        fields = (
+            "day_number",
+            "reward_amount",
+            "sequence_day",
+            "claimed_for_date",
+            "claimed_at",
+        )
+
+
+# ---------- Advertisements & config ----------
+
+
+class AdvertisementButtonSerializer(serializers.ModelSerializer[AdvertisementButton]):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdvertisementButton
+        fields = ("id", "title", "link", "order", "image")
+
+    def get_image(self, obj: AdvertisementButton) -> str | None:
+        request = self.context.get("request")
+        return _absolute_url(request, obj.image)
+
+
+class FrontendConfigSerializer(serializers.ModelSerializer[FrontendConfig]):
+    screen_texture = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FrontendConfig
+        fields = ("screen_texture",)
+
+    def get_screen_texture(self, obj: FrontendConfig) -> str | None:
+        request = self.context.get("request")
+        return _absolute_url(request, obj.screen_texture)
 
 
 # ---------- Failures ----------
@@ -132,6 +193,7 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
     is_active = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
     bonus_prices = serializers.SerializerMethodField()
+    main_prize_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Failure
@@ -147,6 +209,8 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
             "bombs_max_count",
             "max_bonuses_per_run",
             "bonus_prices",
+            "main_prize_title",
+            "main_prize_image",
         )
 
     def get_is_active(self, obj: Failure) -> bool:
@@ -170,6 +234,10 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
 
     def get_bonus_prices(self, obj: Failure) -> dict[str, int]:
         return obj.bonus_prices()
+
+    def get_main_prize_image(self, obj: Failure) -> str | None:
+        request = self.context.get("request")
+        return _absolute_url(request, obj.main_prize_image)
 
 
 class FailureBonusPurchaseSerializer(serializers.Serializer):

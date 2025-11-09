@@ -31,24 +31,20 @@ const StyledButton = styled.button`
 
 interface RulesItemProps {
   icon: string;
-  text: string;
+  category: RuleCategory;
   handleClick: (category: RuleCategory) => void;
 }
 
-const RulesItem = ({ icon, text, handleClick }: RulesItemProps) => {
-  const normalizedCategory = text.toLowerCase() as RuleCategory;
-
-  return (
-    <StyledRulesItem>
-      <StyledButton
-        type="button"
-        onClick={() => handleClick(normalizedCategory)}
-      >
-        <StyledRuleImg src={icon} alt={text} />
-        <StyledRuleText>{text}</StyledRuleText>
-      </StyledButton>
-    </StyledRulesItem>
-  );
-};
+const RulesItem = ({ icon, category, handleClick }: RulesItemProps) => (
+  <StyledRulesItem>
+    <StyledButton
+      type="button"
+      onClick={() => handleClick(category)}
+    >
+      <StyledRuleImg src={icon} alt={category.text} />
+      <StyledRuleText>{category.text}</StyledRuleText>
+    </StyledButton>
+  </StyledRulesItem>
+);
 
 export default RulesItem;

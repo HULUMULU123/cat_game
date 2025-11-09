@@ -1,58 +1,70 @@
-import styled from "styled-components"
-import drop from '../../../../assets/icons/drop.svg'
-const StyledListItem = styled.li`
-display: flex;
-flex-direction: column;
-align-items: center;
-display: flex;
-flex-direction: column;
+import styled from "styled-components";
+import drop from "../../../../assets/icons/drop.svg";
 
-`
+const StyledListItem = styled.li<{ $status: "claimed" | "next" | "locked" }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: ${({ $status }) => ($status === "locked" ? 0.5 : 1)};
+`;
 
-const StyledItemContent = styled.div`
-width: 100%;
-margin: auto;
-display: flex;
-flex-direction: column;
-align-items: center;
-gap:7px;
-background: #4fc5bf;
+const StyledItemContent = styled.div<{ $status: "claimed" | "next" | "locked" }>`
+  width: 100%;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 0;
+  border-radius: 7px;
   background: linear-gradient(
     0deg,
     rgba(79, 197, 191, 0.2) 15%,
     rgba(150, 238, 172, 0.08) 100%
   );
-border-radius: 7px;
-padding: 15px 0;
-`
+  border: ${({ $status }) =>
+    $status === "next" ? "1px solid rgba(133, 255, 240, 0.8)" : "1px solid transparent"};
+`;
 
-const StyledContentImg = styled.img``
+const StyledContentImg = styled.img`
+  width: 28px;
+  height: 28px;
+`;
 
 const StyledContentSpan = styled.span`
-font-family: 'Conthrax', sans-serif;
-font-size: 20px;
-font-weight: 700;
-color: var(--color-white-text);
-`
+  font-family: "Conthrax", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-white-text);
+`;
 
-const StyledUnderItemSpan = styled.span`
-  font-size: 14px;
+const StyledDayLabel = styled.span`
+  font-size: 12px;
   font-weight: 300;
-  color: rgb(113,143,139);
-  font-family: 'Roboto', sans-serif;` 
+  color: rgb(113, 143, 139);
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+`;
 
-export default function RewardsItem() {
+interface RewardsItemProps {
+  dayNumber: number;
+  rewardAmount: number;
+  status: "claimed" | "next" | "locked";
+}
+
+export default function RewardsItem({
+  dayNumber,
+  rewardAmount,
+  status,
+}: RewardsItemProps) {
   return (
-    <StyledListItem>
-        <StyledItemContent>
-            <StyledContentImg src={drop}/>
-            <StyledContentSpan>
-                10
-            </StyledContentSpan>
-        </StyledItemContent>
-        <StyledUnderItemSpan>
-            26 / 07
-        </StyledUnderItemSpan>
+    <StyledListItem $status={status}>
+      <StyledItemContent $status={status}>
+        <StyledContentImg src={drop} alt="капля" />
+        <StyledContentSpan>+{rewardAmount}</StyledContentSpan>
+      </StyledItemContent>
+      <StyledDayLabel>День {dayNumber}</StyledDayLabel>
     </StyledListItem>
-  )
+  );
 }

@@ -15,7 +15,7 @@ const Home = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [infoType, setInfoType] = useState<HomeModalType>("");
-  const [ruleCategory, setRuleCategory] = useState<RuleCategory>("");
+  const [ruleCategory, setRuleCategory] = useState<RuleCategory | null>(null);
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
@@ -28,7 +28,7 @@ const Home = () => {
   }, []);
 
   const handleRuleCategoryClose = useCallback(() => {
-    setRuleCategory("");
+    setRuleCategory(null);
     setInfoType("rules");
   }, []);
 

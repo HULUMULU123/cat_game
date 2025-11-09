@@ -2,19 +2,11 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import styled from "styled-components";
 import RulesItem from "./RulesItem";
 
-import clock from "../../../assets/rules_icons/clock.svg";
-import drops from "../../../assets/rules_icons/drops.svg";
-import gift from "../../../assets/rules_icons/gift.svg";
 import logoCircle from "../../../assets/rules_icons/logo_circle.svg";
-import logo from "../../../assets/rules_icons/logo.svg";
-import money from "../../../assets/rules_icons/money.svg";
-import points from "../../../assets/rules_icons/points.svg";
-import rightText from "../../../assets/rules_icons/right_text.svg";
-import alert from "../../../assets/rules_icons/alert.svg";
 
-import { request } from "../../../shared/api/httpClient"; // ← FIX
-import useGlobalStore from "../../../shared/store/useGlobalStore"; // ← FIX
-import type { RuleCategoryResponse } from "../../../shared/api/types"; // ← FIX
+import { request } from "../../../shared/api/httpClient";
+import useGlobalStore from "../../../shared/store/useGlobalStore";
+import type { RuleCategoryResponse } from "../../../shared/api/types";
 import type { RuleCategory } from "../../home/types";
 
 const StyledWrapper = styled.div`
@@ -75,19 +67,12 @@ interface RulesListProps {
 }
 
 /** Подбор иконки по названию категории */
-const pickIcon = (name: string): string => {
-  const n = name.toLowerCase();
+const pickIcon = (candidate: string | null, fallbackName: string): string => {
+  const provided = candidate?.trim();
+  if (provided) return provided;
 
-  if (n.includes("стакан")) return logo;
-  if (n.includes("сбой") || n.includes("crash")) return drops;
-  if (n.includes("условия")) return rightText;
-  if (n.includes("анома")) return gift;
-  if (n.includes("запрещ")) return alert;
-  if (n.includes("передача") || n.includes("материаль")) return money;
-  if (n.includes("таймер") || n.includes("турнир")) return clock;
-  if (n.includes("допол")) return points;
-
-  // дефолт
+  const n = fallbackName.toLowerCase();
+  if (n.includes("стакан")) return logoCircle;
   return logoCircle;
 };
 
@@ -96,6 +81,7 @@ const toRuleCategory = (r: RuleCategoryResponse): RuleCategory => ({
   id: r.id,
   text: r.category,
   rule: r.rule_text,
+  icon: r.icon,
 });
 
 const RulesList = ({ openRuleCategory }: RulesListProps) => {
@@ -133,14 +119,17 @@ const RulesList = ({ openRuleCategory }: RulesListProps) => {
 
     return (
       <StyledRulesList>
-        {rules.map((r) => (
-          <RulesItem
-            key={r.id}
-            icon={pickIcon(r.category)}
-            text={r.category}
-            handleClick={() => openRuleCategory(toRuleCategory(r))}
-          />
-        ))}
+        {rules.map((r) => {
+          const category = toRuleCategory(r);
+          return (
+            <RulesItem
+              key={r.id}
+              icon={pickIcon(category.icon ?? null, category.text)}
+              category={category}
+              handleClick={openRuleCategory}
+            />
+          );
+        })}
       </StyledRulesList>
     );
   }, [loading, err, rules, openRuleCategory]);

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import gift from "../../assets/icons/gift.svg";
 import type { HomeModalType } from "./types";
 import { request } from "../../shared/api/httpClient";
-import type { GiftResponse, FailureResponse } from "../../shared/api/types";
+import type { FailureResponse } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 
 const StyledActionBtn = styled.button<{ $disabled?: boolean }>`
@@ -87,38 +87,8 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
   const tokens = useGlobalStore((s) => s.tokens);
   const completedFailures = useGlobalStore((s) => s.completedFailures);
 
-  const [giftInfo, setGiftInfo] = useState<GiftResponse | null>(null);
-  const [giftError, setGiftError] = useState<string | null>(null);
-
   const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
-
-  // ---- fetch gift ----
-  useEffect(() => {
-    if (!tokens) return;
-    let mounted = true;
-
-    (async () => {
-      try {
-        const data = await request<GiftResponse>("/gift/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        });
-        if (mounted) {
-          setGiftInfo(data);
-          setGiftError(null);
-        }
-      } catch {
-        if (mounted) {
-          setGiftInfo(null);
-          setGiftError("Время неизвестно...");
-        }
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [tokens]);
 
   // ---- fetch current failure (берём последний созданный) ----
   useEffect(() => {
@@ -251,7 +221,7 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
       <StyledActionContentWrapper>
         <StyledActionTextWrapper>
           <StyledActionName>{headerText}</StyledActionName>
-          <StyledActionTimer>{timerText || giftError || ""}</StyledActionTimer>
+          <StyledActionTimer>{timerText || ""}</StyledActionTimer>
         </StyledActionTextWrapper>
 
         {/* НЕ кнопка внутри кнопки */}

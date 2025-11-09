@@ -21,6 +21,8 @@ from .views import (
     # Ежедневные награды
     DailyRewardConfigView,
     DailyRewardClaimTodayView,
+    AdvertisementButtonListView,
+    FrontendConfigView,
 
     # Сбои
     FailureListView,
@@ -62,6 +64,14 @@ urlpatterns = [
     # Ежедневные награды
     path("daily-rewards/", DailyRewardConfigView.as_view(), name="daily-rewards"),
     path("daily-rewards/claim/", DailyRewardClaimTodayView.as_view(), name="daily-reward-claim"),
+
+    # Реклама и конфиг фронтенда
+    path(
+        "home/advert-buttons/",
+        AdvertisementButtonListView.as_view(),
+        name="advert-buttons",
+    ),
+    path("frontend/config/", FrontendConfigView.as_view(), name="frontend-config"),
 
     # Сбои
     path("failures/", FailureListView.as_view(), name="failures"),
