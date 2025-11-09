@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
@@ -11,8 +11,13 @@ import type {
   FailureResponse,
   FailureStartResponse,
   FailureCompleteResponse,
+  FailureBonusPurchaseResponse,
+  FailureBonusType,
 } from "../shared/api/types";
 import useGlobalStore from "../shared/store/useGlobalStore";
+import FailureShop from "../components/failure/shop/FailureShop";
+import type { BonusListEntry } from "../components/failure/footer/BounusList";
+import type { BonusStatus } from "../components/failure/footer/BonusItem";
 
 /** загрузочный экран */
 import StakanLoader from "../shared/components/stakan/StakanLoader";
@@ -43,7 +48,7 @@ const StyledHeaderWrapper = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 1;
+  z-index: 3;
 `;
 
 const StyledFooterWrapper = styled.div`
@@ -54,6 +59,21 @@ const StyledFooterWrapper = styled.div`
   bottom: 0;
   left: 0;
   width: 100%;
+  z-index: 3;
+`;
+
+const FreezeOverlay = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(88, 188, 255, 0.18) 0%,
+    rgba(34, 120, 194, 0.12) 100%
+  );
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transition: opacity 0.3s ease;
+  mix-blend-mode: screen;
   z-index: 1;
 `;
 
@@ -152,9 +172,17 @@ const HeaderMemo: React.FC<{ timeLeft: number; duration: number }> = React.memo(
 );
 HeaderMemo.displayName = "HeaderMemo";
 
-const FooterMemo: React.FC<{ score: number }> = React.memo(({ score }) => (
+const FooterMemo: React.FC<{
+  score: number;
+  bonuses: BonusListEntry[];
+  onBonusActivate: (type: FailureBonusType) => void;
+}> = React.memo(({ score, bonuses, onBonusActivate }) => (
   <StyledFooterWrapper>
-    <FailureFooter score={score} />
+    <FailureFooter
+      score={score}
+      bonuses={bonuses}
+      onBonusActivate={onBonusActivate}
+    />
   </StyledFooterWrapper>
 ));
 FooterMemo.displayName = "FooterMemo";
@@ -163,6 +191,13 @@ FooterMemo.displayName = "FooterMemo";
 
 export default function Failure() {
   const tokens = useGlobalStore((state) => state.tokens);
+  const updateBalance = useGlobalStore((state) => state.updateBalance);
+  const balance = useGlobalStore((state) => state.balance);
+  const incrementStat = useGlobalStore((state) => state.incrementProfileStat);
+  const markFailureCompleted = useGlobalStore(
+    (state) => state.markFailureCompleted
+  );
+
   const [score, setScore] = useState(0);
   const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [duration, setDuration] = useState(60);
@@ -174,6 +209,47 @@ export default function Failure() {
   const [startMessage, setStartMessage] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [bonusPrices, setBonusPrices] = useState<Record<FailureBonusType, number>>({
+    x2: 0,
+    x5: 0,
+    x10: 0,
+    freeze: 0,
+    no_bombs: 0,
+  });
+  const [bonusStatus, setBonusStatus] = useState<Record<FailureBonusType, BonusStatus>>(
+    {}
+  );
+  const [purchasedBonuses, setPurchasedBonuses] = useState<FailureBonusType[]>([]);
+  const [maxBonusesPerRun, setMaxBonusesPerRun] = useState(3);
+  const [storeOpen, setStoreOpen] = useState(false);
+  const [shopError, setShopError] = useState<string | null>(null);
+  const [purchasingType, setPurchasingType] = useState<FailureBonusType | null>(
+    null
+  );
+  const [bombConfig, setBombConfig] = useState<{ min: number; max: number }>(
+    {
+      min: 0,
+      max: 0,
+    }
+  );
+  const [bombSchedule, setBombSchedule] = useState<number[]>([]);
+  const [bombsDisabled, setBombsDisabled] = useState(false);
+  const [speedModifier, setSpeedModifier] = useState(1);
+  const [freezeActive, setFreezeActive] = useState(false);
+  const [activeMultiplier, setActiveMultiplier] = useState(1);
+  const [activeMultiplierType, setActiveMultiplierType] =
+    useState<FailureBonusType | null>(null);
+
+  const multiplierTimeoutRef = useRef<number | null>(null);
+  const freezeTimeoutRef = useRef<number | null>(null);
+
+  const footerBonuses = useMemo<BonusListEntry[]>(() => {
+    return Object.entries(bonusStatus).map(([type, status]) => ({
+      type: type as FailureBonusType,
+      status,
+      highlight: status === "available",
+    }));
+  }, [bonusStatus]);
 
   // фиксированная метка окончания раунда
   const endAtRef = useRef<number | null>(null);
@@ -204,10 +280,136 @@ export default function Failure() {
     []
   );
 
+  const scheduleBombs = useCallback(
+    (durationSeconds: number, minCount: number, maxCount: number) => {
+      const safeDuration = Math.max(0, durationSeconds);
+      const safeMin = Math.max(0, minCount);
+      const safeMax = Math.max(safeMin, maxCount);
+
+      if (safeDuration === 0 || safeMax === 0) {
+        setBombSchedule([]);
+        return;
+      }
+
+      const count = Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin;
+      if (count <= 0) {
+        setBombSchedule([]);
+        return;
+      }
+
+      const totalMs = safeDuration * 1000;
+      const times: number[] = [];
+      for (let i = 0; i < count; i += 1) {
+        const time = Math.random() * Math.max(0, totalMs - 4000) + 1500;
+        times.push(time);
+      }
+      times.sort((a, b) => a - b);
+      setBombSchedule(times);
+    },
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      if (multiplierTimeoutRef.current) {
+        window.clearTimeout(multiplierTimeoutRef.current);
+        multiplierTimeoutRef.current = null;
+      }
+      if (freezeTimeoutRef.current) {
+        window.clearTimeout(freezeTimeoutRef.current);
+        freezeTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  const markBonusStatus = useCallback(
+    (type: FailureBonusType, status: BonusStatus) => {
+      setBonusStatus((prev) => ({ ...prev, [type]: status }));
+    },
+    []
+  );
+
+  const activateMultiplier = useCallback(
+    (type: FailureBonusType, multiplier: number) => {
+      if (multiplierTimeoutRef.current && activeMultiplierType) {
+        window.clearTimeout(multiplierTimeoutRef.current);
+        multiplierTimeoutRef.current = null;
+        markBonusStatus(activeMultiplierType, "used");
+      }
+
+      setActiveMultiplier(multiplier);
+      setActiveMultiplierType(type);
+      markBonusStatus(type, "active");
+
+      multiplierTimeoutRef.current = window.setTimeout(() => {
+        setActiveMultiplier(1);
+        markBonusStatus(type, "used");
+        setActiveMultiplierType(null);
+        multiplierTimeoutRef.current = null;
+      }, 10_000);
+    },
+    [activeMultiplierType, markBonusStatus]
+  );
+
+  const activateFreeze = useCallback(() => {
+    if (freezeTimeoutRef.current) {
+      window.clearTimeout(freezeTimeoutRef.current);
+      freezeTimeoutRef.current = null;
+    }
+
+    setFreezeActive(true);
+    setSpeedModifier(1.8);
+    markBonusStatus("freeze", "active");
+
+    freezeTimeoutRef.current = window.setTimeout(() => {
+      setFreezeActive(false);
+      setSpeedModifier(1);
+      markBonusStatus("freeze", "used");
+      freezeTimeoutRef.current = null;
+    }, 10_000);
+  }, [markBonusStatus]);
+
+  const activateNoBombs = useCallback(() => {
+    setBombsDisabled(true);
+    setBombSchedule([]);
+    markBonusStatus("no_bombs", "used");
+  }, [markBonusStatus]);
+
+  const handleBonusActivate = useCallback(
+    (type: FailureBonusType) => {
+      if (bonusStatus[type] !== "available") return;
+
+      switch (type) {
+        case "x2":
+          activateMultiplier(type, 2);
+          break;
+        case "x5":
+          activateMultiplier(type, 5);
+          break;
+        case "x10":
+          activateMultiplier(type, 10);
+          break;
+        case "freeze":
+          activateFreeze();
+          break;
+        case "no_bombs":
+          activateNoBombs();
+          break;
+        default:
+          break;
+      }
+    },
+    [activateFreeze, activateMultiplier, activateNoBombs, bonusStatus]
+  );
+
   const handlePop = useCallback(() => {
     if (!isGameRunning) return;
-    setScore((s) => s + 1);
-  }, [isGameRunning]);
+    setScore((s) => s + activeMultiplier);
+  }, [activeMultiplier, isGameRunning]);
+
+  const handleBombHit = useCallback(() => {
+    setScore(0);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -256,8 +458,17 @@ export default function Failure() {
         const current = data.find((item) => item.is_active) ?? null;
         setFailure(current);
         if (current) {
-          setDuration(60);
-          setTimeLeft(60);
+          setDuration(current.duration_seconds ?? 60);
+          setTimeLeft(current.duration_seconds ?? 60);
+          setBonusPrices((prev) => current.bonus_prices ?? prev);
+          setMaxBonusesPerRun(current.max_bonuses_per_run ?? 3);
+          setBombConfig({
+            min: current.bombs_min_count ?? 0,
+            max: current.bombs_max_count ?? 0,
+          });
+          setBonusStatus({});
+          setPurchasedBonuses([]);
+          setStoreOpen(false);
           setStartMessage(
             "У тебя 60 секунд. Кликай по каплям, чтобы набрать как можно больше очков."
           );
@@ -299,7 +510,6 @@ export default function Failure() {
     setIsStarting(true);
     try {
       const payload = { failure_id: failure.id };
-      console.log(payload);
       const response = await request<FailureStartResponse>("/failures/start/", {
         method: "POST",
         headers: {
@@ -317,11 +527,27 @@ export default function Failure() {
       setHasFinished(false);
       setResultMessage(null);
       setResultModalOpen(false);
-
-      // фиксируем момент окончания
-      endAtRef.current = Date.now() + dur * 1000;
-
-      setIsGameRunning(true);
+      setBombConfig({
+        min: response.bombs_min_count ?? 0,
+        max: response.bombs_max_count ?? 0,
+      });
+      setBonusPrices((prev) => response.bonus_prices ?? prev);
+      setMaxBonusesPerRun(response.max_bonuses_per_run ?? 3);
+      const initialBonuses = response.purchased_bonuses ?? [];
+      setPurchasedBonuses(initialBonuses);
+      setBonusStatus(
+        initialBonuses.reduce(
+          (acc, type) => ({ ...acc, [type]: "available" as BonusStatus }),
+          {} as Record<FailureBonusType, BonusStatus>
+        )
+      );
+      setBombsDisabled(false);
+      setSpeedModifier(1);
+      setFreezeActive(false);
+      setActiveMultiplier(1);
+      setActiveMultiplierType(null);
+      updateBalance(response.balance ?? balance);
+      setStoreOpen(true);
       setStartModalOpen(false);
     } catch (error) {
       const message = parseErrorDetail(error, "Не удалось начать сбой.");
@@ -333,7 +559,80 @@ export default function Failure() {
     } finally {
       setIsStarting(false);
     }
-  }, [failure, parseErrorDetail, tokens]);
+  }, [
+    balance,
+    failure,
+    parseErrorDetail,
+    tokens,
+    updateBalance,
+  ]);
+
+  const beginGame = useCallback(() => {
+    if (!failure) return;
+    setStoreOpen(false);
+    setScore(0);
+    setHasFinished(false);
+    setResultMessage(null);
+    setResultModalOpen(false);
+    setTimeLeft(duration);
+    endAtRef.current = Date.now() + duration * 1000;
+    scheduleBombs(duration, bombConfig.min, bombConfig.max);
+    setIsGameRunning(true);
+  }, [bombConfig.max, bombConfig.min, duration, failure, scheduleBombs]);
+
+  const handleStoreClose = useCallback(() => {
+    setShopError(null);
+    setPurchasingType(null);
+    beginGame();
+  }, [beginGame]);
+
+  const handlePurchaseBonus = useCallback(
+    async (type: FailureBonusType) => {
+      if (!failure || !tokens || purchasingType) return;
+      setPurchasingType(type);
+      setShopError(null);
+
+      try {
+        const response = await request<FailureBonusPurchaseResponse>(
+          "/failures/bonus-purchase/",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${tokens.access}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ failure_id: failure.id, bonus_type: type }),
+          }
+        );
+
+        setPurchasedBonuses(response.purchased_bonuses ?? []);
+        setBonusStatus((prev) => {
+          const next = { ...prev } as Record<FailureBonusType, BonusStatus>;
+          (response.purchased_bonuses ?? []).forEach((bonusType) => {
+            if (!next[bonusType] || next[bonusType] === "used") {
+              next[bonusType] = "available";
+            }
+          });
+          return next;
+        });
+        setMaxBonusesPerRun(response.max_bonuses_per_run ?? maxBonusesPerRun);
+        updateBalance(response.balance);
+      } catch (error) {
+        const detail = parseErrorDetail(error, "Не удалось купить бонус.");
+        setShopError(detail);
+      } finally {
+        setPurchasingType(null);
+      }
+    },
+    [
+      failure,
+      maxBonusesPerRun,
+      parseErrorDetail,
+      purchasingType,
+      tokens,
+      updateBalance,
+    ]
+  );
 
   const finishGame = useCallback(async () => {
     if (hasFinished) {
@@ -369,6 +668,8 @@ export default function Failure() {
         }
       );
       setResultMessage(`${response.detail} Очки: ${response.score}`);
+      incrementStat("failures");
+      markFailureCompleted(failure.id);
     } catch (error) {
       const message = parseErrorDetail(
         error,
@@ -378,7 +679,16 @@ export default function Failure() {
     } finally {
       setResultModalOpen(true);
     }
-  }, [duration, failure, hasFinished, parseErrorDetail, score, tokens]);
+  }, [
+    duration,
+    failure,
+    hasFinished,
+    incrementStat,
+    markFailureCompleted,
+    parseErrorDetail,
+    score,
+    tokens,
+  ]);
 
   // стабильный таймер по метке окончания
   useEffect(() => {
@@ -446,9 +756,22 @@ export default function Failure() {
       >
         <HeaderMemo timeLeft={timeLeft} duration={duration} />
 
-        <Droplets onPop={handlePop} />
+        <FreezeOverlay $visible={freezeActive} />
 
-        <FooterMemo score={score} />
+        <Droplets
+          onPop={handlePop}
+          onBomb={handleBombHit}
+          speedModifier={speedModifier}
+          bombSchedule={bombSchedule}
+          disableBombs={bombsDisabled}
+          bombEffectColor="rgba(220, 80, 80, 0.55)"
+        />
+
+        <FooterMemo
+          score={score}
+          bonuses={footerBonuses}
+          onBonusActivate={handleBonusActivate}
+        />
 
         {startModalOpen ? (
           <ModalLayout
@@ -482,6 +805,20 @@ export default function Failure() {
               onAction={() => setResultModalOpen(false)}
             />
           </ModalLayout>
+        ) : null}
+
+        {storeOpen ? (
+          <FailureShop
+            isOpen={storeOpen}
+            onClose={handleStoreClose}
+            bonusPrices={bonusPrices}
+            purchasedBonuses={purchasedBonuses}
+            maxBonuses={maxBonusesPerRun}
+            onPurchase={handlePurchaseBonus}
+            purchasingType={purchasingType}
+            balance={balance}
+            error={shopError}
+          />
         ) : null}
       </StyledWrapper>
     </>

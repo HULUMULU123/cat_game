@@ -13,6 +13,7 @@ from .views import (
     SimulationConfigView,
     SimulationStartView,
     SimulationAdRewardView,
+    SimulationRewardClaimView,
 
     # Правила
     RuleCategoryListView,
@@ -25,6 +26,7 @@ from .views import (
     FailureListView,
     FailureStartView,
     FailureCompleteView,
+    FailureBonusPurchaseView,
 
     # Очки и лидерборд
     ScoreListView,
@@ -48,6 +50,11 @@ urlpatterns = [
     path("simulation/", SimulationConfigView.as_view(), name="simulation-config"),
     path("simulation/start/", SimulationStartView.as_view(), name="simulation-start"),
     path("simulation/ad-reward/", SimulationAdRewardView.as_view(), name="simulation-ad-reward"),
+    path(
+        "simulation/reward-claim/",
+        SimulationRewardClaimView.as_view(),
+        name="simulation-reward-claim",
+    ),
 
     # Правила
     path("rules/", RuleCategoryListView.as_view(), name="rules"),
@@ -60,6 +67,11 @@ urlpatterns = [
     path("failures/", FailureListView.as_view(), name="failures"),
     path("failures/start/", FailureStartView.as_view(), name="failure-start"),
     path("failures/complete/", FailureCompleteView.as_view(), name="failure-complete"),
+    path(
+        "failures/bonus-purchase/",
+        FailureBonusPurchaseView.as_view(),
+        name="failure-bonus-purchase",
+    ),
 
     # Очки и лидерборд
     path("scores/", ScoreListView.as_view(), name="scores"),

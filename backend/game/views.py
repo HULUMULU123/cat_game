@@ -17,10 +17,13 @@ from .models import (
     Task,
     TaskCompletion,
     SimulationConfig,
+    SimulationRewardClaim,
     RuleCategory,
     DailyReward,
     DailyRewardClaim,
     Failure,
+    FailureBonusPurchase,
+    FailureBonusType,
     QuizQuestion,
     ScoreEntry,
     QuizAttempt,
@@ -31,12 +34,14 @@ from .serializers import (
     TaskCompletionSerializer,
     QuizQuestionSerializer,
     SimulationConfigSerializer,
+    SimulationRewardClaimSerializer,
     RuleCategorySerializer,
     DailyRewardSerializer,
     DailyRewardClaimSerializer,
     FailureSerializer,
     FailureStartSerializer,
     FailureCompleteSerializer,
+    FailureBonusPurchaseSerializer,
     ScoreEntrySerializer,
     LeaderboardRowSerializer,
     QuizResultSubmitSerializer,
@@ -169,6 +174,12 @@ class SimulationConfigView(APIView):
                 reward_level_3=1000,
                 duration_seconds=60,
                 description="Default simulation config",
+                reward_threshold_1=100,
+                reward_amount_1=100,
+                reward_threshold_2=200,
+                reward_amount_2=150,
+                reward_threshold_3=300,
+                reward_amount_3=250,
             )
         serializer = SimulationConfigSerializer(config)
         return Response(serializer.data)
@@ -189,6 +200,12 @@ class SimulationStartView(APIView):
                 reward_level_3=1000,
                 duration_seconds=60,
                 description="Default simulation config",
+                reward_threshold_1=100,
+                reward_amount_1=100,
+                reward_threshold_2=200,
+                reward_amount_2=150,
+                reward_threshold_3=300,
+                reward_amount_3=250,
             )
         cost = config.attempt_cost
         profile.refresh_from_db(fields=["balance"])
@@ -209,6 +226,12 @@ class SimulationStartView(APIView):
                 "balance": profile.balance,
                 "cost": cost,
                 "duration_seconds": config.duration_seconds,
+                "reward_threshold_1": config.reward_threshold_1,
+                "reward_amount_1": config.reward_amount_1,
+                "reward_threshold_2": config.reward_threshold_2,
+                "reward_amount_2": config.reward_amount_2,
+                "reward_threshold_3": config.reward_threshold_3,
+                "reward_amount_3": config.reward_amount_3,
             }
         )
 
@@ -229,6 +252,81 @@ class SimulationAdRewardView(APIView):
                 "detail": "Баланс пополнен за просмотр рекламы.",
                 "balance": profile.balance,
                 "reward": reward,
+            }
+        )
+
+
+class SimulationRewardClaimView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        serializer = SimulationRewardClaimSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        threshold = serializer.validated_data["threshold"]
+        profile = request.user.profile
+
+        config = (
+            SimulationConfig.objects.select_for_update().order_by("-updated_at").first()
+        )
+        if not config:
+            config = SimulationConfig.objects.create(
+                attempt_cost=200,
+                reward_level_1=100,
+                reward_level_2=500,
+                reward_level_3=1000,
+                duration_seconds=60,
+                description="Default simulation config",
+                reward_threshold_1=100,
+                reward_amount_1=100,
+                reward_threshold_2=200,
+                reward_amount_2=150,
+                reward_threshold_3=300,
+                reward_amount_3=250,
+            )
+
+        mapping = {
+            int(config.reward_threshold_1): int(config.reward_amount_1),
+            int(config.reward_threshold_2): int(config.reward_amount_2),
+            int(config.reward_threshold_3): int(config.reward_amount_3),
+        }
+
+        if threshold not in mapping:
+            return Response(
+                {"detail": "Награда для указанного порога не найдена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        reward_amount = mapping[threshold]
+        if reward_amount <= 0:
+            return Response(
+                {"detail": "Награда для данного порога отключена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        today = timezone.localdate()
+        claim, created = SimulationRewardClaim.objects.get_or_create(
+            profile=profile,
+            threshold=threshold,
+            claimed_for_date=today,
+        )
+        if not created:
+            return Response(
+                {"detail": "Награда уже начислена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile.balance = F("balance") + reward_amount
+        profile.save(update_fields=["balance", "updated_at"])
+        profile.refresh_from_db(fields=["balance"])
+
+        return Response(
+            {
+                "detail": "Награда начислена.",
+                "threshold": threshold,
+                "reward": reward_amount,
+                "balance": profile.balance,
             }
         )
 
@@ -318,7 +416,10 @@ class FailureListView(APIView):
 
     def get(self, request: Request) -> Response:
         failures = Failure.objects.order_by("-created_at")
-        return Response(FailureSerializer(failures, many=True).data)
+        serializer = FailureSerializer(
+            failures, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
 
 
 from rest_framework import status, permissions, serializers
@@ -380,11 +481,29 @@ class FailureStartView(APIView):
             return Response({"detail": "Вы уже участвовали в этом сбое."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({
-            "detail": "Можно начинать.",
-            "failure": FailureSerializer(failure).data,
-            "duration_seconds": 60,
-        })
+        purchases = list(
+            FailureBonusPurchase.objects.filter(
+                profile=profile, failure=failure
+            ).values_list("bonus_type", flat=True)
+        )
+
+        failure_payload = FailureSerializer(
+            failure, context={"request": request}
+        ).data
+
+        return Response(
+            {
+                "detail": "Можно начинать.",
+                "failure": failure_payload,
+                "duration_seconds": failure.duration_seconds,
+                "bombs_min_count": failure.bombs_min_count,
+                "bombs_max_count": failure.bombs_max_count,
+                "max_bonuses_per_run": failure.max_bonuses_per_run,
+                "purchased_bonuses": list(purchases),
+                "bonus_prices": failure.bonus_prices(),
+                "balance": profile.balance,
+            }
+        )
 
 class FailureCompleteView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -426,6 +545,97 @@ class FailureCompleteView(APIView):
                 "failure": FailureSerializer(failure).data,
             },
             status=status.HTTP_200_OK,
+        )
+
+
+class FailureBonusPurchaseView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        serializer = FailureBonusPurchaseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        failure_id = serializer.validated_data["failure_id"]
+        bonus_type = serializer.validated_data["bonus_type"]
+
+        profile = request.user.profile
+
+        try:
+            failure = Failure.objects.select_for_update().get(id=failure_id)
+        except Failure.DoesNotExist:
+            return Response({"detail": "Сбой не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+        now = timezone.now()
+        if not _failure_is_active(failure, now):
+            return Response(
+                {"detail": "Сбой недоступен для покупки бонусов."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
+            return Response(
+                {"detail": "Сбой уже завершён."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        existing = FailureBonusPurchase.objects.select_for_update().filter(
+            profile=profile, failure=failure
+        )
+
+        if existing.filter(bonus_type=bonus_type).exists():
+            return Response(
+                {"detail": "Бонус уже приобретён."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if existing.count() >= failure.max_bonuses_per_run:
+            return Response(
+                {"detail": "Достигнут лимит бонусов."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        prices = failure.bonus_prices()
+        price = int(prices.get(bonus_type, 0))
+
+        if price < 0:
+            price = 0
+
+        profile.refresh_from_db(fields=["balance"])
+        if profile.balance < price:
+            return Response(
+                {
+                    "detail": "Недостаточно монет.",
+                    "balance": profile.balance,
+                    "required": price,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if price:
+            profile.balance = F("balance") - price
+            profile.save(update_fields=["balance", "updated_at"])
+            profile.refresh_from_db(fields=["balance"])
+
+        FailureBonusPurchase.objects.create(
+            profile=profile,
+            failure=failure,
+            bonus_type=bonus_type,
+        )
+
+        purchases = list(
+            FailureBonusPurchase.objects.filter(
+                profile=profile, failure=failure
+            ).values_list("bonus_type", flat=True)
+        )
+
+        return Response(
+            {
+                "detail": "Бонус приобретён.",
+                "bonus_type": bonus_type,
+                "purchased_bonuses": purchases,
+                "balance": profile.balance,
+                "max_bonuses_per_run": failure.max_bonuses_per_run,
+            }
         )
 
 

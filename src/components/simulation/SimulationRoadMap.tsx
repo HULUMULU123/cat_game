@@ -68,10 +68,8 @@ const StyledCoinImg = styled.img`
 `;
 
 type Props = {
-  attemptCost: number; // стоимость запуска симуляции
-  reward1: number;
-  reward2: number;
-  reward3: number;
+  thresholds: [number, number, number];
+  rewards: [number, number, number];
 };
 
 /**
@@ -80,50 +78,45 @@ type Props = {
  * Здесь делаем универсально: 1/3, 2/3 и 3/3 от attemptCost.
  * Если нужно иное правило — можно заменить расчёт checkpoints.
  */
-export default function SimulationRoadMap({
-  attemptCost,
-  reward1,
-  reward2,
-  reward3,
-}: Props) {
+export default function SimulationRoadMap({ thresholds, rewards }: Props) {
   const checkpoints = useMemo(() => {
-    const c = Math.max(0, attemptCost || 0);
-    const c1 = Math.max(1, Math.floor(c / 3));
-    const c2 = Math.max(c1 + 1, Math.floor((2 * c) / 3));
-    const c3 = c; // финальная цель
-    return [c1, c2, c3];
-  }, [attemptCost]);
+    return thresholds.map((value) => Math.max(0, Math.floor(value))) as [
+      number,
+      number,
+      number
+    ];
+  }, [thresholds]);
 
   return (
     <StyledWrapper>
       <StyledContentWrapper>
         <StyledGoalItem>
           <StyledDoneSpan>
-            {checkpoints[0]} / {attemptCost}
+            {checkpoints[0]}
           </StyledDoneSpan>
           <StyledPointSpan />
           <StyledGoalSpan>
-            {reward1} <StyledCoinImg src={coin} alt="coin" />
+            {rewards[0]} <StyledCoinImg src={coin} alt="coin" />
           </StyledGoalSpan>
         </StyledGoalItem>
 
         <StyledGoalItem>
           <StyledDoneSpan>
-            {checkpoints[1]} / {attemptCost}
+            {checkpoints[1]}
           </StyledDoneSpan>
           <StyledPointSpan />
           <StyledGoalSpan>
-            {reward2} <StyledCoinImg src={coin} alt="coin" />
+            {rewards[1]} <StyledCoinImg src={coin} alt="coin" />
           </StyledGoalSpan>
         </StyledGoalItem>
 
         <StyledGoalItem>
           <StyledDoneSpan>
-            {checkpoints[2]} / {attemptCost}
+            {checkpoints[2]}
           </StyledDoneSpan>
           <StyledPointSpan />
           <StyledGoalSpan>
-            {reward3} <StyledCoinImg src={coin} alt="coin" />
+            {rewards[2]} <StyledCoinImg src={coin} alt="coin" />
           </StyledGoalSpan>
         </StyledGoalItem>
       </StyledContentWrapper>

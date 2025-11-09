@@ -1,7 +1,8 @@
-import React from 'react'
-import styled from 'styled-components'
-import failure_bottom from '../../../assets/failure_bottom.png'
-import BounusList from './BounusList'
+import React from "react";
+import styled from "styled-components";
+import failure_bottom from "../../../assets/failure_bottom.png";
+import BounusList, { BonusListEntry } from "./BounusList";
+import type { FailureBonusType } from "../../../shared/api/types";
 
 const Wrapper = styled.div`
   height: 30vh;
@@ -59,22 +60,32 @@ const StyledScoreSpan = styled.span`
 `
 
 const StyledScoreInfo = styled.span`
-  color: #E1FFFB;
+  color: #e1fffb;
   font-size: 12px;
-  font-family: 'Conthrax', sans-serif;
+  font-family: "Conthrax", sans-serif;
   font-weight: 700;
-`
+`;
 
 const StyledBottomImg = styled.img`
   width: 100%;
   display: block;
-`
+`;
 
-export default function FailureFooter({score}) {
+interface FailureFooterProps {
+  score: number;
+  bonuses?: BonusListEntry[];
+  onBonusActivate?: (type: FailureBonusType) => void;
+}
+
+export default function FailureFooter({
+  score,
+  bonuses = [],
+  onBonusActivate,
+}: FailureFooterProps) {
   return (
     <Wrapper>
       <LightLine></LightLine>
-      <BounusList />
+      <BounusList bonuses={bonuses} onActivate={onBonusActivate} />
       <BottomWrapper>
         <ImageWrapper>
           <StyledBottomImg src={failure_bottom} />

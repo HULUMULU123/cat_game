@@ -199,6 +199,24 @@ class SimulationConfig(TimestampedModel):
         default=60, verbose_name="Длительность тренировки (сек)"
     )
     description = models.TextField(blank=True, verbose_name="Описание")
+    reward_threshold_1 = models.PositiveIntegerField(
+        default=100, verbose_name="Порог капель для награды 1"
+    )
+    reward_amount_1 = models.PositiveIntegerField(
+        default=100, verbose_name="Размер награды 1"
+    )
+    reward_threshold_2 = models.PositiveIntegerField(
+        default=200, verbose_name="Порог капель для награды 2"
+    )
+    reward_amount_2 = models.PositiveIntegerField(
+        default=150, verbose_name="Размер награды 2"
+    )
+    reward_threshold_3 = models.PositiveIntegerField(
+        default=300, verbose_name="Порог капель для награды 3"
+    )
+    reward_amount_3 = models.PositiveIntegerField(
+        default=250, verbose_name="Размер награды 3"
+    )
 
     class Meta:
         db_table = "симуляции"
@@ -207,6 +225,26 @@ class SimulationConfig(TimestampedModel):
 
     def __str__(self):
         return f"Симуляция (цена: {self.attempt_cost})"
+
+
+class SimulationRewardClaim(TimestampedModel):
+    profile = models.ForeignKey(
+        "UserProfile",
+        on_delete=models.CASCADE,
+        related_name="simulation_reward_claims",
+        verbose_name="Профиль",
+    )
+    threshold = models.PositiveIntegerField(verbose_name="Порог капель")
+    claimed_for_date = models.DateField(verbose_name="Дата начисления")
+
+    class Meta:
+        db_table = "simulation_reward_claims"
+        verbose_name = "Награда симуляции"
+        verbose_name_plural = "Награды симуляции"
+        unique_together = ("profile", "threshold", "claimed_for_date")
+
+    def __str__(self) -> str:
+        return f"{self.profile_id}: {self.threshold} ({self.claimed_for_date})"
 
 
 # ==============================
@@ -273,6 +311,25 @@ class Failure(TimestampedModel):
     name = models.CharField(max_length=255, verbose_name="Название сбоя")
     start_time = models.DateTimeField(null=True, blank=True, verbose_name="Время начала")
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="Время окончания")
+    duration_seconds = models.PositiveIntegerField(
+        default=60, verbose_name="Длительность попытки (сек)"
+    )
+    bombs_min_count = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Минимум бомб за игру"
+    )
+    bombs_max_count = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Максимум бомб за игру"
+    )
+    max_bonuses_per_run = models.PositiveSmallIntegerField(
+        default=3, verbose_name="Максимум бонусов за игру"
+    )
+    bonus_price_x2 = models.PositiveIntegerField(default=0, verbose_name="Цена бонуса x2")
+    bonus_price_x5 = models.PositiveIntegerField(default=0, verbose_name="Цена бонуса x5")
+    bonus_price_x10 = models.PositiveIntegerField(default=0, verbose_name="Цена бонуса x10")
+    bonus_price_freeze = models.PositiveIntegerField(default=0, verbose_name="Цена бонуса заморозка")
+    bonus_price_no_bombs = models.PositiveIntegerField(
+        default=0, verbose_name="Цена бонуса отключение бомб"
+    )
 
     class Meta:
         db_table = "сбои"
@@ -281,6 +338,52 @@ class Failure(TimestampedModel):
 
     def __str__(self):
         return self.name
+
+    def bonus_prices(self) -> dict[str, int]:
+        return {
+            "x2": int(self.bonus_price_x2 or 0),
+            "x5": int(self.bonus_price_x5 or 0),
+            "x10": int(self.bonus_price_x10 or 0),
+            "freeze": int(self.bonus_price_freeze or 0),
+            "no_bombs": int(self.bonus_price_no_bombs or 0),
+        }
+
+
+class FailureBonusType(models.TextChoices):
+    X2 = "x2", "x2"
+    X5 = "x5", "x5"
+    X10 = "x10", "x10"
+    FREEZE = "freeze", "freeze"
+    NO_BOMBS = "no_bombs", "no_bombs"
+
+
+class FailureBonusPurchase(TimestampedModel):
+    profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="failure_bonus_purchases",
+        verbose_name="Профиль",
+    )
+    failure = models.ForeignKey(
+        Failure,
+        on_delete=models.CASCADE,
+        related_name="bonus_purchases",
+        verbose_name="Сбой",
+    )
+    bonus_type = models.CharField(
+        max_length=32,
+        choices=FailureBonusType.choices,
+        verbose_name="Тип бонуса",
+    )
+
+    class Meta:
+        db_table = "покупки_бонусов_сбоя"
+        verbose_name = "Покупка бонуса сбоя"
+        verbose_name_plural = "Покупки бонусов сбоя"
+        unique_together = ("profile", "failure", "bonus_type")
+
+    def __str__(self) -> str:
+        return f"{self.profile_id} → {self.failure_id}: {self.bonus_type}"
 
 
 # ==============================
