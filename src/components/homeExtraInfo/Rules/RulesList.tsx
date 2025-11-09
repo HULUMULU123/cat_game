@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo } from "react";
 import styled from "styled-components";
 import RulesItem from "./RulesItem";
 
@@ -8,6 +8,8 @@ import { request } from "../../../shared/api/httpClient";
 import useGlobalStore from "../../../shared/store/useGlobalStore";
 import type { RuleCategoryResponse } from "../../../shared/api/types";
 import type { RuleCategory } from "../../home/types";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../../../shared/components/LoadingSpinner";
 
 const StyledWrapper = styled.div`
   display: flex;
@@ -86,34 +88,42 @@ const toRuleCategory = (r: RuleCategoryResponse): RuleCategory => ({
 
 const RulesList = ({ openRuleCategory }: RulesListProps) => {
   const tokens = useGlobalStore((s) => s.tokens);
-  const [rules, setRules] = useState<RuleCategoryResponse[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const fetchRules = useCallback(async () => {
-    if (!tokens) return;
-    setLoading(true);
-    try {
-      const data = await request<RuleCategoryResponse[]>("/rules/", {
+  const {
+    data: ruleCategories,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<RuleCategoryResponse[]>({
+    queryKey: ["rules", tokens?.access ?? null],
+    queryFn: async () => {
+      if (!tokens) return [];
+      return request<RuleCategoryResponse[]>("/rules/", {
         headers: { Authorization: `Bearer ${tokens.access}` },
       });
-      setRules(data);
-      setErr(null);
-    } catch (e) {
-      console.error("[Rules] fetch error:", e);
-      setErr("Не удалось загрузить правила");
-    } finally {
-      setLoading(false);
-    }
-  }, [tokens]);
+    },
+    enabled: Boolean(tokens),
+  });
 
   useEffect(() => {
-    void fetchRules();
-  }, [fetchRules]);
+    if (isError && error) {
+      console.error("[Rules] fetch error:", error);
+    }
+  }, [isError, error]);
+
+  const rules = ruleCategories ?? [];
 
   const content = useMemo(() => {
-    if (loading) return <Placeholder>Загрузка правил…</Placeholder>;
-    if (err) return <Placeholder>{err}</Placeholder>;
+    if (!tokens) {
+      return <Placeholder>Авторизуйтесь, чтобы увидеть правила</Placeholder>;
+    }
+    if (isLoading)
+      return (
+        <Placeholder>
+          <LoadingSpinner label="Загружаем правила" />
+        </Placeholder>
+      );
+    if (isError)
+      return <Placeholder>Не удалось загрузить правила</Placeholder>;
     if (!rules.length)
       return <Placeholder>Правила пока не добавлены</Placeholder>;
 
@@ -132,7 +142,7 @@ const RulesList = ({ openRuleCategory }: RulesListProps) => {
         })}
       </StyledRulesList>
     );
-  }, [loading, err, rules, openRuleCategory]);
+  }, [isError, isLoading, openRuleCategory, rules, tokens]);
 
   return (
     <StyledWrapper>

@@ -6,6 +6,8 @@ import type { HomeModalType } from "./types";
 import { request } from "../../shared/api/httpClient";
 import type { FailureResponse } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
+import { useQuery } from "react-query";
+import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
 const StyledActionBtn = styled.button<{ $disabled?: boolean }>`
   position: absolute;
@@ -78,6 +80,16 @@ const StyledGiftImg = styled.img`
   height: 24px;
 `;
 
+const StyledSpinnerOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: inherit;
+`;
+
 interface MainActionProps {
   onOpenModal: (modalType: HomeModalType) => void;
 }
@@ -87,32 +99,31 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
   const tokens = useGlobalStore((s) => s.tokens);
   const completedFailures = useGlobalStore((s) => s.completedFailures);
 
-  const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
 
-  // ---- fetch current failure (берём последний созданный) ----
+  const {
+    data: failures,
+    isLoading: isFailureLoading,
+    isError: isFailureError,
+    error: failureError,
+  } = useQuery<FailureResponse[]>({
+    queryKey: ["failures", tokens?.access ?? null],
+    queryFn: async () => {
+      if (!tokens) return [];
+      return request<FailureResponse[]>("/failures/", {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+    },
+    enabled: Boolean(tokens),
+  });
+
   useEffect(() => {
-    if (!tokens) return;
-    let mounted = true;
+    if (isFailureError && failureError) {
+      console.error("[MainAction] failure fetch error", failureError);
+    }
+  }, [isFailureError, failureError]);
 
-    (async () => {
-      try {
-        const data = await request<FailureResponse[]>("/failures/", {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        });
-        if (mounted) {
-          // предполагаем, что первый элемент — самый актуальный (вьюха отдает -created_at)
-          setFailure(data[0] ?? null);
-        }
-      } catch (e) {
-        if (mounted) setFailure(null);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [tokens]);
+  const failure = failures?.[0] ?? null;
 
   // тикер раз в секунду (если есть смысл считать)
   useEffect(() => {
@@ -192,7 +203,8 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
     return ""; // дефолт
   }, [isUpcoming, isActive, startMs, endMs, now]);
 
-  const buttonDisabled = !isActive || hasCompletedFailure;
+  const buttonDisabled =
+    !failure || !isActive || hasCompletedFailure || isFailureLoading;
 
   const handleActionClick = () => {
     if (buttonDisabled) return;
@@ -219,6 +231,11 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
       aria-disabled={buttonDisabled}
     >
       <StyledActionContentWrapper>
+        {isFailureLoading ? (
+          <StyledSpinnerOverlay>
+            <LoadingSpinner label="Обновляем данные" />
+          </StyledSpinnerOverlay>
+        ) : null}
         <StyledActionTextWrapper>
           <StyledActionName>{headerText}</StyledActionName>
           <StyledActionTimer>{timerText || ""}</StyledActionTimer>

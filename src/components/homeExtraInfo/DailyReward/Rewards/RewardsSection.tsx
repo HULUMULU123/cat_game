@@ -2,6 +2,7 @@ import styled from "styled-components";
 
 import type { DailyRewardResponse } from "../../../../shared/api/types";
 import RewardsList from "./RewardsList";
+import LoadingSpinner from "../../../../shared/components/LoadingSpinner";
 
 const StyledWrapper = styled.div`
   display: flex;
@@ -42,7 +43,12 @@ export default function RewardsSection({
   error,
   nextUpdateHint,
 }: RewardsSectionProps) {
-  if (loading) return <Placeholder>Загрузка наград...</Placeholder>;
+  if (loading)
+    return (
+      <Placeholder>
+        <LoadingSpinner label="Загружаем награды" />
+      </Placeholder>
+    );
   if (error) return <Placeholder>{error}</Placeholder>;
   if (!rewards.length)
     return <Placeholder>Награды ещё не настроены</Placeholder>;
