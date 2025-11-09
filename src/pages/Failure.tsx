@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import styled from "styled-components";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
@@ -209,29 +215,31 @@ export default function Failure() {
   const [startMessage, setStartMessage] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
-  const [bonusPrices, setBonusPrices] = useState<Record<FailureBonusType, number>>({
+  const [bonusPrices, setBonusPrices] = useState<
+    Record<FailureBonusType, number>
+  >({
     x2: 0,
     x5: 0,
     x10: 0,
     freeze: 0,
     no_bombs: 0,
   });
-  const [bonusStatus, setBonusStatus] = useState<Record<FailureBonusType, BonusStatus>>(
-    {}
+  const [bonusStatus, setBonusStatus] = useState<
+    Record<FailureBonusType, BonusStatus>
+  >({});
+  const [purchasedBonuses, setPurchasedBonuses] = useState<FailureBonusType[]>(
+    []
   );
-  const [purchasedBonuses, setPurchasedBonuses] = useState<FailureBonusType[]>([]);
   const [maxBonusesPerRun, setMaxBonusesPerRun] = useState(3);
   const [storeOpen, setStoreOpen] = useState(false);
   const [shopError, setShopError] = useState<string | null>(null);
   const [purchasingType, setPurchasingType] = useState<FailureBonusType | null>(
     null
   );
-  const [bombConfig, setBombConfig] = useState<{ min: number; max: number }>(
-    {
-      min: 0,
-      max: 0,
-    }
-  );
+  const [bombConfig, setBombConfig] = useState<{ min: number; max: number }>({
+    min: 0,
+    max: 0,
+  });
   const [bombSchedule, setBombSchedule] = useState<number[]>([]);
   const [bombsDisabled, setBombsDisabled] = useState(false);
   const [speedModifier, setSpeedModifier] = useState(1);
@@ -292,7 +300,8 @@ export default function Failure() {
         return;
       }
 
-      const count = Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin;
+      const count =
+        Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin;
       if (count <= 0) {
         setBombSchedule([]);
         return;
@@ -477,7 +486,7 @@ export default function Failure() {
             setStoreOpen(false);
           }
           setStartMessage(
-            "У тебя 60 секунд. Кликай по каплям, чтобы набрать как можно больше очков."
+            "У тебя 60 секунд. Кликай по каплям, чтобы набрать как можно больше очков. Нажмешь на бомбу - все капли пропадут. Удачи!"
           );
         } else {
           setStartMessage("Активный сбой не найден.");
@@ -572,13 +581,7 @@ export default function Failure() {
     } finally {
       setIsStarting(false);
     }
-  }, [
-    balance,
-    failure,
-    parseErrorDetail,
-    tokens,
-    updateBalance,
-  ]);
+  }, [balance, failure, parseErrorDetail, tokens, updateBalance]);
 
   const beginGame = useCallback(() => {
     if (!failure) return;
@@ -798,7 +801,7 @@ export default function Failure() {
                 "Участвуй в сбое: у тебя 60 секунд, чтобы набрать как можно больше очков."
               }
               // по ТЗ таймер стартует при закрытии модалки
-              btnContent={<span>Закрыть</span>}
+              btnContent={<span style={{ margin: "auto" }}>Закрыть</span>}
               setOpenModal={handleStartModalToggle}
               isOpenModal={startModalOpen}
               onAction={() => handleStartModalToggle(false)}

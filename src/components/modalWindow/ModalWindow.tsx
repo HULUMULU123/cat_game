@@ -60,7 +60,7 @@ const StyledBtn = styled.button`
   margin: 0 auto;
   margin-top: 20px;
   border-radius: 7px;
-  padding: 5px 0;
+  padding: 5px 10px;
   display: flex;
   align-items: center;
   border: none;
