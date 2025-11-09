@@ -42,6 +42,7 @@ export type LeaderboardEntryResponse = {
 export type LeaderboardResponse = {
   entries: LeaderboardEntryResponse[];
   current_user: LeaderboardEntryResponse | null;
+  failure: FailureResponse | null;
 };
 
 // --- Simulation ---

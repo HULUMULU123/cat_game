@@ -1,4 +1,3 @@
-import React from 'react'
 import styled from 'styled-components'
 import { CustomSelect } from './CustomSelect'
 
@@ -31,20 +30,35 @@ background: #85FFF0;
 
 `
 
-export default function PrevContentHeader() {
-    const options = [
-    { label: "23 / 05 / 2025", value: "1" },
-    { label: "23 / 05 /2024", value: "2" },
-    { label: "23 / 05 / 2023", value: "3" },
-    { label: "23 / 04 / 2023", value: "4" },
-    { label: "23 / 03 / 2023", value: "5" },
-    { label: "23 / 02 / 2023", value: "6" },
-    { label: "23 / 01 / 2023", value: "7" },
-  ];
+interface PrevContentHeaderProps {
+  options: { label: string; value: string }[];
+  selectedValue: string | null;
+  onSelect: (value: string) => void;
+  isLoading?: boolean;
+}
+
+export default function PrevContentHeader({
+  options,
+  selectedValue,
+  onSelect,
+  isLoading = false,
+}: PrevContentHeaderProps) {
+  const placeholder = isLoading
+    ? 'Загрузка...'
+    : options.length
+    ? 'Выберите дату'
+    : 'Нет завершённых сбоев';
+
   return (
     <StyledWrapper>
       <StyledHeader>ИТОГИ СБОЯ</StyledHeader>
-      <CustomSelect options={options} onChange={(value)=>console.log(value)}/>
+      <CustomSelect
+        options={options}
+        value={selectedValue}
+        onChange={onSelect}
+        placeholder={placeholder}
+        disabled={isLoading || options.length === 0}
+      />
       <StyledLine></StyledLine>
     </StyledWrapper>
   )

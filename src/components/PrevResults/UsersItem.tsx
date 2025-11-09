@@ -1,8 +1,9 @@
-import React from 'react'
 import styled, { css } from 'styled-components'
 import white_prize from '../../assets/icons/white_prize.svg'
 import empty_prize from '../../assets/icons/empty_prize.svg'
-const StyledItem = styled.li`
+import type { LeaderboardEntryResponse } from '../../shared/api/types'
+
+const StyledItem = styled.li<{ $position: number }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -10,12 +11,21 @@ const StyledItem = styled.li`
   width: 95%;
   margin: 0 auto;
   border-radius:7px;
-  background-color: ${({ number }) =>
-    number === 1 ? css`background: #1FFFE3;
-                        background: linear-gradient(90deg, rgba(31, 255, 227, 1) 0%, rgba(0, 223, 152, 1) 100%);` : 
-                        number === 2 || number === 3 ? css`background: #1FFFE3;
-                        background: linear-gradient(228deg, rgba(31, 255, 227, 0.8) 0%, rgba(0, 223, 152, 0.82) 100%);` : 
-                        "transparent"};
+  ${({ $position }) => {
+    if ($position === 1) {
+      return css`
+        background: linear-gradient(90deg, rgba(31, 255, 227, 1) 0%, rgba(0, 223, 152, 1) 100%);
+      `
+    }
+    if ($position === 2 || $position === 3) {
+      return css`
+        background: linear-gradient(228deg, rgba(31, 255, 227, 0.8) 0%, rgba(0, 223, 152, 0.82) 100%);
+      `
+    }
+    return css`
+      background: transparent;
+    `
+  }};
 `;
 
 
@@ -51,27 +61,45 @@ font-size: 10px;
 font-weight: 800;
 color: #fff;`
 
-const getPrizeImg = (number) => {
-    if (number === 1) return white_prize;
-    if (number === 2 || number === 3) return empty_prize;
+const getPrizeImg = (position: number) => {
+    if (position === 1) return white_prize;
+    if (position === 2 || position === 3) return empty_prize;
     return null; // ничего или прозрачный плейсхолдер
   };
 
-  const getText = (number) => {
-    if (number === 1) return number;
-    if (number === 2 || number === 3) return number;
-    return `#${number}`;
+const getText = (position: number) => {
+    if (position <= 3) return position;
+    return `#${position}`;
   };
-export default function UsersItem({number}) {
+
+const getDisplayName = (entry: LeaderboardEntryResponse) => {
+  const parts = [entry.first_name, entry.last_name].filter(Boolean);
+  if (parts.length) {
+    return parts.join(' ');
+  }
+  return entry.username;
+};
+
+interface UsersItemProps {
+  entry: LeaderboardEntryResponse;
+  index: number;
+}
+
+export default function UsersItem({ entry, index }: UsersItemProps) {
+  const position = entry.position ?? index + 1;
+  const prizeImg = getPrizeImg(position);
+  const timeLabel = entry.display_time || '';
+  const scoreLabel = entry.score?.toLocaleString?.('ru-RU') ?? entry.score;
+
   return (
-    <StyledItem number={number}>
+    <StyledItem $position={position}>
       <NumberWrapper>
-        {getPrizeImg(number) && <PrizeImg src={getPrizeImg(number)} />}
-        <NumberSpan>{getText(number)}</NumberSpan>
+        {prizeImg && <PrizeImg src={prizeImg} alt="Призовое место" />}
+        <NumberSpan>{getText(position)}</NumberSpan>
       </NumberWrapper>
-      <NicknameSpan>Alex</NicknameSpan>
-      <TimeSpan>12 : 12 : 12</TimeSpan>
-      <ScoreSpan>5 400</ScoreSpan>
+      <NicknameSpan>{getDisplayName(entry)}</NicknameSpan>
+      <TimeSpan>{timeLabel}</TimeSpan>
+      <ScoreSpan>{scoreLabel}</ScoreSpan>
     </StyledItem>
   )
 }
