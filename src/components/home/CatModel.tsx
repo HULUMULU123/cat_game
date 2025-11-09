@@ -13,19 +13,10 @@ const modelUrls = [
 // Предзагрузка всех моделей
 modelUrls.forEach((url) => useGLTF.preload(url));
 
-function getRandomIndex(length: number, exclude?: number) {
-  if (length <= 1) return 0;
-  let idx = exclude ?? -1;
-  while (idx === exclude) {
-    idx = Math.floor(Math.random() * length);
-  }
-  return idx;
-}
-
 export default function CatModel() {
   const models = modelUrls.map((url) => useGLTF(url));
 
-  // Берём сцену из первой модели без клонирования
+  // Берём сцену из первой модели
   const scene = useMemo(() => models[0].scene, [models]);
   const animations = useMemo(
     () => models.flatMap((m) => m.animations || []),
@@ -36,35 +27,34 @@ export default function CatModel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentAction = useRef<THREE.AnimationAction | null>(null);
 
-  // Инициализация миксера и старт со случайной анимации
+  // Инициализация миксера и старт первой анимации
   useEffect(() => {
     if (!scene || animations.length === 0) return;
 
     if (!mixer.current) mixer.current = new THREE.AnimationMixer(scene);
 
-    const startIndex = getRandomIndex(animations.length);
-    setCurrentIndex(startIndex);
-
-    const clip = animations[startIndex];
+    const clip = animations[0];
     const action = mixer.current.clipAction(clip);
     action.reset();
-    action.setLoop(THREE.LoopOnce, 1);
-    action.clampWhenFinished = true;
+    action.setLoop(THREE.LoopOnce, 1); // проигрываем один раз
+    action.clampWhenFinished = true; // заморозить позу в конце до кроссфейда
     action.play();
+
     currentAction.current = action;
+    setCurrentIndex(0);
 
     return () => {
       mixer.current?.stopAllAction();
     };
   }, [scene, animations]);
 
-  // Случайное переключение по завершению текущего клипа
+  // Переключение по завершению текущего клипа: 0 → 1 → 2 → 3 → 0 …
   useEffect(() => {
     if (!mixer.current || animations.length === 0) return;
     const mixerInstance = mixer.current;
 
     const handleFinished = () => {
-      const nextIndex = getRandomIndex(animations.length, currentIndex);
+      const nextIndex = (currentIndex + 1) % animations.length;
       const nextClip = animations[nextIndex];
 
       const nextAction = mixerInstance.clipAction(nextClip);
