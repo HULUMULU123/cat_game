@@ -1,26 +1,44 @@
+// httpClient.ts
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
+  constructor(public status: number, public payload: string) {
+    super(payload);
   }
 }
+
+const joinUrl = (base: string, path: string) =>
+  `${base.replace(/\/+$/, "")}/${String(path).replace(/^\/+/, "")}`;
+
+// Глобальная дедупликация одинаковых запросов
+const inflight = new Map<string, Promise<Response>>();
 
 export const request = async <T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> => {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  const url = joinUrl(API_BASE_URL, path);
+  const key = `${options.method || "GET"} ${url}`;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new ApiError(response.status, errorText || response.statusText);
+  // если уже есть такой запрос — ждём его же
+  if (inflight.has(key)) {
+    const res = await inflight.get(key)!;
+    return handleResponse<T>(res);
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
+  const p = fetch(url, options).finally(() => inflight.delete(key));
+  inflight.set(key, p);
 
-  return (await response.json()) as T;
+  const res = await p;
+  return handleResponse<T>(res);
 };
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new ApiError(response.status, text || response.statusText);
+  }
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}
