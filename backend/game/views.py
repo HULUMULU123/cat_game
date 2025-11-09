@@ -321,14 +321,31 @@ class FailureListView(APIView):
         return Response(FailureSerializer(failures, many=True).data)
 
 
+from rest_framework import status, permissions, serializers
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
+from django.db.models import Q
+import logging
+
+logger = logging.getLogger(__name__)
+
 class FailureStartView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     @transaction.atomic
-    def post(self, request: Request) -> Response:
-        print(request.data)
-        serializer = FailureStartSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def post(self, request):
+        logger.info("FAILURE START POST data=%s user=%s", request.data, request.user.id)
+
+        # Явно ловим валидацию, чтобы увидеть причину
+        try:
+            serializer = FailureStartSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as exc:
+            logger.warning("FAILURE START 400 serializer: %s", exc.detail)
+            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
 
         failure_id = serializer.validated_data.get("failure_id")
         now = timezone.now()
@@ -340,6 +357,7 @@ class FailureStartView(APIView):
             try:
                 failure = qs.get(id=failure_id)
             except Failure.DoesNotExist:
+                logger.warning("FAILURE START 404: not found id=%s", failure_id)
                 return Response({"detail": "Сбой не найден."}, status=status.HTTP_404_NOT_FOUND)
         else:
             failure = (
@@ -349,25 +367,24 @@ class FailureStartView(APIView):
                 .first()
             )
             if not failure:
+                logger.warning("FAILURE START 404: active not found")
                 return Response({"detail": "Активный сбой не найден."}, status=status.HTTP_404_NOT_FOUND)
 
         if not _failure_is_active(failure, now):
+            logger.warning("FAILURE START 400: not active failure_id=%s", failure.id)
             return Response({"detail": "Сбой недоступен для участия."}, status=status.HTTP_400_BAD_REQUEST)
 
         if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
-            return Response(
-                {"detail": "Вы уже участвовали в этом сбое."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            logger.warning("FAILURE START 400: already played failure_id=%s profile_id=%s",
+                           failure.id, profile.id)
+            return Response({"detail": "Вы уже участвовали в этом сбое."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(
-            {
-                "detail": "Можно начинать.",
-                "failure": FailureSerializer(failure).data,
-                "duration_seconds": 60,
-            }
-        )
-
+        return Response({
+            "detail": "Можно начинать.",
+            "failure": FailureSerializer(failure).data,
+            "duration_seconds": 60,
+        })
 
 class FailureCompleteView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
