@@ -216,32 +216,11 @@ const Simulation = () => {
     const practiceUrl = new URL("/simulation/practice/", origin);
     practiceUrl.searchParams.set("duration", String(durationSeconds));
 
-    if (practiceWindowRef.current && !practiceWindowRef.current.closed) {
-      practiceWindowRef.current.close();
-    }
-
-    let win: Window | null = null;
-    try {
-      win = window.open(
-        practiceUrl.toString(),
-        "simulation_practice",
-        "noopener,noreferrer,width=480,height=780"
-      );
-    } catch (error) {
-      console.warn("[Simulation] failed to open practice window", error);
-    }
-
-    if (win) {
-      practiceWindowRef.current = win;
-      win.focus();
-      return;
-    }
-
-    // фолбэк: открываем в текущей вкладке, если popup заблокирован
+    // Просто переходим на страницу практики в этой же вкладке
     window.location.href = practiceUrl.toString();
   }, [config?.duration_seconds, gameDuration]);
 
-  const handleStart = useCallback(() => {
+  const handleStart = async () => {
     if (!tokens || !config) {
       setModalState("insufficient");
       setModalMessage("Пожалуйста, авторизуйтесь, чтобы начать симуляцию.");
@@ -258,23 +237,47 @@ const Simulation = () => {
 
     setIsProcessing(true);
     try {
-      // очищаем модалку и открываем практику
+      // Делаем запрос, чтобы сервер списал монеты и вернул баланс
+      const data = await request<SimulationStartResponse>(
+        "simulation/practice/",
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${tokens.access}` },
+        }
+      );
+
+      // Обновляем баланс после списания
+      updateBalance(data.balance);
+
+      // Очищаем модалку
       setModalState("");
       setModalMessage("");
-      handlePracticeStart(); // откроет окно/вкладку или сделает fallback
-    } catch (e) {
-      setModalState("insufficient");
-      setModalMessage("Не удалось открыть страницу практики.");
+
+      // Открываем страницу практики
+      handlePracticeStart();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        try {
+          const parsed = JSON.parse(error.message) as {
+            detail?: string;
+            balance?: number;
+            required?: number;
+          };
+          setModalState("insufficient");
+          setModalMessage(parsed.detail ?? "Недостаточно средств для запуска.");
+          if (typeof parsed.balance === "number") {
+            updateBalance(parsed.balance);
+          }
+        } catch {
+          setModalState("insufficient");
+          setModalMessage("Не удалось запустить симуляцию.");
+        }
+      } else {
+        setModalState("insufficient");
+        setModalMessage("Не удалось запустить симуляцию.");
+      }
     } finally {
       setIsProcessing(false);
-    }
-  }, [tokens, config, balance, handlePracticeStart]);
-
-  const handleModalToggle = (value: boolean) => {
-    if (!value) {
-      setModalState("");
-      setModalMessage("");
-      resetAds();
     }
   };
 

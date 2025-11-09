@@ -5,7 +5,11 @@ const StyledWrapper = styled.div`
   width: 95%;
   border-radius: 7px;
   background: #126358;
-  background: linear-gradient(216deg, rgba(18, 99, 88, 0.4) 50%, rgba(119, 162, 148, 0.2) 100%);
+  background: linear-gradient(
+    216deg,
+    rgba(18, 99, 88, 0.4) 50%,
+    rgba(119, 162, 148, 0.2) 100%
+  );
   padding: 40px 0 20px 0;
   margin: 0 auto;
   margin-top: 10px;
@@ -44,7 +48,11 @@ const StyledButton = styled.button`
   display: flex;
   border: none;
   background: #126358;
-  background: linear-gradient(216deg, rgba(18, 99, 88, 0.7) 0%, rgba(119, 162, 148, 0.5) 50%);
+  background: linear-gradient(
+    216deg,
+    rgba(18, 99, 88, 0.7) 0%,
+    rgba(119, 162, 148, 0.5) 50%
+  );
   padding: 7px 50px;
   border-radius: 7px;
   font-family: "Conthrax", sans-serif;
@@ -100,7 +108,11 @@ const PracticeButton = styled.button`
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #0e4f45;
-  background: linear-gradient(216deg, rgba(76, 204, 181, 0.9) 0%, rgba(168, 244, 219, 0.7) 50%);
+  background: linear-gradient(
+    216deg,
+    rgba(76, 204, 181, 0.9) 0%,
+    rgba(168, 244, 219, 0.7) 50%
+  );
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
@@ -129,7 +141,8 @@ const SectionContent = ({
   <StyledWrapper>
     <StyledContentWrapper>
       <StyledTextP style={{ marginBottom: "5px" }}>
-        «СИМУЛЯЦИЯ» — тренажёр, имитирующий сбой. Здесь вы можете тренироваться в любое время.
+        «СИМУЛЯЦИЯ» — тренажёр, имитирующий сбой. Здесь вы можете тренироваться
+        в любое время.
       </StyledTextP>
       <StyledTextP>{description}</StyledTextP>
       <StyledTextSpan>Запустить симуляцию</StyledTextSpan>
@@ -138,7 +151,7 @@ const SectionContent = ({
         {cost}
       </StyledButton>
 
-      {onPracticeStart ? (
+      {/* {onPracticeStart ? (
         <PracticeWrapper>
           <PracticeHint>Тренировка без списания монет</PracticeHint>
           <PracticeButton
@@ -149,7 +162,7 @@ const SectionContent = ({
             {practiceLabel}
           </PracticeButton>
         </PracticeWrapper>
-      ) : null}
+      ) : null} */}
     </StyledContentWrapper>
   </StyledWrapper>
 );
