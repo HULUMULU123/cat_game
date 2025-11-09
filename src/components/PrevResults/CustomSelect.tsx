@@ -137,26 +137,36 @@ type Option = { label: string; value: string };
 
 interface CustomSelectProps {
   options: Option[];
+  value: string | null;
   onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
   options,
+  value,
   onChange,
+  placeholder = "Выберите дату",
+  disabled = false,
 }) => {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Option | null>(
-    options.length > 0 ? options[options.length - 1] : null
-  );
 
-  const handleSelect = (opt: Option) => {
-    setSelected(opt);
-    setOpen(false);
-    onChange(opt.value);
+  const selected = options.find((opt) => opt.value === value) ?? null;
+
+  const handleToggle = () => {
+    if (disabled || options.length === 0) return;
+    setOpen((prev) => !prev);
   };
 
-  // Сначала выбранный элемент, потом остальные
-  const sortedOptions = selected
+  const handleSelect = (opt: Option) => {
+    setOpen(false);
+    if (opt.value !== value) {
+      onChange(opt.value);
+    }
+  };
+
+  const visibleOptions = selected
     ? [selected, ...options.filter((opt) => opt.value !== selected.value)]
     : options;
 
@@ -164,22 +174,22 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     <>
       <Backdrop open={open} onClick={() => setOpen(false)} />
       <Wrapper>
-        <SelectBox onClick={() => setOpen((prev) => !prev)}>
-          <StyledBoxSpan>{selected ? selected.label : "Выберите дату"}</StyledBoxSpan>
-          <StyledSelectImg src={drop_down}/>
+        <SelectBox onClick={handleToggle}>
+          <StyledBoxSpan>{selected ? selected.label : placeholder}</StyledBoxSpan>
+          <StyledSelectImg src={drop_down} />
         </SelectBox>
         <OptionListWrapper open={open}>
-        <OptionsList >
-          {sortedOptions.map((opt) => (
-            <OptionItem
-              key={opt.value}
-              selected={selected?.value === opt.value}
-              onClick={() => handleSelect(opt)}
-            >
-              {opt.label}
-            </OptionItem>
-          ))}
-        </OptionsList>
+          <OptionsList>
+            {visibleOptions.map((opt) => (
+              <OptionItem
+                key={opt.value}
+                selected={selected?.value === opt.value}
+                onClick={() => handleSelect(opt)}
+              >
+                {opt.label}
+              </OptionItem>
+            ))}
+          </OptionsList>
         </OptionListWrapper>
       </Wrapper>
     </>

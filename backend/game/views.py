@@ -835,36 +835,69 @@ class ScoreListView(APIView):
 
 
 class LeaderboardView(APIView):
-    """
-    Лидерборд на основе ScoreEntry:
-      - только записи с score > 0 (игроки, реально что-то заработали),
-      - сортируем по score (убыв.) и времени получения результата (updated_at возр.),
-      - показываем achieved_at как updated_at.
-    """
+    """Возвращает таблицу лидеров для выбранного сбоя."""
+
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request: Request) -> Response:
-        qs = (
-            ScoreEntry.objects
-            .select_related("profile", "profile__user")
-            .filter(points__gt=0)
-            .order_by("-points", "earned_at", "id")
-        )
+        failure_param = request.query_params.get("failure")
+        failure_obj: Failure | None = None
+
+        if failure_param:
+            try:
+                failure_id = int(failure_param)
+            except (TypeError, ValueError):
+                return Response(
+                    {"detail": "Некорректный идентификатор сбоя."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                failure_obj = Failure.objects.get(id=failure_id)
+            except Failure.DoesNotExist:
+                return Response(
+                    {"detail": "Сбой не найден."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            now = timezone.now()
+            failure_obj = (
+                Failure.objects.filter(Q(start_time__isnull=True) | Q(start_time__lte=now))
+                .filter(Q(end_time__isnull=True) | Q(end_time__gt=now))
+                .order_by("-start_time", "-created_at")
+                .first()
+            )
+
+        qs = ScoreEntry.objects.select_related("profile", "profile__user")
+        if failure_obj is not None:
+            qs = qs.filter(failure=failure_obj)
+        else:
+            qs = qs.none()
+
+        qs = qs.filter(points__gt=0).order_by("-points", "earned_at", "id")
 
         rows = []
-        for position, e in enumerate(qs, start=1):
+        for position, entry in enumerate(qs, start=1):
             rows.append(
                 {
                     "position": position,
-                    "username": e.profile.user.username,
-                    "first_name": e.profile.user.first_name or "",
-                    "last_name": e.profile.user.last_name or "",
-                    "score": int(e.points or 0),
+                    "username": entry.profile.user.username,
+                    "first_name": entry.profile.user.first_name or "",
+                    "last_name": entry.profile.user.last_name or "",
+                    "score": int(entry.points or 0),
                     "duration_seconds": 0,  # legacy поле, больше не используем
-                    "achieved_at": e.earned_at.isoformat() if e.earned_at else None,
+                    "achieved_at": entry.earned_at.isoformat() if entry.earned_at else None,
                 }
             )
 
         current = next((r for r in rows if r["username"] == request.user.username), None)
 
-        return Response({"entries": rows, "current_user": current})
+        failure_payload = (
+            FailureSerializer(failure_obj, context={"request": request}).data
+            if failure_obj is not None
+            else None
+        )
+
+        return Response(
+            {"entries": rows, "current_user": current, "failure": failure_payload}
+        )

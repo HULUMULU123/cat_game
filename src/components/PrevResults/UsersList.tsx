@@ -1,6 +1,7 @@
-import React from 'react'
+import { useMemo } from 'react'
 import styled from 'styled-components'
 import UsersItem from './UsersItem'
+import type { LeaderboardEntryResponse } from '../../shared/api/types'
 
 const StyledList = styled.ul`
     display: flex;
@@ -17,26 +18,53 @@ const StyledList = styled.ul`
     box-sizing: content-box;
 
     scrollbar-width: thin;
-    scrollbar-color: #E1FFFB #2CC2A9; 
+    scrollbar-color: #E1FFFB #2CC2A9;
     &::-webkit-scrollbar {
-      width: 4px; 
+      width: 4px;
     }
     &::-webkit-scrollbar-track {
-      background: #2CC2A9;  
+      background: #2CC2A9;
       border-radius: 10px;
-      
+
     }
     &::-webkit-scrollbar-thumb {
-      background: #E1FFFB;  
+      background: #E1FFFB;
       border-radius: 20px;
     }
 `
-export default function UsersList() {
-  return (
-    <StyledList>
-      {Array.from({ length: 50 }, (_, i) => (
-        <UsersItem key={i + 1} number={i + 1} />
-      ))}
-    </StyledList>
-  )
+
+const Placeholder = styled.div`
+  margin: 24px auto;
+  text-align: center;
+  font-family: 'Conthrax', sans-serif;
+  font-size: 12px;
+  color: rgb(199, 247, 238);
+`
+
+interface UsersListProps {
+  entries: LeaderboardEntryResponse[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export default function UsersList({ entries, isLoading, error }: UsersListProps) {
+  const content = useMemo(() => {
+    if (isLoading) {
+      return <Placeholder>Загрузка...</Placeholder>
+    }
+
+    if (error) {
+      return <Placeholder>{error}</Placeholder>
+    }
+
+    if (!entries.length) {
+      return <Placeholder>Результаты будут доступны позже</Placeholder>
+    }
+
+    return entries.map((entry, index) => (
+      <UsersItem key={`${entry.username}-${entry.position}`} entry={entry} index={index} />
+    ))
+  }, [entries, error, isLoading])
+
+  return <StyledList>{content}</StyledList>
 }

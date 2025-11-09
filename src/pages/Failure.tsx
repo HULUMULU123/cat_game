@@ -242,6 +242,7 @@ export default function Failure() {
 
   const multiplierTimeoutRef = useRef<number | null>(null);
   const freezeTimeoutRef = useRef<number | null>(null);
+  const prevFailureIdRef = useRef<number | null>(null);
 
   const footerBonuses = useMemo<BonusListEntry[]>(() => {
     return Object.entries(bonusStatus).map(([type, status]) => ({
@@ -456,6 +457,10 @@ export default function Failure() {
         });
         if (!active) return;
         const current = data.find((item) => item.is_active) ?? null;
+        const prevId = prevFailureIdRef.current;
+        const nextId = current?.id ?? null;
+        const failureChanged = prevId !== nextId;
+
         setFailure(current);
         if (current) {
           setDuration(current.duration_seconds ?? 60);
@@ -466,15 +471,23 @@ export default function Failure() {
             min: current.bombs_min_count ?? 0,
             max: current.bombs_max_count ?? 0,
           });
-          setBonusStatus({});
-          setPurchasedBonuses([]);
-          setStoreOpen(false);
+          if (failureChanged) {
+            setBonusStatus({});
+            setPurchasedBonuses([]);
+            setStoreOpen(false);
+          }
           setStartMessage(
             "У тебя 60 секунд. Кликай по каплям, чтобы набрать как можно больше очков."
           );
         } else {
           setStartMessage("Активный сбой не найден.");
+          if (failureChanged) {
+            setBonusStatus({});
+            setPurchasedBonuses([]);
+            setStoreOpen(false);
+          }
         }
+        prevFailureIdRef.current = nextId;
         if (!isGameRunning && !hasFinished) {
           setStartModalOpen(true);
         }

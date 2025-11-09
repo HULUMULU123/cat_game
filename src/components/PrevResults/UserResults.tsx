@@ -1,6 +1,7 @@
-import React from 'react'
 import styled from 'styled-components'
 import avatar from '../../assets/avatar.jpg'
+import type { LeaderboardEntryResponse } from '../../shared/api/types'
+
 const StyledUserItem = styled.li`
 background: #26B291;
 width: 95%;
@@ -46,7 +47,7 @@ color: rgb(224,255,251);
 font-size: 11px;`
 
 const StyledUserInfo = styled.div`
-display: flex; 
+display: flex;
 align-items: center;
 gap: 14px;
 `
@@ -63,22 +64,33 @@ font-weight: 700;
 font-size: 11px;
 `
 
+interface UserResultsProps {
+  entry: LeaderboardEntryResponse | null;
+}
 
-export default function UserResults() {
+const buildDisplayName = (entry: LeaderboardEntryResponse) => {
+  const parts = [entry.first_name, entry.last_name].filter(Boolean)
+  if (parts.length) return parts.join(' ')
+  return entry.username
+}
+
+export default function UserResults({ entry }: UserResultsProps) {
+  if (!entry) return null
+
   return (
     <StyledUserItem>
         <StyledContentWrapper>
-            <StyledNumberSpan>#{4445}</StyledNumberSpan>
+            <StyledNumberSpan>#{entry.position}</StyledNumberSpan>
             <StyledUserProfile>
-                <StyledUserImg src={avatar}/>
-                <StyledUserSpan>Alex</StyledUserSpan>
+                <StyledUserImg src={avatar} alt="Профиль"/>
+                <StyledUserSpan>{buildDisplayName(entry)}</StyledUserSpan>
             </StyledUserProfile>
             <StyledUserInfo>
                 <StyledUserTime>
-                    16 : 35 : 37
+                    {entry.display_time || ''}
                 </StyledUserTime>
                 <StyledUserScore>
-                    4 700
+                    {entry.score?.toLocaleString?.('ru-RU') ?? entry.score}
                 </StyledUserScore>
             </StyledUserInfo>
         </StyledContentWrapper>

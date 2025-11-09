@@ -6,6 +6,7 @@ import { request } from "../../shared/api/httpClient";
 import type {
   LeaderboardResponse,
   LeaderboardEntryResponse,
+  FailureResponse,
 } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 
@@ -93,6 +94,7 @@ const UsersList = () => {
   const [entries, setEntries] = useState<LeaderboardEntryResponse[]>([]);
   const [currentUser, setCurrentUser] =
     useState<LeaderboardEntryResponse | null>(null);
+  const [failure, setFailure] = useState<FailureResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -118,6 +120,7 @@ const UsersList = () => {
         })) as LeaderboardEntryResponse[];
 
         setEntries(enhanced);
+        setFailure(data.failure ?? null);
         setCurrentUser(
           data.current_user
             ? ({
@@ -155,10 +158,28 @@ const UsersList = () => {
     ));
   }, [entries, error]);
 
+  const failureName = failure?.name ?? "Активный сбой не найден";
+  const failureEnd = useMemo(() => {
+    if (!failure || !failure.end_time) return "";
+    try {
+      const endDate = new Date(failure.end_time);
+      return endDate.toLocaleString();
+    } catch {
+      return "";
+    }
+  }, [failure]);
+
   return (
     <StyledWrapper>
       <StyledContentWrapper>
-        <StyledHeader>ТОП ИГРОКОВ ТЕКУЩЕГО СБОЯ</StyledHeader>
+        <StyledHeader>
+          {failure?.name
+            ? `ТОП ИГРОКОВ: ${failureName}`
+            : "ТОП ИГРОКОВ ТЕКУЩЕГО СБОЯ"}
+        </StyledHeader>
+        {failureEnd ? (
+          <Placeholder>Завершение: {failureEnd}</Placeholder>
+        ) : null}
         <StyledList>{listContent}</StyledList>
         <UserResult entry={currentUser} />
       </StyledContentWrapper>
