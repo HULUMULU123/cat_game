@@ -39,7 +39,7 @@ interface HomeModalProps {
   isOpen: boolean;
   handleClose: () => void;
   handleRuleClose: () => void;
-  ruleCategory: RuleCategory;
+  ruleCategory: RuleCategory | null;
   openRuleCategory: (category: RuleCategory) => void;
 }
 

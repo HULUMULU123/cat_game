@@ -29,7 +29,7 @@ const Placeholder = styled.div`
 interface OpenRuleModalProps {
   handleClose: () => void;
   /** объект категории: { id, text, rule } */
-  ruleCategory: RuleCategory;
+  ruleCategory: RuleCategory | null;
 }
 
 const safeUpper = (v: unknown) =>
@@ -39,27 +39,33 @@ const safeString = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
   const tokens = useGlobalStore((s) => s.tokens);
 
-  const initialText =
-    typeof (ruleCategory as any)?.rule === "string"
-      ? ((ruleCategory as any).rule as string)
-      : null;
-
-  const [ruleText, setRuleText] = useState<string | null>(initialText);
+  const [ruleText, setRuleText] = useState<string | null>(
+    ruleCategory && typeof ruleCategory.rule === "string"
+      ? ruleCategory.rule
+      : null
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
 
   const categoryTitle = useMemo(() => {
-    const t =
-      typeof (ruleCategory as any)?.text === "string"
-        ? (ruleCategory as any).text
-        : typeof ruleCategory === "string"
-        ? (ruleCategory as string)
-        : "";
-    return t;
+    if (ruleCategory && typeof ruleCategory.text === "string") {
+      return ruleCategory.text;
+    }
+    return "";
+  }, [ruleCategory]);
+
+  useEffect(() => {
+    if (ruleCategory && typeof ruleCategory.rule === "string") {
+      setRuleText(ruleCategory.rule);
+    } else {
+      setRuleText(null);
+    }
   }, [ruleCategory]);
 
   useEffect(() => {
     let mounted = true;
+
+    if (!ruleCategory) return;
 
     // если текст уже есть — не дёргаем бэк, чтобы не было мерцания
     if (ruleText || !tokens) return;
@@ -68,7 +74,7 @@ const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
       setLoading(true);
       setErr(null);
       try {
-        const name = safeString((ruleCategory as any)?.text);
+        const name = safeString(ruleCategory?.text);
 
         // 1) если бэк поддерживает фильтр по категории
         let list: RuleCategoryResponse[];
@@ -87,8 +93,8 @@ const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
         let found: RuleCategoryResponse | undefined;
 
         // пробуем матчить по id
-        if (typeof (ruleCategory as any)?.id === "number") {
-          const id = (ruleCategory as any).id as number;
+        if (typeof ruleCategory?.id === "number") {
+          const id = ruleCategory.id;
           found = list.find((r) => r.id === id);
         }
 
@@ -100,13 +106,13 @@ const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
 
         if (mounted && found?.rule_text) {
           setRuleText(found.rule_text);
-        } else if (mounted && !initialText) {
+        } else if (mounted && !ruleCategory?.rule) {
           // если так и не нашли и не было стартового текста
           setErr("Правило пока недоступно");
         }
       } catch (e) {
         // Ошибка запроса: показываем ошибку только если нет стартового текста
-        if (mounted && !initialText) {
+        if (mounted && !ruleCategory?.rule) {
           setErr("Не удалось загрузить правило");
         }
       } finally {
@@ -118,14 +124,16 @@ const OpenRuleModal = ({ handleClose, ruleCategory }: OpenRuleModalProps) => {
     return () => {
       mounted = false;
     };
-  }, [tokens, ruleCategory, ruleText, initialText]);
+  }, [tokens, ruleCategory, ruleText]);
 
   return (
     <StyledWrapper>
       <RulesHeader handleClose={handleClose} />
       <ModalName textName={safeUpper(categoryTitle)} />
 
-      {ruleText ? (
+      {!ruleCategory ? (
+        <Placeholder>Категория правил не выбрана</Placeholder>
+      ) : ruleText ? (
         <RulesContent plainText={ruleText} />
       ) : loading ? (
         <Placeholder>Загрузка правил…</Placeholder>

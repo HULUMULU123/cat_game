@@ -30,6 +30,7 @@ const StyledListItemContent = styled.div`
   margin: auto;
   align-items: center;
   width: 90%;
+  gap: 12px;
 `;
 
 const StyledListImg = styled.img`
@@ -37,12 +38,25 @@ const StyledListImg = styled.img`
   margin-right: 15px;
 `;
 
+const StyledTextWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+`;
+
 const StyledListName = styled.span`
   font-family: "Conthrax", sans-serif;
   font-size: 11px;
   color: #e1fffb;
   font-weight: 700;
-  width: 60%;
+`;
+
+const StyledReward = styled.span`
+  font-family: "Conthrax", sans-serif;
+  font-size: 10px;
+  color: #85fff0;
+  text-transform: uppercase;
 `;
 
 const StyledListButton = styled.button<{ $done: boolean }>`
@@ -86,6 +100,7 @@ interface TaskItemProps {
   img: string;
   url?: string;
   done: boolean;
+  reward: number;
   onOpenAndComplete: (taskId: number, done: boolean, url?: string) => void;
   disabled?: boolean;
 }
@@ -96,6 +111,7 @@ const TaskItem = ({
   img,
   url,
   done,
+  reward,
   onOpenAndComplete,
   disabled = false,
 }: TaskItemProps) => {
@@ -111,7 +127,12 @@ const TaskItem = ({
       <StyledWrapper $done={done}>
         <StyledListItemContent>
           <StyledListImg src={img} alt="task icon" />
-          <StyledListName>{name}</StyledListName>
+          <StyledTextWrapper>
+            <StyledListName>{name}</StyledListName>
+            <StyledReward>
+              +{new Intl.NumberFormat("ru-RU").format(reward)} монет
+            </StyledReward>
+          </StyledTextWrapper>
           <StyledListButton
             type="button"
             onClick={handleClick}

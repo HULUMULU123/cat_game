@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import prizePhoto from "../../../assets/prize-photo.png";
-import type { GiftResponse } from "../../../shared/api/types";
 
 const StyledWrapper = styled.div`
   width: 95%;
@@ -75,12 +74,6 @@ const StyledPrizeName = styled.span`
   text-transform: uppercase;
 `;
 
-const StyledReward = styled.span`
-  font-family: "Conthrax", sans-serif;
-  font-size: 10px;
-  color: #85fff0;
-`;
-
 const StyledLine = styled.span`
   display: flex;
   width: 100%;
@@ -90,28 +83,27 @@ const StyledLine = styled.span`
 `;
 
 interface PrizeCardProps {
-  gift: GiftResponse | null;
+  mainPrizeTitle: string | null;
+  mainPrizeImage: string | null;
   timerLabel: string;
   timerValue: string;
   completionNote: string | null;
 }
 
 export default function PrizeCard({
-  gift,
+  mainPrizeTitle,
+  mainPrizeImage,
   timerLabel,
   timerValue,
   completionNote,
 }: PrizeCardProps) {
-  const imageSrc = gift?.image_url || prizePhoto;
-  const rewardText =
-    typeof gift?.coins === "number"
-      ? `+${new Intl.NumberFormat("ru-RU").format(gift.coins)} монет`
-      : null;
+  const imageSrc = mainPrizeImage?.trim() ? mainPrizeImage : prizePhoto;
+  const prizeName = mainPrizeTitle?.trim() || "Скоро объявим приз";
 
   return (
     <StyledWrapper>
       <StyledPrizeWrapper>
-        <StyledPrizeImg src={imageSrc} alt={gift?.title ?? "Приз"} />
+        <StyledPrizeImg src={imageSrc} alt={prizeName} />
         <StyledTimerInfo>
           <StyledTextSpan>{timerLabel}</StyledTextSpan>
           {timerValue ? <StyledTimerSpan>{timerValue}</StyledTimerSpan> : null}
@@ -123,8 +115,7 @@ export default function PrizeCard({
           ) : null}
         </StyledTimerInfo>
       </StyledPrizeWrapper>
-      <StyledPrizeName>{gift?.title ?? "Скоро объявим приз"}</StyledPrizeName>
-      {rewardText ? <StyledReward>{rewardText}</StyledReward> : null}
+      <StyledPrizeName>{prizeName}</StyledPrizeName>
       <StyledLine />
     </StyledWrapper>
   );

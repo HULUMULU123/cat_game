@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import (
+    AdvertisementButton,
     UserProfile,
     Task,
     TaskCompletion,
@@ -29,6 +30,7 @@ from .models import (
     QuizAttempt,
     AdsgramAssignment,
     AdsgramAssignmentStatus,
+    FrontendConfig,
 )
 from .serializers import (
     TaskCompletionSerializer,
@@ -38,6 +40,8 @@ from .serializers import (
     RuleCategorySerializer,
     DailyRewardSerializer,
     DailyRewardClaimSerializer,
+    AdvertisementButtonSerializer,
+    FrontendConfigSerializer,
     FailureSerializer,
     FailureStartSerializer,
     FailureCompleteSerializer,
@@ -83,7 +87,11 @@ class TaskCompletionListView(APIView):
             .select_related("task")
             .order_by("-is_completed", "task__name")
         )
-        serializer = TaskCompletionSerializer(assignments, many=True)
+        serializer = TaskCompletionSerializer(
+            assignments,
+            many=True,
+            context={"request": request},
+        )
         return Response(serializer.data)
 
 
@@ -338,7 +346,12 @@ class RuleCategoryListView(APIView):
 
     def get(self, request: Request) -> Response:
         rules = RuleCategory.objects.order_by("category")
-        return Response(RuleCategorySerializer(rules, many=True).data)
+        serializer = RuleCategorySerializer(
+            rules,
+            many=True,
+            context={"request": request},
+        )
+        return Response(serializer.data)
 
 
 # ---------- Daily rewards ----------
@@ -352,9 +365,30 @@ def _failure_is_active(failure: Failure, now: timezone.datetime | None = None) -
     return True
 
 
-def _weekday_1_7(d: date) -> int:
-    # Python: Monday=0..Sunday=6 → 1..7
-    return d.weekday() + 1
+def _ensure_daily_reward_defaults() -> None:
+    existing = set(DailyReward.objects.values_list("day_number", flat=True))
+    missing = [idx for idx in range(1, 9) if idx not in existing]
+    if missing:
+        DailyReward.objects.bulk_create(
+            [DailyReward(day_number=idx, reward_amount=0) for idx in missing],
+            ignore_conflicts=True,
+        )
+
+
+def _next_reward_day(profile: UserProfile, today: date) -> int:
+    last_claim = profile.daily_reward_last_claimed_at
+    streak = profile.daily_reward_streak or 0
+
+    if last_claim == today:
+        base = streak or 0
+        return 1 if base >= 8 else min(base + 1, 8)
+
+    if last_claim and last_claim == today - timedelta(days=1):
+        if streak <= 0:
+            return 1
+        return min(streak + 1, 8)
+
+    return 1
 
 
 class DailyRewardConfigView(APIView):
@@ -362,13 +396,26 @@ class DailyRewardConfigView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request: Request) -> Response:
+        _ensure_daily_reward_defaults()
         rewards = DailyReward.objects.order_by("day_number")
-        if rewards.count() == 0:
-            # bootstrap default config
-            objs = [DailyReward(day_number=i, reward_amount=0) for i in range(1, 8)]
-            DailyReward.objects.bulk_create(objs, ignore_conflicts=True)
-            rewards = DailyReward.objects.order_by("day_number")
-        return Response(DailyRewardSerializer(rewards, many=True).data)
+        profile = request.user.profile
+        today = timezone.localdate()
+        last_claim_entry = (
+            profile.reward_claims.order_by("-claimed_for_date", "-claimed_at").first()
+        )
+        last_claim_date = (
+            last_claim_entry.claimed_for_date if last_claim_entry else None
+        )
+
+        data = {
+            "rewards": DailyRewardSerializer(rewards, many=True).data,
+            "streak": int(profile.daily_reward_streak or 0),
+            "last_claim_date": last_claim_date,
+            "today_claimed": last_claim_date == today,
+            "next_day": _next_reward_day(profile, today),
+            "current_day": last_claim_entry.sequence_day if last_claim_entry else 0,
+        }
+        return Response(data)
 
 
 class DailyRewardClaimTodayView(APIView):
@@ -378,35 +425,92 @@ class DailyRewardClaimTodayView(APIView):
     @transaction.atomic
     def post(self, request: Request) -> Response:
         profile = request.user.profile
-        now = timezone.localtime()
-        day_num = _weekday_1_7(now.date())
+        today = timezone.localdate()
+
+        if profile.daily_reward_last_claimed_at == today:
+            return Response(
+                {"detail": "Награда за сегодня уже получена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _ensure_daily_reward_defaults()
+
+        streak = profile.daily_reward_streak or 0
+        last_claim = profile.daily_reward_last_claimed_at
+
+        if last_claim and last_claim == today - timedelta(days=1):
+            day_to_claim = 1 if streak <= 0 else min(streak + 1, 8)
+        else:
+            day_to_claim = 1
 
         try:
-            reward_cfg = DailyReward.objects.get(day_number=day_num)
+            reward_cfg = DailyReward.objects.get(day_number=day_to_claim)
         except DailyReward.DoesNotExist:
-            return Response({"detail": "Конфиг наград не найден."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Конфиг наград не найден."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        # запрещаем повторное получение в пределах календарной даты
-        already_today = DailyRewardClaim.objects.filter(
-            profile=profile, reward=reward_cfg, claimed_at__date=now.date()
-        ).exists()
-        if already_today:
-            return Response({"detail": "Награда за сегодня уже получена."}, status=status.HTTP_400_BAD_REQUEST)
+        claim = DailyRewardClaim.objects.create(
+            profile=profile,
+            reward=reward_cfg,
+            claimed_for_date=today,
+            sequence_day=day_to_claim,
+        )
 
-        claim = DailyRewardClaim.objects.create(profile=profile, reward=reward_cfg, claimed_at=now)
-
-        # начисляем монеты
         profile.balance = F("balance") + reward_cfg.reward_amount
-        profile.save(update_fields=["balance", "updated_at"])
-        profile.refresh_from_db(fields=["balance"])
+        profile.daily_reward_last_claimed_at = today
+        profile.daily_reward_streak = 0 if day_to_claim == 8 else day_to_claim
+        profile.save(
+            update_fields=[
+                "balance",
+                "updated_at",
+                "daily_reward_last_claimed_at",
+                "daily_reward_streak",
+            ]
+        )
+        profile.refresh_from_db(
+            fields=["balance", "daily_reward_last_claimed_at", "daily_reward_streak"]
+        )
+
+        serializer = DailyRewardClaimSerializer(claim)
+        next_day = _next_reward_day(profile, today)
 
         return Response(
             {
                 "detail": "Ежедневная награда получена",
-                "claim": DailyRewardClaimSerializer(claim).data,
+                "claim": serializer.data,
                 "balance": profile.balance,
+                "streak": profile.daily_reward_streak,
+                "next_day": next_day,
+                "current_day": claim.sequence_day,
             }
         )
+
+
+# ---------- Advertisements & config ----------
+
+
+class AdvertisementButtonListView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request: Request) -> Response:
+        buttons = AdvertisementButton.objects.order_by("order", "id")
+        serializer = AdvertisementButtonSerializer(
+            buttons,
+            many=True,
+            context={"request": request},
+        )
+        return Response(serializer.data)
+
+
+class FrontendConfigView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request: Request) -> Response:
+        config = FrontendConfig.get_active()
+        serializer = FrontendConfigSerializer(config, context={"request": request})
+        return Response(serializer.data)
 
 
 # ---------- Failures ----------
