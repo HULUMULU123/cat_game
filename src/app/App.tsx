@@ -17,7 +17,7 @@ const AppContent = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const loadProfile = useGlobalStore((state) => state.loadProfile);
 
-  useTelegramInit();
+  // useTelegramInit();
 
   useEffect(() => {
     if (tokens) {
