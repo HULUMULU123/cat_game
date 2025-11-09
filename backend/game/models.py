@@ -113,7 +113,12 @@ class Task(TimestampedModel):
     name = models.CharField(max_length=255, verbose_name="Название задания")
     description = models.TextField(blank=True, verbose_name="Описание")
     reward = models.PositiveIntegerField(default=0, verbose_name="Награда (монеты)")
-    icon = models.URLField(blank=True, verbose_name="Изображение (URL)")
+    icon = models.ImageField(
+    upload_to="icons/",
+    blank=True,
+    null=True,
+    verbose_name="Изображение"
+)
     link = models.URLField(blank=True, verbose_name="Ссылка (URL)")  # ← добавили
 
     class Meta:
@@ -265,7 +270,12 @@ class SimulationRewardClaim(TimestampedModel):
 class AdvertisementButton(TimestampedModel):
     title = models.CharField(max_length=100, verbose_name="Подпись кнопки")
     link = models.URLField(verbose_name="Ссылка")
-    image = models.URLField(verbose_name="Изображение (URL)")
+    image = models.ImageField(
+    upload_to="advert/",
+    blank=True,
+    null=True,
+    verbose_name="Изображение"
+)
     order = models.PositiveSmallIntegerField(default=0, verbose_name="Порядок отображения")
 
     class Meta:
@@ -407,10 +417,13 @@ class Failure(TimestampedModel):
         blank=True,
         verbose_name="Название главного приза",
     )
-    main_prize_image = models.URLField(
-        blank=True,
-        verbose_name="Изображение главного приза (URL)",
-    )
+    main_prize_image = models.ImageField(
+    upload_to="main_prizes/",
+    blank=True,
+    null=True,
+    verbose_name="Изображение главного приза",
+)
+
 
     class Meta:
         db_table = "сбои"
