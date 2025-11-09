@@ -349,6 +349,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         const data = await request<FrontendConfigResponse>("/frontend/config/");
         if (cancelled) return;
         const incoming = data.screen_texture?.trim();
+        console.log("incoming", incoming);
         if (incoming) setScreenTexture(incoming);
       } catch (error) {
         console.error("[Model] screen texture load error", error);

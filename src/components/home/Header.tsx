@@ -90,7 +90,7 @@ const Header = ({ onOpenModal }: HeaderProps) => {
       </StyledInfo>
       <StyledUser type="button" onClick={() => onOpenModal("user")}>
         <StyledUserTextWrapper>
-          <StyledUserText>Good Evening,</StyledUserText>
+          <StyledUserText>Добро пожаловать,</StyledUserText>
           <StyledUserText>{userData?.first_name || ""}!</StyledUserText>
         </StyledUserTextWrapper>
         <StyledUserImgWrapper>
