@@ -198,7 +198,7 @@ const Simulation = () => {
 
   const infoExtra = useMemo(() => {
     if (!config) return "";
-    return `0 / ${config.attempt_cost}`;
+    return `0 / ${config.reward_threshold_3 ?? config.attempt_cost}`;
   }, [config]);
 
   const startGameSession = useCallback((duration: number) => {
@@ -436,10 +436,16 @@ const Simulation = () => {
         />
 
         <SimulationRoadMap
-          attemptCost={config?.attempt_cost ?? 0}
-          reward1={config?.reward_level_1 ?? 0}
-          reward2={config?.reward_level_2 ?? 0}
-          reward3={config?.reward_level_3 ?? 0}
+          thresholds={[
+            config?.reward_threshold_1 ?? 0,
+            config?.reward_threshold_2 ?? 0,
+            config?.reward_threshold_3 ?? 0,
+          ]}
+          rewards={[
+            config?.reward_amount_1 ?? config?.reward_level_1 ?? 0,
+            config?.reward_amount_2 ?? config?.reward_level_2 ?? 0,
+            config?.reward_amount_3 ?? config?.reward_level_3 ?? 0,
+          ]}
         />
       </StyledWrapper>
 

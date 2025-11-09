@@ -22,7 +22,7 @@ const StyledActionBtn = styled.button<{ $disabled?: boolean }>`
   border: none;
   cursor: ${({ $disabled }) => ($disabled ? "default" : "pointer")};
   opacity: ${({ $disabled }) => ($disabled ? 0.6 : 1)};
-  pointer-events: ${({ $disabled }) => ($disabled ? "none" : "auto")};
+  pointer-events: auto;
 
   @media (max-width: 370px) {
     width: 80%;
@@ -85,6 +85,7 @@ interface MainActionProps {
 const MainAction = ({ onOpenModal }: MainActionProps) => {
   const navigate = useNavigate();
   const tokens = useGlobalStore((s) => s.tokens);
+  const completedFailures = useGlobalStore((s) => s.completedFailures);
 
   const [giftInfo, setGiftInfo] = useState<GiftResponse | null>(null);
   const [giftError, setGiftError] = useState<string | null>(null);
@@ -175,6 +176,12 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
     return now < startMs;
   }, [failure, startMs, now]);
 
+  const hasCompletedFailure = useMemo(() => {
+    if (!failure) return false;
+    if (failure.is_completed) return true;
+    return Boolean(completedFailures[failure.id]);
+  }, [completedFailures, failure]);
+
   const headerText = useMemo(() => {
     if (isActive) return "СБОЙ ЗАКОНЧИТСЯ ЧЕРЕЗ";
     if (isUpcoming) return "СБОЙ СКОРО";
@@ -215,7 +222,7 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
     return ""; // дефолт
   }, [isUpcoming, isActive, startMs, endMs, now]);
 
-  const buttonDisabled = !isActive;
+  const buttonDisabled = !isActive || hasCompletedFailure;
 
   const handleActionClick = () => {
     if (buttonDisabled) return;

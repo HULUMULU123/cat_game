@@ -6,6 +6,11 @@ import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 import useGlobalStore from "../shared/store/useGlobalStore";
+import { request, ApiError } from "../shared/api/httpClient";
+import {
+  SimulationConfigResponse,
+  SimulationRewardClaimResponse,
+} from "../shared/api/types";
 
 const PageWrapper = styled.div`
   position: relative;
@@ -146,6 +151,24 @@ const ResultButton = styled.button`
   }
 `;
 
+const RewardBanner = styled.div<{ $error?: boolean }>`
+  position: absolute;
+  top: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: ${({ $error }) =>
+    $error ? "rgba(196, 70, 70, 0.9)" : "rgba(30, 180, 150, 0.85)"};
+  color: #e9fffb;
+  font-family: "Conthrax", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  z-index: 3;
+`;
+
 type PracticeMessagePayload = {
   source: "simulation-practice";
   type: "finished" | "closed";
@@ -169,16 +192,26 @@ const SimulationPractice = () => {
   const requestedDuration = Number.parseInt(searchParams.get("duration") ?? "", 10);
   const duration = useMemo(() => clampDuration(requestedDuration), [requestedDuration]);
 
+  const tokens = useGlobalStore((state) => state.tokens);
+  const updateBalance = useGlobalStore((state) => state.updateBalance);
+
+  const [config, setConfig] = useState<SimulationConfigResponse | null>(null);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [score, setScore] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [isFinished, setIsFinished] = useState(false);
+  const [banner, setBanner] = useState<{ message: string; error?: boolean } | null>(
+    null
+  );
 
   const endRef = useRef<number | null>(null);
   const runningRef = useRef(isRunning);
   const finishedRef = useRef(isFinished);
   const scoreRef = useRef(score);
   const notifiedRef = useRef(false);
+  const claimedThresholdsRef = useRef<Set<number>>(new Set());
+  const pendingClaimsRef = useRef<Set<number>>(new Set());
+  const rewardTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     runningRef.current = isRunning;
@@ -203,8 +236,127 @@ const SimulationPractice = () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.margin = prevMargin;
       setBottomNavVisible(true);
+      if (rewardTimeoutRef.current) {
+        window.clearTimeout(rewardTimeoutRef.current);
+        rewardTimeoutRef.current = null;
+      }
     };
   }, [setBottomNavVisible]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!tokens) {
+      setConfig(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const data = await request<SimulationConfigResponse>("/simulation/", {
+          headers: { Authorization: `Bearer ${tokens.access}` },
+        });
+        if (!cancelled) {
+          setConfig(data);
+        }
+      } catch (error) {
+        console.error("Failed to load simulation config", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tokens]);
+
+  const thresholdValues = useMemo(() => {
+    const raw = config
+      ? [
+          config.reward_threshold_1 ?? 0,
+          config.reward_threshold_2 ?? 0,
+          config.reward_threshold_3 ?? 0,
+        ]
+      : [100, 200, 300];
+    const filtered = raw.filter((value) => Number.isFinite(value) && value > 0);
+    const unique = Array.from(new Set(filtered));
+    unique.sort((a, b) => a - b);
+    return unique;
+  }, [config]);
+
+  useEffect(() => {
+    claimedThresholdsRef.current.clear();
+    pendingClaimsRef.current.clear();
+  }, [thresholdValues]);
+
+  const parseErrorDetail = useCallback((error: unknown): string => {
+    if (error instanceof ApiError) {
+      try {
+        const parsed = JSON.parse(error.message) as { detail?: string };
+        if (parsed.detail) return parsed.detail;
+      } catch {
+        if (error.message) return error.message;
+      }
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "Не удалось начислить награду.";
+  }, []);
+
+  const showBanner = useCallback((message: string, error = false) => {
+    if (rewardTimeoutRef.current) {
+      window.clearTimeout(rewardTimeoutRef.current);
+    }
+    setBanner({ message, error });
+    rewardTimeoutRef.current = window.setTimeout(() => {
+      setBanner(null);
+      rewardTimeoutRef.current = null;
+    }, 4000);
+  }, []);
+
+  const checkThresholds = useCallback(
+    (nextScore: number) => {
+      if (!tokens) return;
+
+      thresholdValues.forEach((threshold) => {
+        if (nextScore < threshold) return;
+        if (claimedThresholdsRef.current.has(threshold)) return;
+        if (pendingClaimsRef.current.has(threshold)) return;
+
+        pendingClaimsRef.current.add(threshold);
+
+        (async () => {
+          try {
+            const response = await request<SimulationRewardClaimResponse>(
+              "/simulation/reward-claim/",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${tokens.access}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ threshold }),
+              }
+            );
+            updateBalance(response.balance);
+            claimedThresholdsRef.current.add(threshold);
+            showBanner(
+              `+${response.reward} CRASH — ${threshold} капель`,
+              false
+            );
+          } catch (error) {
+            const detail = parseErrorDetail(error);
+            if (detail.toLowerCase().includes("уже")) {
+              claimedThresholdsRef.current.add(threshold);
+            }
+            showBanner(detail, true);
+          } finally {
+            pendingClaimsRef.current.delete(threshold);
+          }
+        })();
+      });
+    },
+    [parseErrorDetail, showBanner, thresholdValues, tokens, updateBalance]
+  );
 
   useEffect(() => {
     endRef.current = Date.now() + duration * 1000;
@@ -274,8 +426,12 @@ const SimulationPractice = () => {
 
   const handlePop = useCallback(() => {
     if (!runningRef.current) return;
-    setScore((prev) => prev + 1);
-  }, []);
+    setScore((prev) => {
+      const next = prev + 1;
+      checkThresholds(next);
+      return next;
+    });
+  }, [checkThresholds]);
 
   const handleClose = useCallback(() => {
     const interrupted = runningRef.current && !finishedRef.current;
@@ -294,6 +450,9 @@ const SimulationPractice = () => {
 
   return (
     <PageWrapper>
+      {banner ? (
+        <RewardBanner $error={banner.error}>{banner.message}</RewardBanner>
+      ) : null}
       <HeaderLayer>
         <HeaderInner>
           <FailrueHeader timeLeft={timeLeft} duration={duration} />

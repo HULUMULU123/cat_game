@@ -20,12 +20,14 @@ from .models import (
     DailyReward,
     DailyRewardClaim,
     Failure,
+    FailureBonusPurchase,
     PromoCode,
     PromoCodeRedemption,
     QuizQuestion,
     RuleCategory,
     ScoreEntry,
     SimulationConfig,
+    SimulationRewardClaim,
     Task,
     TaskCompletion,
     UserProfile,
@@ -40,12 +42,14 @@ if TYPE_CHECKING:
     DailyRewardAdminBase = _ModelAdmin[DailyReward]  # type: ignore[index]
     DailyRewardClaimAdminBase = _ModelAdmin[DailyRewardClaim]  # type: ignore[index]
     FailureAdminBase = _ModelAdmin[Failure]  # type: ignore[index]
+    FailureBonusPurchaseAdminBase = _ModelAdmin[FailureBonusPurchase]  # type: ignore[index]
     PromoCodeAdminBase = _ModelAdmin[PromoCode]  # type: ignore[index]
     PromoCodeRedemptionAdminBase = _ModelAdmin[PromoCodeRedemption]  # type: ignore[index]
     QuizQuestionAdminBase = _ModelAdmin[QuizQuestion]  # type: ignore[index]
     RuleCategoryAdminBase = _ModelAdmin[RuleCategory]  # type: ignore[index]
     ScoreEntryAdminBase = _ModelAdmin[ScoreEntry]  # type: ignore[index]
     SimulationConfigAdminBase = _ModelAdmin[SimulationConfig]  # type: ignore[index]
+    SimulationRewardClaimAdminBase = _ModelAdmin[SimulationRewardClaim]  # type: ignore[index]
     TaskAdminBase = _ModelAdmin[Task]  # type: ignore[index]
     TaskCompletionAdminBase = _ModelAdmin[TaskCompletion]  # type: ignore[index]
     UserProfileAdminBase = _ModelAdmin[UserProfile]  # type: ignore[index]
@@ -54,12 +58,14 @@ else:
     DailyRewardAdminBase = admin.ModelAdmin
     DailyRewardClaimAdminBase = admin.ModelAdmin
     FailureAdminBase = admin.ModelAdmin
+    FailureBonusPurchaseAdminBase = admin.ModelAdmin
     PromoCodeAdminBase = admin.ModelAdmin
     PromoCodeRedemptionAdminBase = admin.ModelAdmin
     QuizQuestionAdminBase = admin.ModelAdmin
     RuleCategoryAdminBase = admin.ModelAdmin
     ScoreEntryAdminBase = admin.ModelAdmin
     SimulationConfigAdminBase = admin.ModelAdmin
+    SimulationRewardClaimAdminBase = admin.ModelAdmin
     TaskAdminBase = admin.ModelAdmin
     TaskCompletionAdminBase = admin.ModelAdmin
     UserProfileAdminBase = admin.ModelAdmin
@@ -185,10 +191,52 @@ class SimulationConfigAdmin(SimulationConfigAdminBase):
         "reward_level_1",
         "reward_level_2",
         "reward_level_3",
+        "reward_threshold_1",
+        "reward_amount_1",
+        "reward_threshold_2",
+        "reward_amount_2",
+        "reward_threshold_3",
+        "reward_amount_3",
         "duration_seconds",
         "updated_at",
     )
     readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {
+            "fields": (
+                "attempt_cost",
+                "duration_seconds",
+                "description",
+            )
+        }),
+        (
+            "Пороговые награды",
+            {
+                "fields": (
+                    "reward_threshold_1",
+                    "reward_amount_1",
+                    "reward_threshold_2",
+                    "reward_amount_2",
+                    "reward_threshold_3",
+                    "reward_amount_3",
+                )
+            },
+        ),
+        (
+            "Стандартные награды",
+            {
+                "fields": (
+                    "reward_level_1",
+                    "reward_level_2",
+                    "reward_level_3",
+                )
+            },
+        ),
+        (
+            "Тех. поля",
+            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
+        ),
+    )
 
 
 @admin.register(RuleCategory)
@@ -212,10 +260,61 @@ class DailyRewardClaimAdmin(DailyRewardClaimAdminBase):
     readonly_fields = ("claimed_at", "created_at", "updated_at")
 
 
+@admin.register(SimulationRewardClaim)
+class SimulationRewardClaimAdmin(SimulationRewardClaimAdminBase):
+    list_display = ("profile", "threshold", "claimed_for_date", "created_at")
+    list_filter = ("threshold", "claimed_for_date")
+    search_fields = ("profile__user__username",)
+    readonly_fields = ("created_at", "updated_at")
+
+
 @admin.register(Failure)
 class FailureAdmin(FailureAdminBase):
-    list_display = ("name", "start_time", "end_time", "created_at")
+    list_display = (
+        "name",
+        "start_time",
+        "end_time",
+        "duration_seconds",
+        "bombs_min_count",
+        "bombs_max_count",
+        "created_at",
+    )
     search_fields = ("name",)
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("name", "start_time", "end_time")}),
+        (
+            "Параметры игры",
+            {
+                "fields": (
+                    "duration_seconds",
+                    "bombs_min_count",
+                    "bombs_max_count",
+                    "max_bonuses_per_run",
+                )
+            },
+        ),
+        (
+            "Цены на бонусы",
+            {
+                "fields": (
+                    "bonus_price_x2",
+                    "bonus_price_x5",
+                    "bonus_price_x10",
+                    "bonus_price_freeze",
+                    "bonus_price_no_bombs",
+                )
+            },
+        ),
+        ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
+@admin.register(FailureBonusPurchase)
+class FailureBonusPurchaseAdmin(FailureBonusPurchaseAdminBase):
+    list_display = ("profile", "failure", "bonus_type", "created_at")
+    list_filter = ("bonus_type", "failure")
+    search_fields = ("profile__user__username", "failure__name")
     readonly_fields = ("created_at", "updated_at")
 
 

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import styled, { keyframes } from "styled-components";
 import drop1 from "../../../assets/drops/drop1.svg";
 import drop2 from "../../../assets/drops/drop2.svg";
 import drop3 from "../../../assets/drops/drop3.svg";
 import drop4 from "../../../assets/drops/drop3.svg";
 import drop5 from "../../../assets/drops/drop4.svg";
+import bombDrop from "../../../assets/drops/bomb.svg";
 
 const StyledWrapper = styled.div`
   position: absolute;
@@ -59,13 +60,18 @@ const DropletImg = styled.img<{ size: number }>`
   -webkit-user-drag: none;
 `;
 
-const PopEffect = styled.div<{ x: number; y: number; size: number }>`
+const PopEffect = styled.div<{
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+}>`
   position: absolute;
   left: ${({ x, size }) => x - size / 2}px;
   top: ${({ y, size }) => y - size / 2}px;
   width: ${({ size }) => size}px;
   height: ${({ size }) => size}px;
-  background: rgba(0, 223, 152, 0.5);
+  background: ${({ color }) => color};
   border-radius: 50%;
   pointer-events: none;
   animation: pop 0.6s forwards;
@@ -78,6 +84,8 @@ const PopEffect = styled.div<{ x: number; y: number; size: number }>`
 
 const dropletSvgs = [drop1, drop2, drop3, drop4, drop5];
 
+type DropKind = "water" | "bomb";
+
 interface DropModel {
   id: number;
   x: number;
@@ -86,68 +94,118 @@ interface DropModel {
   duration: number;
   start: number;
   distance: number;
+  kind: DropKind;
 }
 
 interface DropletsProps {
   spawnInterval?: number;
   hitboxPadding?: number;
   onPop?: () => void; // 👈 функция из родителя
+  onBomb?: () => void;
+  speedModifier?: number;
+  bombSchedule?: number[];
+  disableBombs?: boolean;
+  bombEffectColor?: string;
 }
 
 const Droplets = ({
   spawnInterval = 500,
   hitboxPadding = 20,
   onPop,
+  onBomb,
+  speedModifier = 1,
+  bombSchedule,
+  disableBombs = false,
+  bombEffectColor = "rgba(220, 80, 80, 0.6)",
 }: DropletsProps) => {
   const [drops, setDrops] = useState<DropModel[]>([]);
-  const [pops, setPops] = useState<any[]>([]);
+  const [pops, setPops] = useState<
+    { id: number; x: number; y: number; size: number; color: string }
+  >([]);
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const dropletRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const bombTimeoutsRef = useRef<number[]>([]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
+  const normalizedSpeed = useMemo(() => Math.max(0.5, speedModifier || 1), [
+    speedModifier,
+  ]);
+
+  const createDrop = useCallback(
+    (kind: DropKind) => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
       const x = Math.random() * (window.innerWidth - size);
-      const duration = Math.random() * 1800 + 1800;
       const start = -size;
       const distance = window.innerHeight + 50 - start;
-      const svg = dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
+      const baseDuration = Math.random() * 1800 + 1800;
+      const duration = Math.max(800, baseDuration * normalizedSpeed);
+      const svg =
+        kind === "bomb"
+          ? bombDrop
+          : dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
       setDrops((prev) => [
         ...prev,
-        { id, x, size, svg, duration, start, distance },
+        { id, x, size, svg, duration, start, distance, kind },
       ]);
 
-      // удаляем каплю либо по окончанию анимации, либо когда она ушла за экран
       const removeDrop = () => {
         setDrops((prev) => prev.filter((d) => d.id !== id));
         dropletRefs.current.delete(id);
       };
 
-      // таймер на duration
-      const animationTimeout = setTimeout(removeDrop, duration);
+      const animationTimeout = window.setTimeout(removeDrop, duration);
 
-      // fallback: если по какой-то причине капля ушла ниже окна раньше
       const checkVisibility = () => {
         const el = dropletRefs.current.get(id);
         if (!el) return;
         const rect = el.getBoundingClientRect();
         if (rect.top > window.innerHeight) {
-          clearTimeout(animationTimeout);
+          window.clearTimeout(animationTimeout);
           removeDrop();
         } else {
           requestAnimationFrame(checkVisibility);
         }
       };
       requestAnimationFrame(checkVisibility);
+    },
+    [normalizedSpeed]
+  );
 
-    }, Math.max(10, spawnInterval / 3));
+  useEffect(() => {
+    const interval = Math.max(10, (spawnInterval / 3) * normalizedSpeed);
+    const timer = window.setInterval(() => {
+      createDrop("water");
+    }, interval);
 
-    return () => clearInterval(timer);
-  }, [spawnInterval]);
+    return () => window.clearInterval(timer);
+  }, [createDrop, normalizedSpeed, spawnInterval]);
 
+  useEffect(() => {
+    bombTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    bombTimeoutsRef.current = [];
+
+    if (!bombSchedule || disableBombs) return;
+
+    bombSchedule.forEach((delay) => {
+      const safeDelay = Math.max(0, delay);
+      const timeoutId = window.setTimeout(() => {
+        createDrop("bomb");
+      }, safeDelay);
+      bombTimeoutsRef.current.push(timeoutId);
+    });
+
+    return () => {
+      bombTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      bombTimeoutsRef.current = [];
+    };
+  }, [bombSchedule, createDrop, disableBombs]);
+
+  useEffect(() => {
+    if (!disableBombs) return;
+    setDrops((prev) => prev.filter((drop) => drop.kind !== "bomb"));
+  }, [disableBombs]);
 
   const handlePop = (drop: DropModel) => {
     const el = dropletRefs.current.get(drop.id);
@@ -156,8 +214,11 @@ const Droplets = ({
     setDrops((prev) => prev.filter((d) => d.id !== drop.id));
     dropletRefs.current.delete(drop.id);
 
-    // 🔥 вызываем функцию родителя при сбитии
-    if (onPop) onPop();
+    if (drop.kind === "bomb") {
+      if (onBomb) onBomb();
+    } else if (onPop) {
+      onPop();
+    }
 
     if (el && wrapper) {
       const rect = el.getBoundingClientRect();
@@ -166,7 +227,8 @@ const Droplets = ({
       const y = rect.top - wrapRect.top + hitboxPadding + drop.size / 2;
 
       const popId = drop.id + 0.123;
-      setPops((prev) => [...prev, { id: popId, x, y, size: drop.size }]);
+      const color = drop.kind === "bomb" ? bombEffectColor : "rgba(0, 223, 152, 0.5)";
+      setPops((prev) => [...prev, { id: popId, x, y, size: drop.size, color }]);
       setTimeout(() => {
         setPops((prev) => prev.filter((p) => p.id !== popId));
       }, 600);
@@ -199,7 +261,13 @@ const Droplets = ({
         ))}
 
         {pops.map((pop) => (
-          <PopEffect key={pop.id} x={pop.x} y={pop.y} size={pop.size} />
+          <PopEffect
+            key={pop.id}
+            x={pop.x}
+            y={pop.y}
+            size={pop.size}
+            color={pop.color}
+          />
         ))}
       </Wrapper>
     </StyledWrapper>

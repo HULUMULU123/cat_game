@@ -51,6 +51,7 @@ interface GlobalState {
   referredByCode: string | null;
   referralsCount: number;
   profileStats: ProfileStatsState;
+  completedFailures: Record<number, boolean>;
   tokens: AuthTokens | null;
   hasHydratedProfile: boolean;
 
@@ -64,6 +65,8 @@ interface GlobalState {
 
   setTokens: (t: AuthTokens | null) => void;
   logout: () => void;
+
+  markFailureCompleted: (failureId: number) => void;
 
   incrementProfileStat: (stat: "failures" | "quizzes" | "tasks") => void;
 
@@ -254,6 +257,7 @@ const useGlobalStore = create<GlobalState>()(
           quizzesCompleted: 0,
           tasksCompleted: 0,
         },
+        completedFailures: {},
         tokens: null,
         hasHydratedProfile: false,
 
@@ -265,6 +269,14 @@ const useGlobalStore = create<GlobalState>()(
         setBottomNavVisible: (visible) => set({ isBottomNavVisible: visible }),
 
         updateBalance: (balance) => set({ balance }),
+
+        markFailureCompleted: (failureId) =>
+          set((state) => ({
+            completedFailures: {
+              ...state.completedFailures,
+              [failureId]: true,
+            },
+          })),
 
         incrementProfileStat: (stat) =>
           set((state) => {
@@ -440,8 +452,9 @@ const useGlobalStore = create<GlobalState>()(
               quizzesCompleted: 0,
               tasksCompleted: 0,
             },
+            completedFailures: {},
           }),
-      };
+    };
     },
     {
       name: "global-store",
@@ -455,6 +468,7 @@ const useGlobalStore = create<GlobalState>()(
         referralsCount: s.referralsCount,
         profileStats: s.profileStats,
         hasHydratedProfile: s.hasHydratedProfile,
+        completedFailures: s.completedFailures,
       }),
       version: 1,
     }

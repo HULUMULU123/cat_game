@@ -15,9 +15,12 @@ from .models import (
     DailyReward,
     DailyRewardClaim,
     Failure,
+    FailureBonusPurchase,
+    FailureBonusType,
     QuizQuestion,
     ScoreEntry,
     AdsgramAssignment,
+    SimulationRewardClaim,
 )
 
 User = get_user_model()
@@ -85,7 +88,17 @@ class SimulationConfigSerializer(serializers.ModelSerializer[SimulationConfig]):
             "reward_level_3",
             "duration_seconds",
             "description",
+            "reward_threshold_1",
+            "reward_amount_1",
+            "reward_threshold_2",
+            "reward_amount_2",
+            "reward_threshold_3",
+            "reward_amount_3",
         )
+
+
+class SimulationRewardClaimSerializer(serializers.Serializer):
+    threshold = serializers.IntegerField(min_value=1)
 
 
 # ---------- Rules ----------
@@ -117,10 +130,24 @@ class DailyRewardClaimSerializer(serializers.ModelSerializer[DailyRewardClaim]):
 
 class FailureSerializer(serializers.ModelSerializer[Failure]):
     is_active = serializers.SerializerMethodField()
+    is_completed = serializers.SerializerMethodField()
+    bonus_prices = serializers.SerializerMethodField()
 
     class Meta:
         model = Failure
-        fields = ("id", "name", "start_time", "end_time", "is_active")
+        fields = (
+            "id",
+            "name",
+            "start_time",
+            "end_time",
+            "is_active",
+            "is_completed",
+            "duration_seconds",
+            "bombs_min_count",
+            "bombs_max_count",
+            "max_bonuses_per_run",
+            "bonus_prices",
+        )
 
     def get_is_active(self, obj: Failure) -> bool:
         now = timezone.now()
@@ -129,6 +156,25 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
         if obj.end_time and obj.end_time <= now:
             return False
         return True
+
+    def get_is_completed(self, obj: Failure) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated:
+            return False
+        try:
+            profile = user.profile
+        except UserProfile.DoesNotExist:  # type: ignore[attr-defined]
+            return False
+        return ScoreEntry.objects.filter(profile=profile, failure=obj).exists()
+
+    def get_bonus_prices(self, obj: Failure) -> dict[str, int]:
+        return obj.bonus_prices()
+
+
+class FailureBonusPurchaseSerializer(serializers.Serializer):
+    failure_id = serializers.IntegerField()
+    bonus_type = serializers.ChoiceField(choices=FailureBonusType.choices)
 
 
 # ---------- Scores ----------
