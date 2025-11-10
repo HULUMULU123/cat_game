@@ -10,11 +10,13 @@ class TelegramAuthSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
+    photo_url = serializers.URLField(allow_blank=True, required=False)
 
     def create_or_update_user(self) -> tuple[User, UserProfile]:
         username: str = self.validated_data["username"].lower()
         first_name: str = self.validated_data["first_name"].strip()
         last_name: str = self.validated_data.get("last_name", "").strip()
+        photo_url: str = self.validated_data.get("photo_url", "").strip()
         user, _ = User.objects.get_or_create(username=username)
         user.first_name = first_name
         user.last_name = last_name
@@ -24,6 +26,10 @@ class TelegramAuthSerializer(serializers.Serializer):
         user.save()
 
         profile, _ = UserProfile.objects.get_or_create(user=user)
+        normalized_photo = photo_url.replace("\\/", "/")
+        if profile.photo_url != normalized_photo:
+            profile.photo_url = normalized_photo
+            profile.save(update_fields=["photo_url", "updated_at"])
         return user, profile
 
 
@@ -37,6 +43,7 @@ class UserProfileSerializer(serializers.ModelSerializer[UserProfile]):
     )
     referrals_count = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
+    photo_url = serializers.CharField(allow_blank=True, default="")
 
     class Meta:
         model = UserProfile
@@ -49,6 +56,7 @@ class UserProfileSerializer(serializers.ModelSerializer[UserProfile]):
             "referred_by_code",
             "referrals_count",
             "stats",
+            "photo_url",
         )
 
     def get_referrals_count(self, obj: UserProfile) -> int:

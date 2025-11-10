@@ -85,6 +85,7 @@ const formatHHMM = (iso?: string | null): string => {
 
 const UsersItem = ({ entry }: UsersItemProps) => {
   const displayName = entry.first_name || entry.username;
+  const avatarSrc = entry.photo_url && entry.photo_url.trim().length > 0 ? entry.photo_url : avatar;
   const timeStr =
     entry.display_time && entry.display_time.trim().length > 0
       ? entry.display_time
@@ -95,7 +96,7 @@ const UsersItem = ({ entry }: UsersItemProps) => {
       <StyledContentWrapper>
         <StyledNumberSpan>#{entry.position}</StyledNumberSpan>
         <StyledUserProfile>
-          <StyledUserImg src={avatar} alt={displayName} />
+          <StyledUserImg src={avatarSrc} alt={displayName} />
           <StyledUserSpan>{displayName}</StyledUserSpan>
         </StyledUserProfile>
         <StyledUserInfo>

@@ -37,6 +37,7 @@ export type LeaderboardEntryResponse = {
   score: number;
   achieved_at?: string | null; // ← новое поле
   display_time?: string; // фронтовая вспомогательная строка HH:MM
+  photo_url?: string | null;
 };
 
 export type LeaderboardResponse = {
@@ -148,6 +149,7 @@ export type FailureResponse = {
   end_time: string | null;
   is_active: boolean;
   is_completed: boolean;
+  is_repeatable: boolean;
   duration_seconds: number;
   attempt_cost: number;
   bombs_min_count: number;

@@ -748,7 +748,8 @@ class FailureBonusPurchaseView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
+        has_score = ScoreEntry.objects.filter(profile=profile, failure=failure).exists()
+        if has_score and not failure.is_repeatable:
             return Response(
                 {"detail": "Сбой уже завершён."}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -1062,6 +1063,7 @@ class LeaderboardView(APIView):
                     "score": int(entry.points or 0),
                     "duration_seconds": 0,  # legacy поле, больше не используем
                     "achieved_at": entry.earned_at.isoformat() if entry.earned_at else None,
+                    "photo_url": entry.profile.photo_url or "",
                 }
             )
 

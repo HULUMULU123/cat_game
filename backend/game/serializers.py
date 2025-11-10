@@ -243,6 +243,7 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
     is_completed = serializers.SerializerMethodField()
     bonus_prices = serializers.SerializerMethodField()
     main_prize_image = serializers.SerializerMethodField()
+    is_repeatable = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Failure
@@ -253,6 +254,7 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
             "end_time",
             "is_active",
             "is_completed",
+            "is_repeatable",
             "duration_seconds",
             "attempt_cost",
             "bombs_min_count",
@@ -275,6 +277,8 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
         request = self.context.get("request")
         user = getattr(request, "user", None)
         if not user or not user.is_authenticated:
+            return False
+        if getattr(obj, "is_repeatable", False):
             return False
         try:
             profile = user.profile
@@ -326,6 +330,7 @@ class LeaderboardRowSerializer(serializers.Serializer):
     last_name = serializers.CharField(allow_blank=True)
     score = serializers.IntegerField()
     duration_seconds = serializers.IntegerField()
+    photo_url = serializers.CharField(allow_blank=True, required=False)
 
 
 # --- НОВОЕ: сериалайзеры для результата квиза ---

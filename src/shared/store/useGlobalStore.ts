@@ -35,6 +35,7 @@ type ProfileResponse = {
   referred_by_code: string | null;
   referrals_count: number;
   stats: ProfileStatsResponse;
+  photo_url: string;
 };
 
 type ProfileStatsState = {
@@ -231,7 +232,7 @@ const useGlobalStore = create<GlobalState>()(
             first_name: payload.first_name,
             last_name: payload.last_name,
             username: state.userData?.username ?? payload.username,
-            photo_url: state.userData?.photo_url ?? "",
+            photo_url: sanitizePhotoUrl(payload.photo_url),
           },
           balance: payload.balance,
           referralCode: payload.referral_code,
@@ -396,6 +397,7 @@ const useGlobalStore = create<GlobalState>()(
               username: usernameForBackend,
               first_name: user.first_name,
               last_name: user.last_name,
+              photo_url: user.photo_url ?? "",
             });
 
             set({ tokens: { access: data.access, refresh: data.refresh } });

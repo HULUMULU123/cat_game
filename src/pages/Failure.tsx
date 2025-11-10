@@ -687,7 +687,9 @@ export default function Failure() {
       );
       setResultMessage(`${response.detail} Очки: ${response.score}`);
       incrementStat("failures");
-      markFailureCompleted(failure.id);
+      if (!failure.is_repeatable) {
+        markFailureCompleted(failure.id);
+      }
     } catch (error) {
       const message = parseErrorDetail(
         error,

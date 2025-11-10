@@ -159,6 +159,7 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
 
   const hasCompletedFailure = useMemo(() => {
     if (!failure) return false;
+    if (failure.is_repeatable) return false;
     if (failure.is_completed) return true;
     return Boolean(completedFailures[failure.id]);
   }, [completedFailures, failure]);

@@ -60,6 +60,7 @@ class UserProfile(TimestampedModel):
         verbose_name="Пользователь",
     )
     balance = models.PositiveIntegerField(default=0, verbose_name="Баланс монет")
+    photo_url = models.URLField(blank=True, default="", verbose_name="URL аватара")
     referral_code = models.CharField(
         max_length=12,
         unique=True,
@@ -437,6 +438,10 @@ class Failure(TimestampedModel):
     attempt_cost = models.PositiveIntegerField(
         default=0,
         verbose_name="Стоимость попытки (монеты)",
+    )
+    is_repeatable = models.BooleanField(
+        default=True,
+        verbose_name="Можно участвовать несколько раз",
     )
     bombs_min_count = models.PositiveSmallIntegerField(
         default=0, verbose_name="Минимум бомб за игру"
