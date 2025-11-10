@@ -271,12 +271,16 @@ class AdvertisementButton(TimestampedModel):
     title = models.CharField(max_length=100, verbose_name="Подпись кнопки")
     link = models.URLField(verbose_name="Ссылка")
     image = models.ImageField(
-    upload_to="advert/",
-    blank=True,
-    null=True,
-    verbose_name="Изображение"
-)
+        upload_to="advert/",
+        blank=True,
+        null=True,
+        verbose_name="Изображение",
+    )
     order = models.PositiveSmallIntegerField(default=0, verbose_name="Порядок отображения")
+    reward_amount = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Награда за переход (монеты)",
+    )
 
     class Meta:
         db_table = "рекламные_кнопки"
@@ -286,6 +290,31 @@ class AdvertisementButton(TimestampedModel):
 
     def __str__(self) -> str:
         return self.title
+
+
+class AdvertisementButtonRewardClaim(TimestampedModel):
+    button = models.ForeignKey(
+        AdvertisementButton,
+        on_delete=models.CASCADE,
+        related_name="reward_claims",
+        verbose_name="Рекламная кнопка",
+    )
+    profile = models.ForeignKey(
+        "UserProfile",
+        on_delete=models.CASCADE,
+        related_name="advert_reward_claims",
+        verbose_name="Профиль",
+    )
+    claimed_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата начисления")
+
+    class Meta:
+        db_table = "начисления_рекламных_переходов"
+        verbose_name = "Начисление за рекламу"
+        verbose_name_plural = "Начисления за рекламу"
+        unique_together = ("button", "profile")
+
+    def __str__(self) -> str:
+        return f"{self.profile_id} → {self.button_id}"
 
 
 class FrontendConfig(TimestampedModel):
@@ -404,6 +433,10 @@ class Failure(TimestampedModel):
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="Время окончания")
     duration_seconds = models.PositiveIntegerField(
         default=60, verbose_name="Длительность попытки (сек)"
+    )
+    attempt_cost = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Стоимость попытки (монеты)",
     )
     bombs_min_count = models.PositiveSmallIntegerField(
         default=0, verbose_name="Минимум бомб за игру"
@@ -666,3 +699,23 @@ class PromoCodeRedemption(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.promo_code.code} → {self.profile.user.username}"
+
+
+class ReferralProgramConfig(TimestampedModel):
+    reward_for_activation = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Награда за активацию реферального кода",
+    )
+
+    class Meta:
+        db_table = "реферальные_настройки"
+        verbose_name = "Настройки реферальной программы"
+        verbose_name_plural = "Настройки реферальной программы"
+
+    def __str__(self) -> str:
+        return f"Награда {self.reward_for_activation} монет"
+
+    @classmethod
+    def get_solo(cls) -> "ReferralProgramConfig":
+        config, _ = cls.objects.get_or_create(id=1)
+        return config

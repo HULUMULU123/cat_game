@@ -22,6 +22,7 @@ from .views import (
     DailyRewardConfigView,
     DailyRewardClaimTodayView,
     AdvertisementButtonListView,
+    AdvertisementButtonClaimView,
     FrontendConfigView,
 
     # Сбои
@@ -70,6 +71,11 @@ urlpatterns = [
         "home/advert-buttons/",
         AdvertisementButtonListView.as_view(),
         name="advert-buttons",
+    ),
+    path(
+        "home/advert-buttons/<int:button_id>/claim/",
+        AdvertisementButtonClaimView.as_view(),
+        name="advert-button-claim",
     ),
     path("frontend/config/", FrontendConfigView.as_view(), name="frontend-config"),
 

@@ -149,6 +149,7 @@ export type FailureResponse = {
   is_active: boolean;
   is_completed: boolean;
   duration_seconds: number;
+  attempt_cost: number;
   bombs_min_count: number;
   bombs_max_count: number;
   max_bonuses_per_run: number;
@@ -166,6 +167,7 @@ export type FailureStartResponse = {
   max_bonuses_per_run: number;
   purchased_bonuses: FailureBonusType[];
   bonus_prices: Record<FailureBonusType, number>;
+  attempt_cost: number;
   balance: number;
 };
 
@@ -190,6 +192,14 @@ export type AdvertisementButtonResponse = {
   link: string;
   order: number;
   image: string | null;
+  reward_amount: number;
+  available_claims: number;
+};
+
+export type AdvertisementButtonClaimResponse = {
+  detail: string;
+  reward: number;
+  balance: number;
 };
 
 // --- Frontend config ---

@@ -188,14 +188,40 @@ class DailyRewardClaimSerializer(serializers.ModelSerializer[DailyRewardClaim]):
 
 class AdvertisementButtonSerializer(serializers.ModelSerializer[AdvertisementButton]):
     image = serializers.SerializerMethodField()
+    available_claims = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvertisementButton
-        fields = ("id", "title", "link", "order", "image")
+        fields = (
+            "id",
+            "title",
+            "link",
+            "order",
+            "image",
+            "reward_amount",
+            "available_claims",
+        )
 
     def get_image(self, obj: AdvertisementButton) -> str | None:
         request = self.context.get("request")
         return _file_to_url(request, obj.image)
+
+    def get_available_claims(self, obj: AdvertisementButton) -> int:
+        if obj.reward_amount <= 0:
+            return 0
+
+        request: Request | None = self.context.get("request")
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return 1
+
+        try:
+            profile = user.profile
+        except UserProfile.DoesNotExist:  # type: ignore[attr-defined]
+            return 0
+
+        claimed = obj.reward_claims.filter(profile=profile).exists()
+        return 0 if claimed else 1
 
 
 class FrontendConfigSerializer(serializers.ModelSerializer[FrontendConfig]):
@@ -228,6 +254,7 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
             "is_active",
             "is_completed",
             "duration_seconds",
+            "attempt_cost",
             "bombs_min_count",
             "bombs_max_count",
             "max_bonuses_per_run",
