@@ -80,7 +80,8 @@ const StyledBadge = styled.span<{ $claimable: boolean }>`
   min-width: 20px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: ${({ $claimable }) => ($claimable ? "#44edd1" : "rgba(255,255,255,0.2)")};
+  background: ${({ $claimable }) =>
+    $claimable ? "#44edd1" : "rgba(255,255,255,0.2)"};
   color: ${({ $claimable }) => ($claimable ? "#0e4f45" : "#d0f5ed")};
   font-family: "Conthrax", sans-serif;
   font-size: 10px;
@@ -129,7 +130,9 @@ export default function AdvertSection() {
     queryKey: ["home", "advert-buttons", tokens?.access ?? null],
     queryFn: () =>
       request<AdvertisementButtonResponse[]>("/home/advert-buttons/", {
-        headers: tokens ? { Authorization: `Bearer ${tokens.access}` } : undefined,
+        headers: tokens
+          ? { Authorization: `Bearer ${tokens.access}` }
+          : undefined,
       }),
   });
 
@@ -162,7 +165,10 @@ export default function AdvertSection() {
   );
 
   const handleButtonClick = useCallback(
-    (button: AdvertisementButtonResponse, event: MouseEvent<HTMLAnchorElement>) => {
+    (
+      button: AdvertisementButtonResponse,
+      event: MouseEvent<HTMLAnchorElement>
+    ) => {
       event.preventDefault();
       const url = normalizeLink(button.link);
       if (url && url !== "#") {
@@ -214,7 +220,7 @@ export default function AdvertSection() {
                 aria-disabled={claimingId === button.id}
               >
                 <StyledBadge $claimable={button.available_claims > 0}>
-                  {Math.max(button.available_claims, 0)}
+                  {Math.max(button.reward_amount, 0)}
                 </StyledBadge>
                 <StyledButtonImg src={img} alt={button.title} />
                 <StyledButtonSpan>{button.title}</StyledButtonSpan>
@@ -238,7 +244,7 @@ export default function AdvertSection() {
                 aria-disabled={claimingId === button.id}
               >
                 <StyledBadge $claimable={button.available_claims > 0}>
-                  {Math.max(button.available_claims, 0)}
+                  {Math.max(button.reward_amount, 0)}
                 </StyledBadge>
                 <StyledButtonImg src={img} alt={button.title} />
                 <StyledButtonSpan>{button.title}</StyledButtonSpan>
@@ -248,13 +254,7 @@ export default function AdvertSection() {
         </Column>
       </StyledWrapper>
     );
-  }, [
-    buttons,
-    claimingId,
-    handleButtonClick,
-    isError,
-    isLoading,
-  ]);
+  }, [buttons, claimingId, handleButtonClick, isError, isLoading]);
 
   return content;
 }
