@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import Droplets from "../components/failure/droplets/Droplets";
 import FailureFooter from "../components/failure/footer/FailureFooter";
@@ -203,6 +204,7 @@ export default function Failure() {
   const markFailureCompleted = useGlobalStore(
     (state) => state.markFailureCompleted
   );
+  const navigate = useNavigate();
 
   const [score, setScore] = useState(0);
   const [failure, setFailure] = useState<FailureResponse | null>(null);
@@ -747,6 +749,20 @@ export default function Failure() {
     if (!loaderVisible) setShowLoaderNode(false);
   }, [loaderVisible]);
 
+  const handleResultModalVisibility = useCallback(
+    (open: boolean) => {
+      setResultModalOpen(open);
+      if (!open) {
+        navigate("/");
+      }
+    },
+    [navigate]
+  );
+
+  const handleResultModalAction = useCallback(() => {
+    handleResultModalVisibility(false);
+  }, [handleResultModalVisibility]);
+
   return (
     <>
       {/* Лоадер через портал, размонтируем после анимации */}
@@ -811,14 +827,17 @@ export default function Failure() {
         ) : null}
 
         {resultModalOpen ? (
-          <ModalLayout isOpen={resultModalOpen} setIsOpen={setResultModalOpen}>
+          <ModalLayout
+            isOpen={resultModalOpen}
+            setIsOpen={handleResultModalVisibility}
+          >
             <ModalWindow
               header="Результат сбоя"
               text={resultMessage ?? `Вы набрали ${score} очков.`}
               btnContent={<span>Закрыть</span>}
-              setOpenModal={(value) => setResultModalOpen(value)}
+              setOpenModal={handleResultModalVisibility}
               isOpenModal={resultModalOpen}
-              onAction={() => setResultModalOpen(false)}
+              onAction={handleResultModalAction}
             />
           </ModalLayout>
         ) : null}

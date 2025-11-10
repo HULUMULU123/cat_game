@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 
 from .models import (
     AdvertisementButton,
+    AdvertisementButtonRewardClaim,
     UserProfile,
     Task,
     TaskCompletion,
@@ -504,6 +505,50 @@ class AdvertisementButtonListView(APIView):
         return Response(serializer.data)
 
 
+class AdvertisementButtonClaimView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request: Request, button_id: int) -> Response:
+        profile = request.user.profile
+
+        try:
+            button = AdvertisementButton.objects.select_for_update().get(id=button_id)
+        except AdvertisementButton.DoesNotExist:
+            return Response({"detail": "Рекламное предложение не найдено."}, status=status.HTTP_404_NOT_FOUND)
+
+        if button.reward_amount <= 0:
+            return Response(
+                {"detail": "Для этого предложения награда не предусмотрена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        already_claimed = AdvertisementButtonRewardClaim.objects.filter(
+            button=button, profile=profile
+        ).exists()
+
+        if already_claimed:
+            return Response(
+                {"detail": "Награда за эту ссылку уже была получена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        AdvertisementButtonRewardClaim.objects.create(button=button, profile=profile)
+
+        if button.reward_amount:
+            profile.balance = F("balance") + int(button.reward_amount)
+            profile.save(update_fields=["balance", "updated_at"])
+            profile.refresh_from_db(fields=["balance"])
+
+        return Response(
+            {
+                "detail": "Награда начислена.",
+                "reward": int(button.reward_amount),
+                "balance": profile.balance,
+            }
+        )
+
+
 class FrontendConfigView(APIView):
     permission_classes = (permissions.AllowAny,)
 
@@ -579,11 +624,25 @@ class FailureStartView(APIView):
             logger.warning("FAILURE START 400: not active failure_id=%s", failure.id)
             return Response({"detail": "Сбой недоступен для участия."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
-            logger.warning("FAILURE START 400: already played failure_id=%s profile_id=%s",
-                           failure.id, profile.id)
-            return Response({"detail": "Вы уже участвовали в этом сбое."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
+        attempt_cost = int(failure.attempt_cost or 0)
+
+        if attempt_cost > 0:
+            if profile.balance < attempt_cost:
+                logger.warning(
+                    "FAILURE START 400: insufficient balance profile_id=%s cost=%s balance=%s",
+                    profile.id,
+                    attempt_cost,
+                    profile.balance,
+                )
+                return Response(
+                    {"detail": "Недостаточно монет для участия в сбое."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            profile.balance = max(profile.balance - attempt_cost, 0)
+            profile.save(update_fields=["balance", "updated_at"])
+            profile.refresh_from_db(fields=["balance"])
 
         purchases = list(
             FailureBonusPurchase.objects.filter(
@@ -605,6 +664,7 @@ class FailureStartView(APIView):
                 "max_bonuses_per_run": failure.max_bonuses_per_run,
                 "purchased_bonuses": list(purchases),
                 "bonus_prices": failure.bonus_prices(),
+                "attempt_cost": attempt_cost,
                 "balance": profile.balance,
             }
         )
@@ -628,23 +688,34 @@ class FailureCompleteView(APIView):
         except Failure.DoesNotExist:
             return Response({"detail": "Сбой не найден."}, status=status.HTTP_404_NOT_FOUND)
 
-        if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
-            return Response(
-                {"detail": "Результат уже зафиксирован."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        ScoreEntry.objects.create(
-            profile=profile,
-            failure=failure,
-            points=points,
-            duration_seconds=duration,
-            earned_at=timezone.now(),
+        entry = (
+            ScoreEntry.objects.select_for_update()
+            .filter(profile=profile, failure=failure)
+            .first()
         )
+
+        now = timezone.now()
+        detail = "Результат сохранён."
+
+        if entry is None:
+            ScoreEntry.objects.create(
+                profile=profile,
+                failure=failure,
+                points=points,
+                duration_seconds=duration,
+                earned_at=now,
+            )
+        else:
+            if points > int(entry.points or 0):
+                entry.points = points
+                entry.duration_seconds = duration
+                entry.earned_at = now
+                entry.save(update_fields=["points", "duration_seconds", "earned_at", "updated_at"])
+                detail = "Результат обновлён."
 
         return Response(
             {
-                "detail": "Результат сохранён.",
+                "detail": detail,
                 "score": points,
                 "failure": FailureSerializer(failure).data,
             },

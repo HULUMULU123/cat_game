@@ -201,6 +201,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   const [adMessage, setAdMessage] = useState("");
   const [adOutcome, setAdOutcome] = useState<"pending" | "success">("pending");
   const [adReason, setAdReason] = useState<"wrong" | "timeout">("wrong");
+  const [adSkipsUsed, setAdSkipsUsed] = useState(0);
 
   const [remaining, setRemaining] = useState<number>(QUESTION_TIME_SEC);
   const timerRef = useRef<number | null>(null);
@@ -258,6 +259,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     setAdMessage("");
     setAdOutcome("pending");
     setAdReason("wrong");
+    setAdSkipsUsed(0);
     resetAds();
     setRemaining(QUESTION_TIME_SEC);
     onProgressChange?.({ current: 0, total: fetchedQuestions.length });
@@ -301,6 +303,21 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     [idx]
   );
 
+  const handleSecondFailure = useCallback(
+    (reason: "wrong" | "timeout") => {
+      setAdModalOpen(false);
+      setAdMessage("");
+      setAdOutcome("pending");
+      setAdReason(reason);
+      resetAds();
+      setFinishMsg("Викторина сброшена. Попробуйте снова.");
+      setRemaining(0);
+      setSubmitting(false);
+      onTimerChange?.({ remaining: 0, total: QUESTION_TIME_SEC });
+    },
+    [onTimerChange, resetAds]
+  );
+
   // ===== Таймер логики (не UI) =====
   useEffect(() => {
     if (!q) return;
@@ -320,15 +337,20 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
 
         if (clamped === 0) {
           window.clearInterval(id);
+          timerRef.current = null;
           setHasAnswered(true);
           recordAnswer(q, "");
           setSelected(null);
-          setAdReason("timeout");
-          setAdOutcome("pending");
-          setAdMessage(
-            "Время вышло. Посмотрите рекламу, чтобы продолжить викторину."
-          );
-          setAdModalOpen(true);
+          if (adSkipsUsed >= 1) {
+            handleSecondFailure("timeout");
+          } else {
+            setAdReason("timeout");
+            setAdOutcome("pending");
+            setAdMessage(
+              "Время вышло. Посмотрите рекламу, чтобы продолжить викторину."
+            );
+            setAdModalOpen(true);
+          }
         }
         return clamped;
       });
@@ -339,7 +361,14 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       if (timerRef.current) window.clearInterval(timerRef.current);
       timerRef.current = null;
     };
-  }, [q, hasAnswered, onTimerChange, recordAnswer]);
+  }, [
+    q,
+    hasAnswered,
+    onTimerChange,
+    recordAnswer,
+    adSkipsUsed,
+    handleSecondFailure,
+  ]);
 
   // ===== Выбор ответа =====
   const handleSelect = (answerIndex: number) => {
@@ -349,19 +378,26 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     setHasAnswered(true);
     const answerText = q.answers[answerIndex] ?? "";
     recordAnswer(q, answerText);
-    if (isCorrect) setCorrectCount((c) => c + 1);
-    else {
-      setAdReason("wrong");
-      setAdOutcome("pending");
-      setAdMessage(
-        "Неправильный ответ. Посмотрите рекламу, чтобы продолжить викторину."
-      );
-      setAdModalOpen(true);
-    }
     if (timerRef.current) {
       window.clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (isCorrect) {
+      setCorrectCount((c) => c + 1);
+      return;
+    }
+
+    if (adSkipsUsed >= 1) {
+      handleSecondFailure("wrong");
+      return;
+    }
+
+    setAdReason("wrong");
+    setAdOutcome("pending");
+    setAdMessage(
+      "Неправильный ответ. Посмотрите рекламу, чтобы продолжить викторину."
+    );
+    setAdModalOpen(true);
   };
 
   const itemStateFor = (i: number): ItemState => {
@@ -489,6 +525,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       setAdModalOpen(false);
       setAdMessage("");
       resetAds();
+      setAdSkipsUsed((count) => count + 1);
       await handleNext();
     } catch (error) {
       setAdOutcome("pending");

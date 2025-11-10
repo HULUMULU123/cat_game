@@ -14,7 +14,12 @@ from .serializers import (
     TelegramAuthSerializer,
     UserProfileSerializer,
 )
-from game.models import PromoCode, PromoCodeRedemption, UserProfile
+from game.models import (
+    PromoCode,
+    PromoCodeRedemption,
+    ReferralProgramConfig,
+    UserProfile,
+)
 
 
 class TelegramAuthView(APIView):
@@ -83,8 +88,16 @@ class ReferralCodeApplyView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        reward_cfg = ReferralProgramConfig.get_solo()
+        reward_amount = int(reward_cfg.reward_for_activation or 0)
+
         profile.referred_by = referrer
-        profile.save(update_fields=["referred_by", "updated_at"])
+        if reward_amount > 0:
+            profile.balance = F("balance") + reward_amount
+            profile.save(update_fields=["referred_by", "balance", "updated_at"])
+            profile.refresh_from_db(fields=["balance", "referred_by"])
+        else:
+            profile.save(update_fields=["referred_by", "updated_at"])
 
         return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
 

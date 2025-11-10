@@ -14,6 +14,7 @@ from django.urls import path
 
 from .models import (
     AdvertisementButton,
+    AdvertisementButtonRewardClaim,
     AdsgramAssignment,
     DailyReward,
     DailyRewardClaim,
@@ -22,6 +23,7 @@ from .models import (
     FailureBonusPurchase,
     PromoCode,
     PromoCodeRedemption,
+    ReferralProgramConfig,
     QuizQuestion,
     RuleCategory,
     ScoreEntry,
@@ -38,6 +40,7 @@ if TYPE_CHECKING:
     from django.contrib.admin import ModelAdmin as _ModelAdmin
 
     AdvertisementButtonAdminBase = _ModelAdmin[AdvertisementButton]  # type: ignore[index]
+    AdvertisementButtonRewardClaimAdminBase = _ModelAdmin[AdvertisementButtonRewardClaim]  # type: ignore[index]
     AdsgramAssignmentAdminBase = _ModelAdmin[AdsgramAssignment]  # type: ignore[index]
     DailyRewardAdminBase = _ModelAdmin[DailyReward]  # type: ignore[index]
     DailyRewardClaimAdminBase = _ModelAdmin[DailyRewardClaim]  # type: ignore[index]
@@ -46,6 +49,7 @@ if TYPE_CHECKING:
     FailureBonusPurchaseAdminBase = _ModelAdmin[FailureBonusPurchase]  # type: ignore[index]
     PromoCodeAdminBase = _ModelAdmin[PromoCode]  # type: ignore[index]
     PromoCodeRedemptionAdminBase = _ModelAdmin[PromoCodeRedemption]  # type: ignore[index]
+    ReferralProgramConfigAdminBase = _ModelAdmin[ReferralProgramConfig]  # type: ignore[index]
     QuizQuestionAdminBase = _ModelAdmin[QuizQuestion]  # type: ignore[index]
     RuleCategoryAdminBase = _ModelAdmin[RuleCategory]  # type: ignore[index]
     ScoreEntryAdminBase = _ModelAdmin[ScoreEntry]  # type: ignore[index]
@@ -56,6 +60,7 @@ if TYPE_CHECKING:
     UserProfileAdminBase = _ModelAdmin[UserProfile]  # type: ignore[index]
 else:
     AdvertisementButtonAdminBase = admin.ModelAdmin
+    AdvertisementButtonRewardClaimAdminBase = admin.ModelAdmin
     AdsgramAssignmentAdminBase = admin.ModelAdmin
     DailyRewardAdminBase = admin.ModelAdmin
     DailyRewardClaimAdminBase = admin.ModelAdmin
@@ -64,6 +69,7 @@ else:
     FailureBonusPurchaseAdminBase = admin.ModelAdmin
     PromoCodeAdminBase = admin.ModelAdmin
     PromoCodeRedemptionAdminBase = admin.ModelAdmin
+    ReferralProgramConfigAdminBase = admin.ModelAdmin
     QuizQuestionAdminBase = admin.ModelAdmin
     RuleCategoryAdminBase = admin.ModelAdmin
     ScoreEntryAdminBase = admin.ModelAdmin
@@ -304,6 +310,7 @@ class FailureAdmin(FailureAdminBase):
         "start_time",
         "end_time",
         "duration_seconds",
+        "attempt_cost",
         "bombs_min_count",
         "bombs_max_count",
         "created_at",
@@ -317,6 +324,7 @@ class FailureAdmin(FailureAdminBase):
             {
                 "fields": (
                     "duration_seconds",
+                    "attempt_cost",
                     "bombs_min_count",
                     "bombs_max_count",
                     "max_bonuses_per_run",
@@ -350,9 +358,24 @@ class FailureBonusPurchaseAdmin(FailureBonusPurchaseAdminBase):
 
 @admin.register(AdvertisementButton)
 class AdvertisementButtonAdmin(AdvertisementButtonAdminBase):
-    list_display = ("title", "link", "order", "created_at", "updated_at")
-    list_editable = ("order",)
+    list_display = (
+        "title",
+        "link",
+        "order",
+        "reward_amount",
+        "created_at",
+        "updated_at",
+    )
+    list_editable = ("order", "reward_amount")
     search_fields = ("title",)
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(AdvertisementButtonRewardClaim)
+class AdvertisementButtonRewardClaimAdmin(AdvertisementButtonRewardClaimAdminBase):
+    list_display = ("profile", "button", "claimed_at")
+    list_filter = ("button",)
+    search_fields = ("profile__user__username", "button__title")
     readonly_fields = ("created_at", "updated_at")
 
 
@@ -578,3 +601,14 @@ class PromoCodeRedemptionAdmin(PromoCodeRedemptionAdminBase):
     list_display = ("promo_code", "profile", "redeemed_at")
     search_fields = ("promo_code__code", "profile__user__username")
     readonly_fields = ("redeemed_at", "created_at", "updated_at")
+
+
+@admin.register(ReferralProgramConfig)
+class ReferralProgramConfigAdmin(ReferralProgramConfigAdminBase):
+    list_display = ("reward_for_activation", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
+
+    def has_add_permission(self, request: HttpRequest) -> bool:  # pragma: no cover - admin guard
+        if ReferralProgramConfig.objects.exists():
+            return False
+        return super().has_add_permission(request)

@@ -1,11 +1,15 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState, type MouseEvent } from "react";
 import styled from "styled-components";
 
 import advertFallback from "../../assets/icons/advert.svg";
 import { request } from "../../shared/api/httpClient";
-import type { AdvertisementButtonResponse } from "../../shared/api/types";
-import { useQuery } from "react-query";
+import type {
+  AdvertisementButtonClaimResponse,
+  AdvertisementButtonResponse,
+} from "../../shared/api/types";
+import { useQuery, useQueryClient } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
+import useGlobalStore from "../../shared/store/useGlobalStore";
 
 /* ======== СТИЛИ ======== */
 
@@ -23,7 +27,7 @@ const Column = styled.div`
   gap: 12px;
 `;
 
-const StyledButton = styled.a`
+const StyledButton = styled.a<{ $claimable: boolean; $busy: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -40,6 +44,10 @@ const StyledButton = styled.a`
   box-shadow: 1px 3px 6px 0px rgba(0, 223, 152, 0.19) inset;
   backdrop-filter: blur(20px);
   transition: transform 0.12s ease-in-out, opacity 0.12s ease-in-out;
+  position: relative;
+  opacity: ${({ $claimable }) => ($claimable ? 1 : 0.7)};
+  cursor: ${({ $busy }) => ($busy ? "wait" : "pointer")};
+  pointer-events: ${({ $busy }) => ($busy ? "none" : "auto")};
 
   &:active {
     transform: translateY(1px);
@@ -63,6 +71,21 @@ const StyledButtonSpan = styled.span`
   font-weight: 200;
   text-align: center;
   padding: 0 6px;
+`;
+
+const StyledBadge = styled.span<{ $claimable: boolean }>`
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: ${({ $claimable }) => ($claimable ? "#44edd1" : "rgba(255,255,255,0.2)")};
+  color: ${({ $claimable }) => ($claimable ? "#0e4f45" : "#d0f5ed")};
+  font-family: "Conthrax", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
 `;
 
 const Placeholder = styled.div`
@@ -93,14 +116,67 @@ const toImgSrc = (raw?: string) => {
 };
 
 export default function AdvertSection() {
+  const tokens = useGlobalStore((state) => state.tokens);
+  const updateBalance = useGlobalStore((state) => state.updateBalance);
+  const queryClient = useQueryClient();
+  const [claimingId, setClaimingId] = useState<number | null>(null);
+
   const {
     data: buttons = [],
     isLoading,
     isError,
   } = useQuery<AdvertisementButtonResponse[]>({
-    queryKey: ["home", "advert-buttons"],
-    queryFn: () => request<AdvertisementButtonResponse[]>("/home/advert-buttons/"),
+    queryKey: ["home", "advert-buttons", tokens?.access ?? null],
+    queryFn: () =>
+      request<AdvertisementButtonResponse[]>("/home/advert-buttons/", {
+        headers: tokens ? { Authorization: `Bearer ${tokens.access}` } : undefined,
+      }),
   });
+
+  const handleClaim = useCallback(
+    async (button: AdvertisementButtonResponse) => {
+      if (!tokens) return;
+      setClaimingId(button.id);
+      try {
+        const response = await request<AdvertisementButtonClaimResponse>(
+          `/home/advert-buttons/${button.id}/claim/`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${tokens.access}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (typeof response?.balance === "number") {
+          updateBalance(response.balance);
+        }
+      } catch (error) {
+        console.warn("[Advert] claim failed", error);
+      } finally {
+        setClaimingId((current) => (current === button.id ? null : current));
+        queryClient.invalidateQueries({ queryKey: ["home", "advert-buttons"] });
+      }
+    },
+    [queryClient, tokens, updateBalance]
+  );
+
+  const handleButtonClick = useCallback(
+    (button: AdvertisementButtonResponse, event: MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      const url = normalizeLink(button.link);
+      if (url && url !== "#") {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+
+      if (!tokens || button.available_claims <= 0) {
+        return;
+      }
+
+      void handleClaim(button);
+    },
+    [handleClaim, tokens]
+  );
 
   const content = useMemo(() => {
     if (isLoading)
@@ -132,7 +208,14 @@ export default function AdvertSection() {
                 href={normalizeLink(button.link)}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(event) => handleButtonClick(button, event)}
+                $claimable={button.available_claims > 0}
+                $busy={claimingId === button.id}
+                aria-disabled={claimingId === button.id}
               >
+                <StyledBadge $claimable={button.available_claims > 0}>
+                  {Math.max(button.available_claims, 0)}
+                </StyledBadge>
                 <StyledButtonImg src={img} alt={button.title} />
                 <StyledButtonSpan>{button.title}</StyledButtonSpan>
               </StyledButton>
@@ -149,7 +232,14 @@ export default function AdvertSection() {
                 href={normalizeLink(button.link)}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(event) => handleButtonClick(button, event)}
+                $claimable={button.available_claims > 0}
+                $busy={claimingId === button.id}
+                aria-disabled={claimingId === button.id}
               >
+                <StyledBadge $claimable={button.available_claims > 0}>
+                  {Math.max(button.available_claims, 0)}
+                </StyledBadge>
                 <StyledButtonImg src={img} alt={button.title} />
                 <StyledButtonSpan>{button.title}</StyledButtonSpan>
               </StyledButton>
@@ -158,7 +248,13 @@ export default function AdvertSection() {
         </Column>
       </StyledWrapper>
     );
-  }, [buttons, isError, isLoading]);
+  }, [
+    buttons,
+    claimingId,
+    handleButtonClick,
+    isError,
+    isLoading,
+  ]);
 
   return content;
 }
