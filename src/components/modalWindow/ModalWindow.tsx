@@ -54,7 +54,7 @@ const StyledText = styled.p`
 `;
 
 const StyledBtn = styled.button`
-  background: #fff;
+  background: #44ecd2;
   padding: 5px 10px;
   width: 40%;
   margin: 0 auto;

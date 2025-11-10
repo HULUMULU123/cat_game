@@ -1001,7 +1001,7 @@ class ScoreListView(APIView):
 
         resp = QuizResultResponseSerializer(
             {
-                "detail": f"Результат сохранён ({mode}). Награда: {reward}",
+                "detail": f"Результат сохранён. Награда: {reward}",
                 "reward": reward,
                 "balance": profile.balance,
             }

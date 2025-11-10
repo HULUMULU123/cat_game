@@ -23,7 +23,7 @@ const StyledContentWrapper = styled.div`
 
 const StyledQuestionSpan = styled.span`
   margin: 0 auto;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   font-family: "Conthrax", sans-serif;
   color: rgb(224, 255, 251);
@@ -81,7 +81,7 @@ const StyledAnswerNumber = styled.span`
 `;
 
 const StyledAnswerText = styled.span<{ $isCorrect: boolean }>`
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   font-family: "Conthrax", sans-serif;
   color: ${({ $isCorrect }) => ($isCorrect ? "#0e4f45" : "rgb(135,176,168)")};
