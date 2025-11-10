@@ -748,10 +748,10 @@ class FailureBonusPurchaseView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
-            return Response(
-                {"detail": "Сбой уже завершён."}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # if ScoreEntry.objects.filter(profile=profile, failure=failure).exists():
+        #     return Response(
+        #         {"detail": "Сбой уже завершён."}, status=status.HTTP_400_BAD_REQUEST
+        #     )
 
         existing = FailureBonusPurchase.objects.select_for_update().filter(
             profile=profile, failure=failure
