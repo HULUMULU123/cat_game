@@ -97,7 +97,7 @@ interface MainActionProps {
 const MainAction = ({ onOpenModal }: MainActionProps) => {
   const navigate = useNavigate();
   const tokens = useGlobalStore((s) => s.tokens);
-  const completedFailures = useGlobalStore((s) => s.completedFailures);
+  const balance = useGlobalStore((s) => s.balance);
 
   const [now, setNow] = useState<number>(() => Date.now());
 
@@ -157,11 +157,10 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
     return now < startMs;
   }, [failure, startMs, now]);
 
-  const hasCompletedFailure = useMemo(() => {
+  const hasEnoughBalance = useMemo(() => {
     if (!failure) return false;
-    if (failure.is_completed) return true;
-    return Boolean(completedFailures[failure.id]);
-  }, [completedFailures, failure]);
+    return balance >= failure.attempt_cost;
+  }, [balance, failure]);
 
   const headerText = useMemo(() => {
     if (isActive) return "СБОЙ ЗАКОНЧИТСЯ ЧЕРЕЗ";
@@ -204,7 +203,7 @@ const MainAction = ({ onOpenModal }: MainActionProps) => {
   }, [isUpcoming, isActive, startMs, endMs, now]);
 
   const buttonDisabled =
-    !failure || !isActive || hasCompletedFailure || isFailureLoading;
+    !failure || !isActive || !hasEnoughBalance || isFailureLoading;
 
   const handleActionClick = () => {
     if (buttonDisabled) return;
