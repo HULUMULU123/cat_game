@@ -35,6 +35,7 @@ const StyledUserProfile = styled.div`
   display: flex;
   gap: 18px;
   align-items: center;
+  margin: 0 auto 0 25px;
 `;
 
 const StyledUserImg = styled.img`
@@ -101,8 +102,12 @@ const UserResult = ({ entry }: UserResultProps) => {
           <StyledUserSpan>{displayName}</StyledUserSpan>
         </StyledUserProfile>
         <StyledUserInfo>
-          <StyledUserTime>{formatDuration(entry.duration_seconds)}</StyledUserTime>
-          <StyledUserScore>{entry.score.toLocaleString("ru-RU")}</StyledUserScore>
+          <StyledUserTime>
+            {formatDuration(entry.duration_seconds)}
+          </StyledUserTime>
+          <StyledUserScore>
+            {entry.score.toLocaleString("ru-RU")}
+          </StyledUserScore>
         </StyledUserInfo>
       </StyledContentWrapper>
     </StyledUserItem>

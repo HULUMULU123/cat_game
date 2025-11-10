@@ -182,13 +182,15 @@ class UserProfileAdmin(UserProfileAdminBase):
         "updated_at",
     )
     search_fields = ("user__username",)
-    readonly_fields = ("created_at", "updated_at")
+
+    # ДОБАВИЛИ referral_code в readonly
+    readonly_fields = ("created_at", "updated_at", "referral_code")
+
     fieldsets = (
         (None, {"fields": ("user", "balance", "daily_reward_streak", "daily_reward_last_claimed_at")}),
         ("Реферальная программа", {"fields": ("referral_code", "referred_by")}),
         ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
-
 
 @admin.register(Task)
 class TaskAdmin(TaskAdminBase):
