@@ -38,6 +38,7 @@ const StyledUserProfile = styled.div`
   display: flex;
   gap: 18px;
   align-items: center;
+  margin: 0 auto 0 25px;
 `;
 
 const StyledUserImg = styled.img`
