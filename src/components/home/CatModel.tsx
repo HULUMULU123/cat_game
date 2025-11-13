@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils";
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 
 const primaryModelUrl = "/models/anim1.glb";
 const secondaryModelUrls = [
