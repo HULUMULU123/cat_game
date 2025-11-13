@@ -644,11 +644,12 @@ class FailureStartView(APIView):
             profile.save(update_fields=["balance", "updated_at"])
             profile.refresh_from_db(fields=["balance"])
 
-        purchases = list(
-            FailureBonusPurchase.objects.filter(
-                profile=profile, failure=failure
-            ).values_list("bonus_type", flat=True)
-        )
+        # bonuses are single-use: clear leftovers from previous attempts
+        FailureBonusPurchase.objects.filter(
+            profile=profile, failure=failure
+        ).delete()
+
+        purchases: list[str] = []
 
         failure_payload = FailureSerializer(
             failure, context={"request": request}
@@ -712,6 +713,11 @@ class FailureCompleteView(APIView):
                 entry.earned_at = now
                 entry.save(update_fields=["points", "duration_seconds", "earned_at", "updated_at"])
                 detail = "Результат обновлён."
+
+        # bonuses are single-use per attempt: clear purchases after completion
+        FailureBonusPurchase.objects.filter(
+            profile=profile, failure=failure
+        ).delete()
 
         return Response(
             {
