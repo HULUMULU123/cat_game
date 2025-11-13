@@ -2,26 +2,55 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils";
 
-const modelUrls = [
-  "/models/anim1.glb",
+const primaryModelUrl = "/models/anim1.glb";
+const secondaryModelUrls = [
   "/models/anim2.glb",
   "/models/anim3.glb",
   "/models/anim4.glb",
 ];
 
-// Предзагрузка всех моделей
-modelUrls.forEach((url) => useGLTF.preload(url));
+// Предзагружаем основные ассеты, чтобы не блокировать Suspense
+useGLTF.preload(primaryModelUrl);
+secondaryModelUrls.forEach((url) => useGLTF.preload(url));
 
 export default function CatModel() {
-  const models = modelUrls.map((url) => useGLTF(url));
+  const primaryModel = useGLTF(primaryModelUrl);
+  const animModel2 = useGLTF(secondaryModelUrls[0]);
+  const animModel3 = useGLTF(secondaryModelUrls[1]);
+  const animModel4 = useGLTF(secondaryModelUrls[2]);
 
-  // Берём сцену из первой модели
-  const scene = useMemo(() => models[0].scene, [models]);
-  const animations = useMemo(
-    () => models.flatMap((m) => m.animations || []),
-    [models]
-  );
+  const scene = useMemo(() => {
+    const cloned = SkeletonUtils.clone(primaryModel.scene) as THREE.Group;
+    cloned.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.frustumCulled = false;
+      }
+    });
+    return cloned;
+  }, [primaryModel.scene]);
+
+  const animations = useMemo(() => {
+    const clips = [
+      ...(primaryModel.animations ?? []),
+      ...(animModel2.animations ?? []),
+      ...(animModel3.animations ?? []),
+      ...(animModel4.animations ?? []),
+    ];
+
+    return clips.map((clip) => {
+      const clone = clip.clone();
+      clone.optimize();
+      return clone;
+    });
+  }, [
+    primaryModel.animations,
+    animModel2.animations,
+    animModel3.animations,
+    animModel4.animations,
+  ]);
 
   const mixer = useRef<THREE.AnimationMixer>();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,6 +74,7 @@ export default function CatModel() {
 
     return () => {
       mixer.current?.stopAllAction();
+      if (scene) mixer.current?.uncacheRoot(scene);
     };
   }, [scene, animations]);
 
@@ -97,6 +127,18 @@ export default function CatModel() {
         });
       }
     });
+    return () => {
+      scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.geometry.dispose();
+          const materials = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material];
+          materials.forEach((mat) => mat?.dispose());
+        }
+      });
+    };
   }, [scene]);
 
   // Заворачиваем сцену в <group>, чтобы задать позицию и ротацию
