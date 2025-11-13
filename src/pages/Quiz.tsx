@@ -27,7 +27,7 @@ export default function Quiz() {
       <CoinCount />
       <SectionInfo
         InfoName={"НЕЙРОФИЛЬТР"}
-        InfoExtra={`${progress.current} / ${progress.total}`}
+        InfoExtra={`${progress.current+1} / ${progress.total}`}
       />
       <QuizPart
         onProgressChange={setProgress}

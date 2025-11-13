@@ -501,7 +501,7 @@ const SimulationPractice = () => {
         <ResultOverlay>
           <ResultTitle>Тренировка завершена</ResultTitle>
           <ResultText>
-            Вы сбили {scoreRef.current} капель. Продолжайте тренировки!
+            Вы собрали {scoreRef.current} капель. Продолжайте тренировки!
           </ResultText>
           <ResultButton onClick={handleClose}>Закрыть тренировку</ResultButton>
         </ResultOverlay>

@@ -75,8 +75,8 @@ const StyledButtonSpan = styled.span`
 
 const StyledBadge = styled.span<{ $claimable: boolean }>`
   position: absolute;
-  top: 4px;
-  right: 6px;
+  top: -4px;
+  right: -6px;
   min-width: 20px;
   padding: 2px 6px;
   border-radius: 999px;

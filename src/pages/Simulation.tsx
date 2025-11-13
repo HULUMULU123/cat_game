@@ -407,7 +407,7 @@ const Simulation = () => {
         practiceWindowRef.current = null;
         const scoreValue = data.payload?.score ?? 0;
         setPracticeModalMessage(
-          `Тренировка завершена. Вы сбили ${scoreValue} капель.`
+          `Тренировка завершена. Вы собрали ${scoreValue} капель.`
         );
         setPracticeModalOpen(true);
         return;
@@ -523,7 +523,7 @@ const Simulation = () => {
         >
           <ModalWindow
             header="СИМУЛЯЦИЯ ЗАВЕРШЕНА"
-            text={`Вы сбили ${score} капель. Результат не сохраняется — тренируйтесь ещё!`}
+            text={`Вы собрали ${score} капель. Результат не сохраняется — тренируйтесь ещё!`}
             isOpenModal={resultModalOpen}
             setOpenModal={handleResultModalToggle}
           />

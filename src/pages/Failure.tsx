@@ -834,7 +834,7 @@ export default function Failure() {
             <ModalWindow
               header="Результат сбоя"
               text={resultMessage ?? `Вы набрали ${score} очков.`}
-              btnContent={<span>Закрыть</span>}
+              btnContent={<span style={{margin:'auto'}}>Закрыть</span>}
               setOpenModal={handleResultModalVisibility}
               isOpenModal={resultModalOpen}
               onAction={handleResultModalAction}
