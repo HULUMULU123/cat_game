@@ -664,7 +664,7 @@ export default function Failure() {
     endAtRef.current = null;
 
     if (!tokens || !failure) {
-      setResultMessage(`Результат не сохранён. Очки: ${score}`);
+      setResultMessage(`Результат не сохранён. Собрано капель: ${score}`);
       setResultModalOpen(true);
       return;
     }
@@ -685,7 +685,7 @@ export default function Failure() {
           }),
         }
       );
-      setResultMessage(`${response.detail} Очки: ${response.score}`);
+      setResultMessage(`${response.detail} Собрано капель: ${response.score}`);
       incrementStat("failures");
       markFailureCompleted(failure.id);
     } catch (error) {
@@ -693,7 +693,7 @@ export default function Failure() {
         error,
         "Не удалось сохранить результат."
       );
-      setResultMessage(`${message} Очки: ${score}`);
+      setResultMessage(`${message} Собрано капель: ${score}`);
     } finally {
       setResultModalOpen(true);
     }
@@ -832,8 +832,10 @@ export default function Failure() {
             setIsOpen={handleResultModalVisibility}
           >
             <ModalWindow
-              header="Результат сбоя"
-              text={resultMessage ?? `Вы набрали ${score} очков.`}
+              header="СБОЙ ЗАВЕРШЁН"
+              text={
+                resultMessage ?? `Вы собрали ${score.toLocaleString("ru-RU")} капель.`
+              }
               btnContent={<span style={{margin:'auto'}}>Закрыть</span>}
               setOpenModal={handleResultModalVisibility}
               isOpenModal={resultModalOpen}
