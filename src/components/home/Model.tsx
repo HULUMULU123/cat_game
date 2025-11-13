@@ -19,6 +19,7 @@ import { request } from "../../shared/api/httpClient";
 import type { FrontendConfigResponse } from "../../shared/api/types";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
+import useQualityProfile from "../../shared/hooks/useQualityProfile";
 
 /* --------------------------- Styled Components --------------------------- */
 
@@ -347,6 +348,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [manualHold, setManualHold] = useState(true); // короткий буфер от мерцаний
   const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
   const { active, progress } = useProgress();
+  const {
+    settings: { render: renderQuality },
+  } = useQualityProfile();
   const isBottomNavVisible = useGlobalStore(
     (state) => state.isBottomNavVisible
   );
@@ -440,41 +444,48 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на зелёный
   const canvasBg = readyCanvas && !postReadyHold ? "#002200" : "#000000";
   const showLoader = !readyCanvas || postReadyHold;
+  const fogEnabled = renderQuality.enableFog && canvasBg === "#002200";
+  const ambientIntensity = 0.6 * renderQuality.lightIntensityMultiplier;
+  const directionalIntensity = 1 * renderQuality.lightIntensityMultiplier;
+  const pointBottomIntensity = 1.2 * renderQuality.lightIntensityMultiplier;
+  const pointTopIntensity = 2 * renderQuality.lightIntensityMultiplier;
+  const shadowOpacity = renderQuality.enableShadows ? 0.3 : 0;
 
   return (
     <ModelWrapper>
       {/* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд без «зелёной» щели */}
       <CanvasFade $visible={readyCanvas}>
         <Canvas
-          shadows
+          shadows={renderQuality.enableShadows}
+          dpr={renderQuality.dpr}
           camera={{ position: [10, 0.5, 5], fov: 50, rotation: [0, 0.77, 0] }}
           style={{ width: "100%", height: "100vh", display: "block" }}
         >
           <color attach="background" args={[canvasBg]} />
-          {canvasBg === "#002200" && (
+          {fogEnabled && (
             <fog attach="fog" args={["#002200", 10, 40]} />
           )}
 
           <FirstFrame onReady={() => setFirstFrame(true)} />
 
-          <ambientLight intensity={0.6} color="#00ff1d" />
+          <ambientLight intensity={ambientIntensity} color="#00ff1d" />
           <directionalLight
             position={[5, 5, 5]}
-            intensity={1}
+            intensity={directionalIntensity}
             color="#00ff1d"
-            castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
+            castShadow={renderQuality.enableShadows}
+            shadow-mapSize-width={renderQuality.shadowMapSize}
+            shadow-mapSize-height={renderQuality.shadowMapSize}
           />
           <pointLight
             position={[0, -1, 0]}
-            intensity={1.2}
+            intensity={pointBottomIntensity}
             color="#00ff1d"
             distance={15}
           />
           <pointLight
             position={[0, 2, 0]}
-            intensity={2}
+            intensity={pointTopIntensity}
             distance={5}
             color="lime"
           />
@@ -491,26 +502,30 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               screenTexture={screenTexture}
             />
             {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
-            {!showLoader && <Environment preset="forest" background />}
+            {!showLoader && renderQuality.enableEnvironment && (
+              <Environment preset="forest" background />
+            )}
           </Suspense>
 
           <mesh
-            receiveShadow
+            receiveShadow={renderQuality.enableShadows}
             rotation={[-Math.PI / 2, 0, 0]}
             position={[0, -1.5, 0]}
           >
             <planeGeometry args={[50, 50]} />
-            <shadowMaterial opacity={0.3} />
+            <shadowMaterial opacity={shadowOpacity} />
           </mesh>
 
-          <EffectComposer>
-            <Bloom
-              intensity={0.4}
-              luminanceThreshold={0.2}
-              luminanceSmoothing={0.9}
-            />
-            <HueSaturation hue={0.3} saturation={0.5} />
-          </EffectComposer>
+          {renderQuality.enablePostprocessing && (
+            <EffectComposer>
+              <Bloom
+                intensity={0.4 * renderQuality.lightIntensityMultiplier}
+                luminanceThreshold={0.2}
+                luminanceSmoothing={0.9}
+              />
+              <HueSaturation hue={0.3} saturation={0.5} />
+            </EffectComposer>
+          )}
         </Canvas>
       </CanvasFade>
 
