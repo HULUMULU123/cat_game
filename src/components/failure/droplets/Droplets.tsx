@@ -20,9 +20,13 @@ const Wrapper = styled.div`
   overflow: hidden;
 `;
 
-const fall = (distance: number) => keyframes`
-  from { transform: translateY(0); }
-  to { transform: translateY(${distance}px); }
+const fall = keyframes`
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, var(--fall-distance, 110vh), 0);
+  }
 `;
 
 const DropletWrapper = styled.div<{
@@ -31,7 +35,6 @@ const DropletWrapper = styled.div<{
   duration: number;
   start: number;
   pad: number;
-  distance: number;
 }>`
   position: absolute;
   left: ${({ x, pad }) => x - pad}px;
@@ -47,8 +50,10 @@ const DropletWrapper = styled.div<{
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
   will-change: transform;
-  animation: ${({ distance }) => fall(distance)}
-    ${({ duration }) => duration}ms ease-in forwards;
+  animation-name: ${fall};
+  animation-duration: ${({ duration }) => duration}ms;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
 `;
 
 const DropletImg = styled.img<{ size: number }>`
@@ -126,18 +131,40 @@ const Droplets = ({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const dropletRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const bombTimeoutsRef = useRef<number[]>([]);
+  const viewportRef = useRef({ width: 0, height: 0 });
 
   const normalizedSpeed = useMemo(() => Math.max(0.5, speedModifier || 1), [
     speedModifier,
   ]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateViewport = () => {
+      viewportRef.current = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
+    };
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  const removeDrop = useCallback((id: number) => {
+    setDrops((prev) => prev.filter((d) => d.id !== id));
+    dropletRefs.current.delete(id);
+  }, []);
+
   const createDrop = useCallback(
     (kind: DropKind) => {
       const id = Date.now() + Math.random();
       const size = Math.random() * 40 + 20;
-      const x = Math.random() * (window.innerWidth - size);
+      const { width, height } = viewportRef.current;
+      const safeWidth = width || (typeof window !== "undefined" ? window.innerWidth : 0);
+      const safeHeight = height || (typeof window !== "undefined" ? window.innerHeight : 0);
+      const x = Math.random() * Math.max(0, safeWidth - size);
       const start = -size;
-      const distance = window.innerHeight + 50 - start;
+      const distance = safeHeight + 50 - start;
       const baseDuration = Math.random() * 1800 + 1800;
       const duration = Math.max(800, baseDuration * normalizedSpeed);
       const svg =
@@ -149,28 +176,8 @@ const Droplets = ({
         ...prev,
         { id, x, size, svg, duration, start, distance, kind },
       ]);
-
-      const removeDrop = () => {
-        setDrops((prev) => prev.filter((d) => d.id !== id));
-        dropletRefs.current.delete(id);
-      };
-
-      const animationTimeout = window.setTimeout(removeDrop, duration);
-
-      const checkVisibility = () => {
-        const el = dropletRefs.current.get(id);
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        if (rect.top > window.innerHeight) {
-          window.clearTimeout(animationTimeout);
-          removeDrop();
-        } else {
-          requestAnimationFrame(checkVisibility);
-        }
-      };
-      requestAnimationFrame(checkVisibility);
     },
-    [normalizedSpeed]
+    [normalizedSpeed, removeDrop]
   );
 
   useEffect(() => {
@@ -204,15 +211,23 @@ const Droplets = ({
 
   useEffect(() => {
     if (!disableBombs) return;
-    setDrops((prev) => prev.filter((drop) => drop.kind !== "bomb"));
+    setDrops((prev) => {
+      const next = prev.filter((drop) => {
+        const keep = drop.kind !== "bomb";
+        if (!keep) {
+          dropletRefs.current.delete(drop.id);
+        }
+        return keep;
+      });
+      return next;
+    });
   }, [disableBombs]);
 
   const handlePop = (drop: DropModel) => {
     const el = dropletRefs.current.get(drop.id);
     const wrapper = wrapperRef.current;
 
-    setDrops((prev) => prev.filter((d) => d.id !== drop.id));
-    dropletRefs.current.delete(drop.id);
+    removeDrop(drop.id);
 
     if (drop.kind === "bomb") {
       if (onBomb) onBomb();
@@ -250,11 +265,17 @@ const Droplets = ({
             duration={drop.duration}
             start={drop.start}
             pad={hitboxPadding}
-            distance={drop.distance}
             onPointerDown={(e) => {
               e.currentTarget.setPointerCapture(e.pointerId);
               handlePop(drop);
             }}
+            onAnimationEnd={() => removeDrop(drop.id)}
+            onAnimationCancel={() => removeDrop(drop.id)}
+            style={
+              {
+                "--fall-distance": `${drop.distance}px`,
+              } as React.CSSProperties
+            }
           >
             <DropletImg src={drop.svg} size={drop.size} draggable={false} />
           </DropletWrapper>
