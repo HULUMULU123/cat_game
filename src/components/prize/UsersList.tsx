@@ -26,6 +26,7 @@ const StyledContentWrapper = styled.div`
   align-items: center;
   margin-top: 20px;
   position: relative;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px);
 `;
 
 const StyledHeader = styled.h3`
@@ -55,6 +56,10 @@ const StyledList = styled.ul`
   scrollbar-color: #e1fffb #2cc2a9;
   height: 50vh;
 
+  @supports (padding: max(0px)) {
+    padding-bottom: max(0px, calc(env(safe-area-inset-bottom, 0px)));
+  }
+
   &::-webkit-scrollbar {
     width: 4px;
   }
@@ -76,6 +81,18 @@ const Placeholder = styled.div`
   font-family: "Conthrax", sans-serif;
   font-size: 12px;
   color: rgb(199, 247, 238);
+`;
+
+const StyledUserResultWrapper = styled.div`
+  position: sticky;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  box-sizing: border-box;
+  z-index: 2;
 `;
 
 /** Форматируем ISO-время результата в HH:MM (локальное) */
@@ -198,7 +215,11 @@ const UsersList = () => {
           <Placeholder>Завершение: {failureEnd}</Placeholder>
         ) : null}
         <StyledList>{listContent}</StyledList>
-        <UserResult entry={currentUser} />
+        {currentUser ? (
+          <StyledUserResultWrapper>
+            <UserResult entry={currentUser} />
+          </StyledUserResultWrapper>
+        ) : null}
       </StyledContentWrapper>
     </StyledWrapper>
   );

@@ -2,13 +2,13 @@ import styled from "styled-components";
 import avatar from "../../assets/avatar.jpg";
 import type { LeaderboardEntryResponse } from "../../shared/api/types";
 
-const StyledUserItem = styled.li`
+const StyledUserItem = styled.div`
   background: #26b291;
-  width: 100%;
+  width: 95%;
   display: flex;
   padding: 7px 0;
   border-radius: 7px;
-  margin: 10px auto;
+  margin: 0;
   color: rgb(224, 255, 251);
 `;
 
