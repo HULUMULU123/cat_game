@@ -84,6 +84,59 @@ const FreezeOverlay = styled.div<{ $visible: boolean }>`
   z-index: 1;
 `;
 
+const ResultOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: rgba(0, 0, 0, 0.68);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 24px;
+  gap: 16px;
+`;
+
+const ResultTitle = styled.h2`
+  margin: 0;
+  font-family: "Conthrax", sans-serif;
+  font-size: 20px;
+  text-transform: uppercase;
+  color: #e1fffb;
+  text-shadow: 0 0 16px rgba(44, 194, 169, 0.65);
+`;
+
+const ResultText = styled.p`
+  margin: 0;
+  font-family: "Conthrax", sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(199, 247, 238, 0.92);
+`;
+
+const ResultButton = styled.button`
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #0e4f45;
+  background: linear-gradient(
+    216deg,
+    rgba(76, 204, 181, 0.9) 0%,
+    rgba(168, 244, 219, 0.7) 50%
+  );
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(31, 255, 227, 0.35);
+  }
+`;
+
 /* Лоадер — поверх всего */
 const LoaderTopLayer = styled.div<{ $visible: boolean }>`
   position: fixed;
@@ -749,19 +802,10 @@ export default function Failure() {
     if (!loaderVisible) setShowLoaderNode(false);
   }, [loaderVisible]);
 
-  const handleResultModalVisibility = useCallback(
-    (open: boolean) => {
-      setResultModalOpen(open);
-      if (!open) {
-        navigate("/");
-      }
-    },
-    [navigate]
-  );
-
-  const handleResultModalAction = useCallback(() => {
-    handleResultModalVisibility(false);
-  }, [handleResultModalVisibility]);
+  const handleResultModalClose = useCallback(() => {
+    setResultModalOpen(false);
+    navigate("/");
+  }, [navigate]);
 
   return (
     <>
@@ -827,21 +871,15 @@ export default function Failure() {
         ) : null}
 
         {resultModalOpen ? (
-          <ModalLayout
-            isOpen={resultModalOpen}
-            setIsOpen={handleResultModalVisibility}
-          >
-            <ModalWindow
-              header="СБОЙ ЗАВЕРШЁН"
-              text={
-                resultMessage ?? `Вы собрали ${score.toLocaleString("ru-RU")} капель.`
-              }
-              btnContent={<span style={{margin:'auto'}}>Закрыть</span>}
-              setOpenModal={handleResultModalVisibility}
-              isOpenModal={resultModalOpen}
-              onAction={handleResultModalAction}
-            />
-          </ModalLayout>
+          <ResultOverlay>
+            <ResultTitle>СБОЙ ЗАВЕРШЁН</ResultTitle>
+            <ResultText>
+              {resultMessage ?? `Вы собрали ${score.toLocaleString("ru-RU")} капель.`}
+            </ResultText>
+            <ResultButton onClick={handleResultModalClose}>
+              Закрыть сбой
+            </ResultButton>
+          </ResultOverlay>
         ) : null}
 
         {storeOpen ? (
