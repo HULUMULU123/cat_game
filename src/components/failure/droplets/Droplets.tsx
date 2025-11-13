@@ -6,6 +6,7 @@ import drop3 from "../../../assets/drops/drop3.svg";
 import drop4 from "../../../assets/drops/drop3.svg";
 import drop5 from "../../../assets/drops/drop4.svg";
 import bombDrop from "../../../assets/drops/bomb.svg";
+import useQualityProfile from "../../../shared/hooks/useQualityProfile";
 
 const StyledWrapper = styled.div`
   position: absolute;
@@ -70,6 +71,7 @@ const PopEffect = styled.div<{
   y: number;
   size: number;
   color: string;
+  duration: number;
 }>`
   position: absolute;
   left: ${({ x, size }) => x - size / 2}px;
@@ -79,7 +81,7 @@ const PopEffect = styled.div<{
   background: ${({ color }) => color};
   border-radius: 50%;
   pointer-events: none;
-  animation: pop 0.6s forwards;
+  animation: pop ${({ duration }) => duration}ms forwards;
 
   @keyframes pop {
     0% { transform: scale(0); opacity: 1; }
@@ -128,6 +130,10 @@ const Droplets = ({
     { id: number; x: number; y: number; size: number; color: string }
   >([]);
 
+  const {
+    settings: { droplets: dropletQuality },
+  } = useQualityProfile();
+
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const dropletRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const bombTimeoutsRef = useRef<number[]>([]);
@@ -136,6 +142,8 @@ const Droplets = ({
   const normalizedSpeed = useMemo(() => Math.max(0.5, speedModifier || 1), [
     speedModifier,
   ]);
+  const bombsDisabled = disableBombs || dropletQuality.disableBombs;
+  const popDuration = dropletQuality.popDuration;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -172,28 +180,47 @@ const Droplets = ({
           ? bombDrop
           : dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
-      setDrops((prev) => [
-        ...prev,
-        { id, x, size, svg, duration, start, distance, kind },
-      ]);
+      setDrops((prev) => {
+        const next = [
+          ...prev,
+          { id, x, size, svg, duration, start, distance, kind },
+        ];
+
+        if (next.length <= dropletQuality.maxDrops) {
+          return next;
+        }
+
+        const overflow = next.slice(0, next.length - dropletQuality.maxDrops);
+        overflow.forEach((drop) => dropletRefs.current.delete(drop.id));
+
+        return next.slice(next.length - dropletQuality.maxDrops);
+      });
     },
-    [normalizedSpeed, removeDrop]
+    [dropletQuality.maxDrops, normalizedSpeed]
   );
 
   useEffect(() => {
-    const interval = Math.max(10, (spawnInterval / 3) * normalizedSpeed);
+    const interval = Math.max(
+      10,
+      (spawnInterval / 3) * normalizedSpeed * dropletQuality.spawnIntervalMultiplier
+    );
     const timer = window.setInterval(() => {
       createDrop("water");
     }, interval);
 
     return () => window.clearInterval(timer);
-  }, [createDrop, normalizedSpeed, spawnInterval]);
+  }, [
+    createDrop,
+    dropletQuality.spawnIntervalMultiplier,
+    normalizedSpeed,
+    spawnInterval,
+  ]);
 
   useEffect(() => {
     bombTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     bombTimeoutsRef.current = [];
 
-    if (!bombSchedule || disableBombs) return;
+    if (!bombSchedule || bombsDisabled) return;
 
     bombSchedule.forEach((delay) => {
       const safeDelay = Math.max(0, delay);
@@ -207,10 +234,10 @@ const Droplets = ({
       bombTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
       bombTimeoutsRef.current = [];
     };
-  }, [bombSchedule, createDrop, disableBombs]);
+  }, [bombSchedule, bombsDisabled, createDrop]);
 
   useEffect(() => {
-    if (!disableBombs) return;
+    if (!bombsDisabled) return;
     setDrops((prev) => {
       const next = prev.filter((drop) => {
         const keep = drop.kind !== "bomb";
@@ -221,7 +248,7 @@ const Droplets = ({
       });
       return next;
     });
-  }, [disableBombs]);
+  }, [bombsDisabled]);
 
   const handlePop = (drop: DropModel) => {
     const el = dropletRefs.current.get(drop.id);
@@ -244,9 +271,9 @@ const Droplets = ({
       const popId = drop.id + 0.123;
       const color = drop.kind === "bomb" ? bombEffectColor : "rgba(0, 223, 152, 0.5)";
       setPops((prev) => [...prev, { id: popId, x, y, size: drop.size, color }]);
-      setTimeout(() => {
+      window.setTimeout(() => {
         setPops((prev) => prev.filter((p) => p.id !== popId));
-      }, 600);
+      }, popDuration);
     }
   };
 
@@ -288,6 +315,7 @@ const Droplets = ({
             y={pop.y}
             size={pop.size}
             color={pop.color}
+            duration={popDuration}
           />
         ))}
       </Wrapper>
