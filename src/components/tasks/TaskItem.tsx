@@ -34,8 +34,9 @@ const StyledListItemContent = styled.div`
 `;
 
 const StyledListImg = styled.img`
-  width: 30px;
+  width: 45px;
   margin-right: 15px;
+  border-radius: 7px;
 `;
 
 const StyledTextWrapper = styled.div`
