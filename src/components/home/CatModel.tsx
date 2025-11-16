@@ -64,9 +64,11 @@ export default function CatModel() {
 
   const mixer = useRef<THREE.AnimationMixer>();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(0);
   const currentAction = useRef<THREE.AnimationAction | null>(null);
   const actionCache = useRef<Map<string, THREE.AnimationAction>>(new Map());
   const clipRegistry = useRef<Map<string, THREE.AnimationClip>>(new Map());
+  const fadeCleanupTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     const registry = clipRegistry.current;
@@ -95,23 +97,55 @@ export default function CatModel() {
     return action;
   }, []);
 
+  const FADE_DURATION = 0.6;
+
+  const playAnimation = useCallback(
+    (index: number, fadeFrom?: THREE.AnimationAction | null) => {
+      if (!mixer.current || animations.length === 0) return;
+      const clip = animations[index];
+      if (!clip) return;
+
+      const next = getActionForClip(clip);
+      if (!next) return;
+
+      const previous = fadeFrom ?? currentAction.current;
+
+      next.reset();
+      next.play();
+
+      if (previous && previous !== next) {
+        next.crossFadeFrom(previous, FADE_DURATION, false);
+
+        const timer = setTimeout(() => {
+          previous.stop();
+          previous.reset();
+          fadeCleanupTimers.current = fadeCleanupTimers.current.filter(
+            (t) => t !== timer
+          );
+        }, FADE_DURATION * 1000 + 50);
+
+        fadeCleanupTimers.current.push(timer);
+      }
+
+      currentAction.current = next;
+      currentIndexRef.current = index;
+      setCurrentIndex(index);
+    },
+    [animations, getActionForClip]
+  );
+
   // Инициализация миксера и старт первой анимации
   useEffect(() => {
     if (!scene || animations.length === 0) return;
 
     if (!mixer.current) mixer.current = new THREE.AnimationMixer(scene);
 
-    const clip = animations[0];
-    const next = getActionForClip(clip);
-    if (!next) return;
-
-    next.reset();
-    next.play();
-
-    currentAction.current = next;
-    setCurrentIndex(0);
+    playAnimation(0);
 
     return () => {
+      fadeCleanupTimers.current.forEach((timer) => clearTimeout(timer));
+      fadeCleanupTimers.current = [];
+
       actionCache.current.forEach((cachedAction, key) => {
         cachedAction.stop();
         cachedAction.reset();
@@ -126,39 +160,28 @@ export default function CatModel() {
       mixer.current?.stopAllAction();
       if (scene) mixer.current?.uncacheRoot(scene);
     };
-  }, [scene, animations, getActionForClip]);
+  }, [scene, animations, playAnimation]);
 
   // Переключение по завершению текущего клипа: 0 → 1 → 2 → 3 → 0 …
   useEffect(() => {
     if (!mixer.current || animations.length === 0) return;
     const mixerInstance = mixer.current;
 
-    const handleFinished = () => {
-      const nextIndex = (currentIndex + 1) % animations.length;
-      const nextClip = animations[nextIndex];
+    const handleFinished = (
+      event: THREE.Event & { action?: THREE.AnimationAction }
+    ) => {
+      const finishedAction = event.action ?? currentAction.current;
+      if (!animations.length) return;
 
-      const next = getActionForClip(nextClip);
-      if (!next) return;
-
-      const previousAction = currentAction.current;
-
-      next.reset();
-      next.play();
-
-      if (previousAction && previousAction !== next) {
-        previousAction.crossFadeTo(next, 0.6, false);
-        previousAction.reset();
-      }
-
-      currentAction.current = next;
-      setCurrentIndex(nextIndex);
+      const nextIndex = (currentIndexRef.current + 1) % animations.length;
+      playAnimation(nextIndex, finishedAction ?? undefined);
     };
 
     mixerInstance.addEventListener("finished", handleFinished);
     return () => {
       mixerInstance.removeEventListener("finished", handleFinished);
     };
-  }, [currentIndex, animations, getActionForClip]);
+  }, [animations, playAnimation]);
 
   useFrame((_, delta) => {
     mixer.current?.update(delta);
