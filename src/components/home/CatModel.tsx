@@ -203,18 +203,10 @@ export default function CatModel() {
         });
       }
     });
-    return () => {
-      scene.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          mesh.geometry.dispose();
-          const materials = Array.isArray(mesh.material)
-            ? mesh.material
-            : [mesh.material];
-          materials.forEach((mat) => mat?.dispose());
-        }
-      });
-    };
+
+    // ВАЖНО: больше не делаем ручной dispose geometry/material,
+    // чтобы не грохать общие ресурсы useGLTF
+    return () => {};
   }, [scene]);
 
   // Заворачиваем сцену в <group>, чтобы задать позицию и ротацию
