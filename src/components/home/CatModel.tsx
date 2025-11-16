@@ -96,6 +96,8 @@ export default function CatModel() {
     return action;
   }, []);
 
+  const FADE_DURATION = 0.6;
+
   const playAnimation = useCallback(
     (index: number, fadeFrom?: THREE.AnimationAction | null) => {
       if (!mixer.current || animations.length === 0) return;
@@ -111,7 +113,7 @@ export default function CatModel() {
       next.play();
 
       if (previous && previous !== next) {
-        next.crossFadeFrom(previous, 0.6, false);
+        next.crossFadeFrom(previous, FADE_DURATION, false);
       }
 
       currentAction.current = next;
@@ -159,8 +161,6 @@ export default function CatModel() {
 
       const nextIndex = (currentIndexRef.current + 1) % animations.length;
       playAnimation(nextIndex, finishedAction ?? undefined);
-
-      finishedAction?.stop();
     };
 
     mixerInstance.addEventListener("finished", handleFinished);
