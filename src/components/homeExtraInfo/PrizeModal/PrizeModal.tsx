@@ -159,7 +159,7 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
         handleClose={handleClose}
         prizeBalance={balance}
       />
-      <SectionInfo InfoName={"НАГРАДЫ ТЕКУЩЕГО СБОЯ"} />
+      <SectionInfo InfoName={"НАГРАДА ТЕКУЩЕГО СБОЯ"} />
       {isLoading ? (
         <Placeholder>
           <LoadingSpinner label="Обновляем информацию" />
