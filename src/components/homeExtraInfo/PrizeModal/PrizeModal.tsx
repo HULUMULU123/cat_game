@@ -134,9 +134,7 @@ export default function PrizeModal({ handleClose }: PrizeModalProps) {
     return Boolean(completedFailures[failure.id]);
   }, [completedFailures, failure]);
 
-  const completionNote = hasCompletedFailure
-    ? "Вы уже прошли текущий сбой"
-    : null;
+  const completionNote = hasCompletedFailure ? null : null;
 
   const displayTimerValue = timerValue || "";
   const currentDate = useMemo(
