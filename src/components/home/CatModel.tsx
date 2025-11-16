@@ -68,6 +68,7 @@ export default function CatModel() {
   const currentAction = useRef<THREE.AnimationAction | null>(null);
   const actionCache = useRef<Map<string, THREE.AnimationAction>>(new Map());
   const clipRegistry = useRef<Map<string, THREE.AnimationClip>>(new Map());
+  const fadeCleanupTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     const registry = clipRegistry.current;
@@ -114,6 +115,16 @@ export default function CatModel() {
 
       if (previous && previous !== next) {
         next.crossFadeFrom(previous, FADE_DURATION, false);
+
+        const timer = setTimeout(() => {
+          previous.stop();
+          previous.reset();
+          fadeCleanupTimers.current = fadeCleanupTimers.current.filter(
+            (t) => t !== timer
+          );
+        }, FADE_DURATION * 1000 + 50);
+
+        fadeCleanupTimers.current.push(timer);
       }
 
       currentAction.current = next;
@@ -132,6 +143,9 @@ export default function CatModel() {
     playAnimation(0);
 
     return () => {
+      fadeCleanupTimers.current.forEach((timer) => clearTimeout(timer));
+      fadeCleanupTimers.current = [];
+
       actionCache.current.forEach((cachedAction, key) => {
         cachedAction.stop();
         cachedAction.reset();
