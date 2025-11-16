@@ -20,34 +20,34 @@ const StyledContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
-`
+`;
 const StyledCoinWrapper = styled.div`
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: end;
   gap: 10px;
-`
+`;
 const StyledCoinImg = styled.img`
   width: 37px;
-  `
+`;
 
 const StyledCoinCount = styled.span`
   font-family: "Conthrax", sans-serif;
   font-weight: 700;
   font-size: 30px;
   color: #fff;
-`
+`;
 
 const StyledCoinLine = styled.span`
-  display:block;
-  width:100%;
-  height:1px;
-  border-radius:5px;
-  background: #85FFF0;
-  box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
-  -webkit-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
-  -moz-box-shadow: -1px -1px 18px 0px rgba(133,255,240,0.75);
-  `
+  display: block;
+  width: 100%;
+  height: 1px;
+  border-radius: 5px;
+  background: #85fff0;
+  box-shadow: -1px -1px 18px 0px rgba(133, 255, 240, 0.75);
+  -webkit-box-shadow: -1px -1px 18px 0px rgba(133, 255, 240, 0.75);
+  -moz-box-shadow: -1px -1px 18px 0px rgba(133, 255, 240, 0.75);
+`;
 
 const StyledCoinName = styled.span`
   margin-left: auto;
@@ -62,7 +62,7 @@ const CrashCount = () => {
 
   const formattedBalance = useMemo(
     () => balance.toLocaleString("ru-RU"),
-    [balance],
+    [balance]
   );
 
   return (
