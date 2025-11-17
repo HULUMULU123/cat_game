@@ -27,15 +27,15 @@ export default function CatModel() {
 
   const {
     settings: {
-      animation: { enableFrustumCulling },
+      animation: { enableFrustumCulling }, // сейчас игнорируем, но оставляем в коде
     },
   } = useQualityProfile();
 
   const scene = useMemo(() => {
     const cloned = SkeletonUtils.clone(primaryModel.scene) as THREE.Group;
+
     cloned.traverse((child) => {
-      // ВАЖНО: для SkinnedMesh всегда отключаем frustum culling,
-      // иначе при анимации части тела (подбородок, голова) могут "отваливаться"
+      // ВАЖНО: полностью отключаем frustum culling для всех мешей
       if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
         const skinned = child as THREE.SkinnedMesh;
         skinned.frustumCulled = false;
@@ -44,9 +44,10 @@ export default function CatModel() {
 
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        mesh.frustumCulled = enableFrustumCulling ? true : false;
+        mesh.frustumCulled = false;
       }
     });
+
     return cloned;
   }, [primaryModel.scene, enableFrustumCulling]);
 
@@ -198,27 +199,23 @@ export default function CatModel() {
   // Исправляем материалы
   useEffect(() => {
     if (!scene) return;
+
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        const name = mesh.name.toLowerCase();
-        const shouldUseDoubleSide =
-          name.includes("head") ||
-          name.includes("face") ||
-          name.includes("chin");
         const materials = Array.isArray(mesh.material)
           ? mesh.material
           : [mesh.material];
+
         materials.forEach((mat) => {
+          // Убираем прозрачность и делаем двусторонние полигоны
           mat.transparent = false;
           mat.depthWrite = true;
-          mat.side = shouldUseDoubleSide ? THREE.DoubleSide : THREE.FrontSide;
+          mat.side = THREE.DoubleSide;
         });
       }
     });
 
-    // ВАЖНО: больше не делаем ручной dispose geometry/material,
-    // чтобы не грохать общие ресурсы useGLTF
     return () => {};
   }, [scene]);
 
