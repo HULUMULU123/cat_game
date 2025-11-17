@@ -34,6 +34,14 @@ export default function CatModel() {
   const scene = useMemo(() => {
     const cloned = SkeletonUtils.clone(primaryModel.scene) as THREE.Group;
     cloned.traverse((child) => {
+      // ВАЖНО: для SkinnedMesh всегда отключаем frustum culling,
+      // иначе при анимации части тела (подбородок, голова) могут "отваливаться"
+      if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
+        const skinned = child as THREE.SkinnedMesh;
+        skinned.frustumCulled = false;
+        return;
+      }
+
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
         mesh.frustumCulled = enableFrustumCulling ? true : false;
@@ -195,7 +203,9 @@ export default function CatModel() {
         const mesh = child as THREE.Mesh;
         const name = mesh.name.toLowerCase();
         const shouldUseDoubleSide =
-          name.includes("head") || name.includes("face") || name.includes("chin");
+          name.includes("head") ||
+          name.includes("face") ||
+          name.includes("chin");
         const materials = Array.isArray(mesh.material)
           ? mesh.material
           : [mesh.material];

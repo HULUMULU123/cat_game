@@ -125,15 +125,96 @@ const LevelBadge = styled.span`
 
 /* ----------------------------- Кэш ресурсов ------------------------------ */
 
-const modelCache = new Map<string, any>();
 const textureCache = new Map<string, THREE.Texture>();
 const videoCache = new Map<string, HTMLVideoElement>();
+
 const DEFAULT_SCREEN_TEXTURE = "/textures/screen_image.jpeg";
+const MAX_TEXTURE_SIZE = 4096;
+
 const textureLoader = new THREE.TextureLoader();
 textureLoader.setCrossOrigin("anonymous");
 
+/**
+ * Нормализация URL, чтобы на всех устройствах и окружениях путь был валидный.
+ */
+const resolveTextureUrl = (url?: string | null): string => {
+  const baseDefault = DEFAULT_SCREEN_TEXTURE;
+
+  if (typeof url !== "string") return baseDefault;
+  const trimmed = url.trim();
+  if (!trimmed) return baseDefault;
+
+  // Абсолютный URL
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  // Протокол-relative
+  if (trimmed.startsWith("//")) {
+    if (typeof window !== "undefined") {
+      return window.location.protocol + trimmed;
+    }
+    return "https:" + trimmed;
+  }
+
+  // От корня домена
+  if (trimmed.startsWith("/")) {
+    if (typeof window !== "undefined") {
+      return window.location.origin + trimmed;
+    }
+    return trimmed;
+  }
+
+  // Относительный путь — считаем от origin
+  if (typeof window !== "undefined") {
+    try {
+      return new URL(trimmed, window.location.origin).toString();
+    } catch {
+      return baseDefault;
+    }
+  }
+
+  return baseDefault;
+};
+
+/**
+ * Если текстура слишком большая — уменьшаем до MAX_TEXTURE_SIZE через canvas.
+ */
+const downscaleIfNeeded = (texture: THREE.Texture): THREE.Texture => {
+  const image = texture.image as HTMLImageElement | HTMLCanvasElement | null;
+  if (!image) return texture;
+
+  const width = (image as any).width;
+  const height = (image as any).height;
+  if (!width || !height) return texture;
+
+  if (width <= MAX_TEXTURE_SIZE && height <= MAX_TEXTURE_SIZE) {
+    return texture;
+  }
+
+  const ratio = Math.min(MAX_TEXTURE_SIZE / width, MAX_TEXTURE_SIZE / height);
+  const targetW = Math.round(width * ratio);
+  const targetH = Math.round(height * ratio);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return texture;
+
+  ctx.drawImage(image as any, 0, 0, targetW, targetH);
+
+  const resizedTexture = new THREE.CanvasTexture(canvas);
+  resizedTexture.colorSpace = THREE.SRGBColorSpace;
+  resizedTexture.flipY = false;
+  resizedTexture.needsUpdate = true;
+
+  texture.dispose();
+  return resizedTexture;
+};
+
 const loadScreenTexture = async (url: string): Promise<THREE.Texture> => {
-  const targetURL = url || DEFAULT_SCREEN_TEXTURE;
+  const targetURL =
+    resolveTextureUrl(url) || resolveTextureUrl(DEFAULT_SCREEN_TEXTURE);
+
   if (textureCache.has(targetURL)) {
     return textureCache.get(targetURL)!;
   }
@@ -141,18 +222,36 @@ const loadScreenTexture = async (url: string): Promise<THREE.Texture> => {
   return new Promise((resolve) => {
     textureLoader.load(
       targetURL,
-      (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.flipY = false;
-        textureCache.set(targetURL, texture);
-        resolve(texture);
+      (rawTexture) => {
+        try {
+          let texture = rawTexture;
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.flipY = false;
+          texture.needsUpdate = true;
+
+          // Защита от гигантских текстур (особенно для iOS)
+          texture = downscaleIfNeeded(texture);
+
+          textureCache.set(targetURL, texture);
+          resolve(texture);
+        } catch (e) {
+          console.error("[screen] texture postprocess error", targetURL, e);
+          if (targetURL !== resolveTextureUrl(DEFAULT_SCREEN_TEXTURE)) {
+            loadScreenTexture(DEFAULT_SCREEN_TEXTURE).then(resolve);
+          } else {
+            resolve(new THREE.Texture());
+          }
+        }
       },
       undefined,
-      () => {
-        if (targetURL !== DEFAULT_SCREEN_TEXTURE) {
+      (err) => {
+        console.error("[screen] texture load error", targetURL, err);
+        // Падаем в дефолтный jpeg
+        const defaultURL = resolveTextureUrl(DEFAULT_SCREEN_TEXTURE);
+        if (targetURL !== defaultURL) {
           loadScreenTexture(DEFAULT_SCREEN_TEXTURE).then(resolve);
         } else {
-          resolve(textureCache.get(DEFAULT_SCREEN_TEXTURE) ?? new THREE.Texture());
+          resolve(new THREE.Texture());
         }
       }
     );
@@ -242,12 +341,9 @@ function RoomWithCat({
   onLoaded?: () => void;
   screenTexture: string;
 }) {
-  const { scene } = useMemo(() => {
-    if (modelCache.has(url)) return modelCache.get(url);
-    const model = useGLTF(url);
-    modelCache.set(url, model);
-    return model;
-  }, [url]);
+  // useGLTF сам кэширует модели, без ручного кэша и нарушений правил хуков
+  const gltf = useGLTF(url);
+  const { scene } = gltf;
 
   const catRef = useRef<THREE.Group>(null);
 
@@ -294,13 +390,13 @@ function RoomWithCat({
     if (windowMesh) {
       const videoURL = "/videos/rain.mp4";
       let video = videoCache.get(videoURL);
-      if (!video) {
+      if (!video && typeof document !== "undefined") {
         video = document.createElement("video");
         video.src = videoURL;
         video.crossOrigin = "anonymous";
         video.loop = true;
         video.muted = true;
-        video.playsInline = true;
+        (video as any).playsInline = true;
         video.autoplay = true;
         video.preload = "auto";
         video.style.display = "none";
@@ -309,36 +405,40 @@ function RoomWithCat({
         videoCache.set(videoURL, video);
       }
 
-      const videoReady = new Promise<void>((resolve) => {
-        if (video!.readyState >= 2) resolve();
-        else {
-          const done = () => resolve();
-          video!.addEventListener("canplaythrough", done, { once: true });
-          video!.addEventListener("loadeddata", done, { once: true });
-        }
-      });
+      if (video) {
+        const videoReady = new Promise<void>((resolve) => {
+          if (video!.readyState >= 2) resolve();
+          else {
+            const done = () => resolve();
+            video!.addEventListener("canplaythrough", done, { once: true });
+            video!.addEventListener("loadeddata", done, { once: true });
+          }
+        });
 
-      video.play().catch(() => {});
+        video.play().catch((e) => {
+          console.warn("[window video] autoplay failed", e);
+        });
 
-      const videoTexture = new THREE.VideoTexture(video);
-      videoTexture.minFilter = THREE.LinearFilter;
-      videoTexture.magFilter = THREE.LinearFilter;
-      videoTexture.format = THREE.RGBFormat;
-      (videoTexture as any).colorSpace = THREE.SRGBColorSpace;
-      videoTexture.flipY = false;
-      videoTexture.center.set(0.5, 0.5);
-      videoTexture.rotation = Math.PI / 2;
-      videoTexture.repeat.set(2.5, 2.5);
-      videoTexture.offset.set(-0.1, 0);
+        const videoTexture = new THREE.VideoTexture(video);
+        videoTexture.minFilter = THREE.LinearFilter;
+        videoTexture.magFilter = THREE.LinearFilter;
+        videoTexture.format = THREE.RGBFormat;
+        (videoTexture as any).colorSpace = THREE.SRGBColorSpace;
+        videoTexture.flipY = false;
+        videoTexture.center.set(0.5, 0.5);
+        videoTexture.rotation = Math.PI / 2;
+        videoTexture.repeat.set(2.5, 2.5);
+        videoTexture.offset.set(-0.1, 0);
 
-      windowMesh.material = new THREE.MeshBasicMaterial({
-        map: videoTexture,
-        toneMapped: false,
-        side: THREE.DoubleSide,
-      });
-      (windowMesh.material as THREE.Material).needsUpdate = true;
+        windowMesh.material = new THREE.MeshBasicMaterial({
+          map: videoTexture,
+          toneMapped: false,
+          side: THREE.DoubleSide,
+        });
+        (windowMesh.material as THREE.Material).needsUpdate = true;
 
-      waiters.push(videoReady);
+        waiters.push(videoReady);
+      }
     }
 
     Promise.all(waiters).then(() => onLoaded?.());
@@ -372,6 +472,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     (state) => state.isBottomNavVisible
   );
   const [screenTexture, setScreenTexture] = useState(DEFAULT_SCREEN_TEXTURE);
+
   const {
     data: frontendConfig,
     isLoading: isConfigLoading,
@@ -392,8 +493,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const incoming = frontendConfig?.screen_texture?.trim();
     if (incoming) {
       setScreenTexture(incoming);
+    } else {
+      setScreenTexture(DEFAULT_SCREEN_TEXTURE);
     }
   }, [frontendConfig]);
+
   // Условия готовности Canvas (для его появления)
   useEffect(() => {
     const t = setTimeout(() => setManualHold(false), 300);
@@ -426,6 +530,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       rainRef.current?.pause();
       musicRef.current?.pause();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -433,8 +538,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const setVol = (a?: HTMLAudioElement | null) => {
       if (!a) return;
       a.volume = vol;
-      if (vol > 0) a.play().catch(() => {});
-      else {
+      if (vol > 0) {
+        a.play().catch((e) => {
+          console.warn("[audio] autoplay failed", e);
+        });
+      } else {
         a.pause();
         a.currentTime = 0;
       }
@@ -479,9 +587,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           style={{ width: "100%", height: "100vh", display: "block" }}
         >
           <color attach="background" args={[canvasBg]} />
-          {fogEnabled && (
-            <fog attach="fog" args={["#002200", 10, 40]} />
-          )}
+          {fogEnabled && <fog attach="fog" args={["#002200", 10, 40]} />}
 
           <FirstFrame onReady={() => setFirstFrame(true)} />
 
