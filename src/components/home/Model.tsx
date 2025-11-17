@@ -129,6 +129,35 @@ const modelCache = new Map<string, any>();
 const textureCache = new Map<string, THREE.Texture>();
 const videoCache = new Map<string, HTMLVideoElement>();
 const DEFAULT_SCREEN_TEXTURE = "/textures/screen_image.jpeg";
+const textureLoader = new THREE.TextureLoader();
+textureLoader.setCrossOrigin("anonymous");
+
+const loadScreenTexture = async (url: string): Promise<THREE.Texture> => {
+  const targetURL = url || DEFAULT_SCREEN_TEXTURE;
+  if (textureCache.has(targetURL)) {
+    return textureCache.get(targetURL)!;
+  }
+
+  return new Promise((resolve) => {
+    textureLoader.load(
+      targetURL,
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.flipY = false;
+        textureCache.set(targetURL, texture);
+        resolve(texture);
+      },
+      undefined,
+      () => {
+        if (targetURL !== DEFAULT_SCREEN_TEXTURE) {
+          loadScreenTexture(DEFAULT_SCREEN_TEXTURE).then(resolve);
+        } else {
+          resolve(textureCache.get(DEFAULT_SCREEN_TEXTURE) ?? new THREE.Texture());
+        }
+      }
+    );
+  });
+};
 
 /* ------------------------- Уведомление о первом кадре -------------------- */
 
@@ -251,27 +280,15 @@ function RoomWithCat({
 
     if (screenMesh) {
       const textureURL = screenTexture || DEFAULT_SCREEN_TEXTURE;
-      if (textureCache.has(textureURL)) {
+      const p = loadScreenTexture(textureURL).then((texture) => {
+        texture.needsUpdate = true;
         screenMesh.material = new THREE.MeshBasicMaterial({
-          map: textureCache.get(textureURL)!,
+          map: texture,
           toneMapped: false,
         });
-      } else {
-        const p = new Promise<void>((resolve) => {
-          new THREE.TextureLoader().load(textureURL, (texture) => {
-            texture.encoding = THREE.sRGBEncoding;
-            texture.flipY = false;
-            textureCache.set(textureURL, texture);
-            screenMesh.material = new THREE.MeshBasicMaterial({
-              map: texture,
-              toneMapped: false,
-            });
-            (screenMesh.material as THREE.Material).needsUpdate = true;
-            resolve();
-          });
-        });
-        waiters.push(p);
-      }
+        (screenMesh.material as THREE.Material).needsUpdate = true;
+      });
+      waiters.push(p);
     }
 
     if (windowMesh) {

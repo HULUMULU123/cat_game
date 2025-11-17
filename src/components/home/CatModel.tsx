@@ -193,13 +193,16 @@ export default function CatModel() {
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
+        const name = mesh.name.toLowerCase();
+        const shouldUseDoubleSide =
+          name.includes("head") || name.includes("face") || name.includes("chin");
         const materials = Array.isArray(mesh.material)
           ? mesh.material
           : [mesh.material];
         materials.forEach((mat) => {
           mat.transparent = false;
           mat.depthWrite = true;
-          mat.side = THREE.FrontSide;
+          mat.side = shouldUseDoubleSide ? THREE.DoubleSide : THREE.FrontSide;
         });
       }
     });
