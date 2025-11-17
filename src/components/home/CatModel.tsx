@@ -27,24 +27,49 @@ export default function CatModel() {
 
   const {
     settings: {
-      animation: { enableFrustumCulling }, // сейчас игнорируем, но оставляем в коде
+      animation: { enableFrustumCulling },
     },
   } = useQualityProfile();
+
+  const mixer = useRef<THREE.AnimationMixer>();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(0);
+  const currentAction = useRef<THREE.AnimationAction | null>(null);
+  const actionCache = useRef<Map<string, THREE.AnimationAction>>(new Map());
+  const clipRegistry = useRef<Map<string, THREE.AnimationClip>>(new Map());
+  const fadeCleanupTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Кость челюсти/подбородка, которую будем править вручную
+  const jawBoneRef = useRef<THREE.Bone | null>(null);
 
   const scene = useMemo(() => {
     const cloned = SkeletonUtils.clone(primaryModel.scene) as THREE.Group;
 
     cloned.traverse((child) => {
-      // ВАЖНО: полностью отключаем frustum culling для всех мешей
+      // Для skinned-мешей отключаем frustum culling
       if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
         const skinned = child as THREE.SkinnedMesh;
         skinned.frustumCulled = false;
+
+        // Пытаемся найти кость челюсти/подбородка/рта по имени
+        if (skinned.skeleton && !jawBoneRef.current) {
+          const candidate = skinned.skeleton.bones.find((bone) => {
+            const n = bone.name.toLowerCase();
+            return (
+              n.includes("jaw") || n.includes("chin") || n.includes("mouth")
+            );
+          });
+          if (candidate) {
+            jawBoneRef.current = candidate;
+          }
+        }
+
         return;
       }
 
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        mesh.frustumCulled = false;
+        mesh.frustumCulled = enableFrustumCulling ? true : false;
       }
     });
 
@@ -70,14 +95,6 @@ export default function CatModel() {
     animModel3.animations,
     animModel4.animations,
   ]);
-
-  const mixer = useRef<THREE.AnimationMixer>();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const currentIndexRef = useRef(0);
-  const currentAction = useRef<THREE.AnimationAction | null>(null);
-  const actionCache = useRef<Map<string, THREE.AnimationAction>>(new Map());
-  const clipRegistry = useRef<Map<string, THREE.AnimationClip>>(new Map());
-  const fadeCleanupTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     const registry = clipRegistry.current;
@@ -193,30 +210,63 @@ export default function CatModel() {
   }, [animations, playAnimation]);
 
   useFrame((_, delta) => {
+    // Ручная коррекция кости челюсти — не даём её слишком сплющивать
+    if (jawBoneRef.current) {
+      const bone = jawBoneRef.current;
+      const minScale = 0.9; // можешь поиграть этим значением
+
+      bone.scale.set(
+        Math.max(bone.scale.x, minScale),
+        Math.max(bone.scale.y, minScale),
+        Math.max(bone.scale.z, minScale)
+      );
+      bone.updateMatrixWorld(true);
+    }
+
     mixer.current?.update(delta);
   });
 
   // Исправляем материалы
   useEffect(() => {
     if (!scene) return;
-
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
+        const name = mesh.name.toLowerCase();
+        const shouldUseDoubleSide =
+          name.includes("head") ||
+          name.includes("face") ||
+          name.includes("chin");
         const materials = Array.isArray(mesh.material)
           ? mesh.material
           : [mesh.material];
-
         materials.forEach((mat) => {
-          // Убираем прозрачность и делаем двусторонние полигоны
           mat.transparent = false;
           mat.depthWrite = true;
-          mat.side = THREE.DoubleSide;
+          mat.side = shouldUseDoubleSide ? THREE.DoubleSide : THREE.FrontSide;
         });
       }
     });
 
     return () => {};
+  }, [scene]);
+
+  // Доп. лог, чтобы ты мог в консоли посмотреть имена костей
+  useEffect(() => {
+    if (!scene) return;
+    scene.traverse((child) => {
+      if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
+        const skinned = child as THREE.SkinnedMesh;
+        if (skinned.skeleton) {
+          console.log(
+            "SkinnedMesh:",
+            skinned.name,
+            "bones:",
+            skinned.skeleton.bones.map((b) => b.name)
+          );
+        }
+      }
+    });
   }, [scene]);
 
   // Заворачиваем сцену в <group>, чтобы задать позицию и ротацию
