@@ -9,6 +9,7 @@ import black_advert from "../../assets/icons/black_advert.svg";
 import useAdsgramAd, { AdsgramStatus } from "../../shared/hooks/useAdsgramAd";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
+import { useAdsgram } from "@adsgram/react";
 
 const StyledWrapper = styled.div`
   width: 95%;
@@ -188,6 +189,12 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     error: adsError,
     reset: resetAds,
   } = useAdsgramAd();
+
+  const { show } = useAdsgram({
+    blockId: "18438",
+    onReward: () => {},
+    onError: () => {},
+  });
 
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -520,7 +527,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
 
   const handleWatchAd = async () => {
     try {
-      await startAdFlow();
+      await show();
       setAdOutcome("success");
       setAdModalOpen(false);
       setAdMessage("");
