@@ -15,12 +15,14 @@ const AppContent = () => {
 
   const tokens = useGlobalStore((state) => state.tokens);
   const loadProfile = useGlobalStore((state) => state.loadProfile);
+  const fetchAdsgramBlock = useGlobalStore((state) => state.fetchAdsgramBlock);
 
   useEffect(() => {
     if (tokens) {
       void loadProfile();
+      void fetchAdsgramBlock();
     }
-  }, [tokens, loadProfile]);
+  }, [tokens, loadProfile, fetchAdsgramBlock]);
 
   const isFailurePage = pathname.includes("failure");
 
