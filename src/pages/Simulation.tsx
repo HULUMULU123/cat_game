@@ -151,8 +151,9 @@ const Simulation = () => {
   } = useAdsgramAd();
 
   const { blockId: adsgramBlockId } = useAdsgramBlock();
+  console.log("blockid ", adsgramBlockId);
   const { show } = useAdsgram({
-    blockId: String(adsgramBlockId ?? 0) as `${number}`,
+    blockId: String(adsgramBlockId) as `${number}`,
     onReward: () => {},
     onError: () => {},
   });
