@@ -150,14 +150,9 @@ const Simulation = () => {
     reset: resetAds,
   } = useAdsgramAd();
 
-  const {
-    data: adsgramBlock,
-    isError: isAdsBlockError,
-    error: adsBlockError,
-  } = useAdsgramBlock();
-  console.log("blockId: ", adsgramBlock?.block_id);
+  const { blockId: adsgramBlockId } = useAdsgramBlock();
   const { show } = useAdsgram({
-    blockId: String(adsgramBlock?.block_id) as `${number}`,
+    blockId: String(adsgramBlockId ?? 0) as `${number}`,
     onReward: () => {},
     onError: () => {},
   });
@@ -197,12 +192,6 @@ const Simulation = () => {
       console.error("Failed to fetch simulation config", configError);
     }
   }, [configError, isConfigError]);
-
-  useEffect(() => {
-    if (isAdsBlockError && adsBlockError) {
-      console.error("Failed to fetch Adsgram block id", adsBlockError);
-    }
-  }, [adsBlockError, isAdsBlockError]);
 
   useEffect(() => {
     if (!config) return;

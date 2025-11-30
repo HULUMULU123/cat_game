@@ -1,6 +1,7 @@
 // store/global.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import type { AdsgramBlockResponse } from "../api/types";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
@@ -53,6 +54,7 @@ interface GlobalState {
   profileStats: ProfileStatsState;
   completedFailures: Record<number, boolean>;
   tokens: AuthTokens | null;
+  adsgramBlockId: string | null;
   hasHydratedProfile: boolean;
 
   setUserFromInitData: (initData: string | undefined | null) => Promise<void>;
@@ -65,6 +67,8 @@ interface GlobalState {
 
   setTokens: (t: AuthTokens | null) => void;
   logout: () => void;
+
+  fetchAdsgramBlock: () => Promise<void>;
 
   markFailureCompleted: (failureId: number) => void;
 
@@ -220,6 +224,7 @@ async function authPostJson<T>(
 /* ---------------- store ---------------- */
 
 let loadProfilePromise: Promise<void> | null = null;
+let adsgramBlockPromise: Promise<void> | null = null;
 
 const useGlobalStore = create<GlobalState>()(
   persist(
@@ -259,6 +264,7 @@ const useGlobalStore = create<GlobalState>()(
         },
         completedFailures: {},
         tokens: null,
+        adsgramBlockId: null,
         hasHydratedProfile: false,
 
         isLoading: true,
@@ -438,6 +444,34 @@ const useGlobalStore = create<GlobalState>()(
           return loadProfilePromise;
         },
 
+        fetchAdsgramBlock: async () => {
+          const { tokens } = get();
+          if (!tokens) return;
+
+          if (adsgramBlockPromise) {
+            return adsgramBlockPromise;
+          }
+
+          adsgramBlockPromise = (async () => {
+            try {
+              const data = await authGetJson<AdsgramBlockResponse>(
+                "/adsgram/block/",
+                get,
+                set
+              );
+
+              set({ adsgramBlockId: data.block_id });
+            } catch (err) {
+              console.error("Failed to fetch Adsgram block id", err);
+              set({ adsgramBlockId: null });
+            } finally {
+              adsgramBlockPromise = null;
+            }
+          })();
+
+          return adsgramBlockPromise;
+        },
+
         setTokens: (t) => set({ tokens: t }),
         logout: () =>
           set({
@@ -453,6 +487,7 @@ const useGlobalStore = create<GlobalState>()(
               tasksCompleted: 0,
             },
             completedFailures: {},
+            adsgramBlockId: null,
           }),
     };
     },

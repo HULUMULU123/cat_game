@@ -191,14 +191,10 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     reset: resetAds,
   } = useAdsgramAd();
 
-  const {
-    data: adsgramBlock,
-    isError: isAdsBlockError,
-    error: adsBlockError,
-  } = useAdsgramBlock();
+  const { blockId: adsgramBlockId } = useAdsgramBlock();
 
   const { show } = useAdsgram({
-    blockId: String(adsgramBlock?.block_id) as `${number}`,
+    blockId: String(adsgramBlockId ?? 0) as `${number}`,
     onReward: () => {},
     onError: () => {},
   });
@@ -290,12 +286,6 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       console.error("[Quiz] load error:", questionsErrorRaw);
     }
   }, [questionsError, questionsErrorRaw]);
-
-  useEffect(() => {
-    if (isAdsBlockError && adsBlockError) {
-      console.error("Failed to fetch Adsgram block id", adsBlockError);
-    }
-  }, [adsBlockError, isAdsBlockError]);
 
   const isLoadingQuestions = questionsLoading || isFetchingQuestions;
 
