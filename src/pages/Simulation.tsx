@@ -149,7 +149,7 @@ const Simulation = () => {
     reset: resetAds,
   } = useAdsgramAd();
 
-  const { load, showFullscreen, showRewarded } = useAdsgram({
+  const { show } = useAdsgram({
     blockId: "18438",
     onReward: () => {},
     onError: () => {},
@@ -346,7 +346,7 @@ const Simulation = () => {
 
     try {
       // await startAdFlow();
-      await showRewarded();
+      await show();
       const rewardResponse = await request<SimulationAdRewardResponse>(
         "/simulation/ad-reward/",
         {
