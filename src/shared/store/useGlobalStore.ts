@@ -455,7 +455,7 @@ const useGlobalStore = create<GlobalState>()(
           adsgramBlockPromise = (async () => {
             try {
               const data = await authGetJson<AdsgramBlockResponse>(
-                "/adsgram/block/",
+                "adsgram/block/",
                 get,
                 set
               );
@@ -489,7 +489,7 @@ const useGlobalStore = create<GlobalState>()(
             completedFailures: {},
             adsgramBlockId: null,
           }),
-    };
+      };
     },
     {
       name: "global-store",
