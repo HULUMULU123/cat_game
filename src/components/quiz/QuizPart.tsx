@@ -198,7 +198,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   } = useAdsgramBlock();
 
   const { show } = useAdsgram({
-    blockId: adsgramBlock?.block_id,
+    blockId: adsgramBlock?.block_id.toString(),
     onReward: () => {},
     onError: () => {},
   });
