@@ -21,6 +21,7 @@ from .models import (
     FailureBonusType,
     QuizQuestion,
     ScoreEntry,
+    AdsgramBlock,
     AdsgramAssignment,
     SimulationRewardClaim,
     FrontendConfig,
@@ -363,6 +364,12 @@ class FailureCompleteSerializer(serializers.Serializer):
 
 
 # ---------- Adsgram ----------
+
+
+class AdsgramBlockSerializer(serializers.ModelSerializer[AdsgramBlock]):
+    class Meta:
+        model = AdsgramBlock
+        fields = ("block_id",)
 
 
 class AdsgramAssignmentRequestSerializer(serializers.Serializer):

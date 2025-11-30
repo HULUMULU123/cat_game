@@ -202,6 +202,24 @@ class AdsgramAssignment(TimestampedModel):
 
 
 # ==============================
+# Adsgram blocks
+# ==============================
+
+
+class AdsgramBlock(TimestampedModel):
+    block_id = models.CharField(max_length=64, unique=True, verbose_name="Block ID")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+
+    class Meta:
+        db_table = "adsgram_blocks"
+        verbose_name = "Рекламный блок Adsgram"
+        verbose_name_plural = "Рекламные блоки Adsgram"
+
+    def __str__(self) -> str:
+        return self.block_id
+
+
+# ==============================
 # Simulation (награды и цена)
 # ==============================
 

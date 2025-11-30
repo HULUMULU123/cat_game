@@ -7,6 +7,7 @@ import ModalLayout from "../modalWindow/ModalLayout";
 import ModalWindow from "../modalWindow/ModalWindow";
 import black_advert from "../../assets/icons/black_advert.svg";
 import useAdsgramAd, { AdsgramStatus } from "../../shared/hooks/useAdsgramAd";
+import useAdsgramBlock from "../../shared/hooks/useAdsgramBlock";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
 import { useAdsgram } from "@adsgram/react";
@@ -190,8 +191,14 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     reset: resetAds,
   } = useAdsgramAd();
 
+  const {
+    data: adsgramBlock,
+    isError: isAdsBlockError,
+    error: adsBlockError,
+  } = useAdsgramBlock();
+
   const { show } = useAdsgram({
-    blockId: "18438",
+    blockId: adsgramBlock?.block_id ?? "18438",
     onReward: () => {},
     onError: () => {},
   });
@@ -283,6 +290,12 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       console.error("[Quiz] load error:", questionsErrorRaw);
     }
   }, [questionsError, questionsErrorRaw]);
+
+  useEffect(() => {
+    if (isAdsBlockError && adsBlockError) {
+      console.error("Failed to fetch Adsgram block id", adsBlockError);
+    }
+  }, [adsBlockError, isAdsBlockError]);
 
   const isLoadingQuestions = questionsLoading || isFetchingQuestions;
 

@@ -87,6 +87,10 @@ export type SimulationRewardClaimResponse = {
 };
 
 // --- Adsgram ---
+export type AdsgramBlockResponse = {
+  block_id: string;
+};
+
 export type AdsgramAssignmentResponse = {
   assignment_id: string;
   placement_id: string | null;
