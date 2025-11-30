@@ -16,7 +16,7 @@ const useAdsgramBlock = () => {
         throw new Error("missing tokens");
       }
 
-      return request<AdsgramBlockResponse>("/adsgram/block/", {
+      return request<AdsgramBlockResponse>("adsgram/block/", {
         headers: { Authorization: `Bearer ${tokens.access}` },
       });
     },
