@@ -36,6 +36,7 @@ from .views import (
     LeaderboardView,
 
     # Adsgram
+    AdsgramBlockView,
     AdsgramAssignmentRequestView,
     AdsgramAssignmentCompleteView,
 )
@@ -94,6 +95,7 @@ urlpatterns = [
     path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
 
     # Adsgram
+    path("adsgram/block/", AdsgramBlockView.as_view(), name="adsgram-block"),
     path("adsgram/request/", AdsgramAssignmentRequestView.as_view(), name="adsgram-request"),
     path("adsgram/complete/", AdsgramAssignmentCompleteView.as_view(), name="adsgram-complete"),
 ]

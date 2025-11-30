@@ -29,6 +29,7 @@ from .models import (
     QuizQuestion,
     ScoreEntry,
     QuizAttempt,
+    AdsgramBlock,
     AdsgramAssignment,
     AdsgramAssignmentStatus,
     FrontendConfig,
@@ -51,6 +52,7 @@ from .serializers import (
     LeaderboardRowSerializer,
     QuizResultSubmitSerializer,
     QuizResultResponseSerializer,
+    AdsgramBlockSerializer,
     AdsgramAssignmentSerializer,
     AdsgramAssignmentRequestSerializer,
     AdsgramAssignmentCompleteSerializer,
@@ -821,6 +823,20 @@ class FailureBonusPurchaseView(APIView):
 
 
 # ---------- Adsgram ----------
+
+
+class AdsgramBlockView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request: Request) -> Response:
+        block = AdsgramBlock.objects.filter(is_active=True).order_by("?").first()
+        if not block:
+            return Response(
+                {"detail": "Нет доступных рекламных блоков."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(AdsgramBlockSerializer(block).data)
 
 
 class AdsgramAssignmentRequestView(APIView):

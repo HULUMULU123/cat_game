@@ -15,6 +15,7 @@ import type {
 } from "../shared/api/types";
 import useGlobalStore from "../shared/store/useGlobalStore";
 import useAdsgramAd, { AdsgramStatus } from "../shared/hooks/useAdsgramAd";
+import useAdsgramBlock from "../shared/hooks/useAdsgramBlock";
 import FailrueHeader from "../components/failure/header/FailrueHeader";
 import FailureFooter from "../components/failure/footer/FailureFooter";
 import Droplets from "../components/failure/droplets/Droplets";
@@ -149,8 +150,14 @@ const Simulation = () => {
     reset: resetAds,
   } = useAdsgramAd();
 
+  const {
+    data: adsgramBlock,
+    isError: isAdsBlockError,
+    error: adsBlockError,
+  } = useAdsgramBlock();
+
   const { show } = useAdsgram({
-    blockId: "18438",
+    blockId: adsgramBlock?.block_id ?? "18438",
     onReward: () => {},
     onError: () => {},
   });
@@ -190,6 +197,12 @@ const Simulation = () => {
       console.error("Failed to fetch simulation config", configError);
     }
   }, [configError, isConfigError]);
+
+  useEffect(() => {
+    if (isAdsBlockError && adsBlockError) {
+      console.error("Failed to fetch Adsgram block id", adsBlockError);
+    }
+  }, [adsBlockError, isAdsBlockError]);
 
   useEffect(() => {
     if (!config) return;

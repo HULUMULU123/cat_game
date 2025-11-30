@@ -15,6 +15,7 @@ from django.urls import path
 from .models import (
     AdvertisementButton,
     AdvertisementButtonRewardClaim,
+    AdsgramBlock,
     AdsgramAssignment,
     DailyReward,
     DailyRewardClaim,
@@ -41,6 +42,7 @@ if TYPE_CHECKING:
 
     AdvertisementButtonAdminBase = _ModelAdmin[AdvertisementButton]  # type: ignore[index]
     AdvertisementButtonRewardClaimAdminBase = _ModelAdmin[AdvertisementButtonRewardClaim]  # type: ignore[index]
+    AdsgramBlockAdminBase = _ModelAdmin[AdsgramBlock]  # type: ignore[index]
     AdsgramAssignmentAdminBase = _ModelAdmin[AdsgramAssignment]  # type: ignore[index]
     DailyRewardAdminBase = _ModelAdmin[DailyReward]  # type: ignore[index]
     DailyRewardClaimAdminBase = _ModelAdmin[DailyRewardClaim]  # type: ignore[index]
@@ -61,6 +63,7 @@ if TYPE_CHECKING:
 else:
     AdvertisementButtonAdminBase = admin.ModelAdmin
     AdvertisementButtonRewardClaimAdminBase = admin.ModelAdmin
+    AdsgramBlockAdminBase = admin.ModelAdmin
     AdsgramAssignmentAdminBase = admin.ModelAdmin
     DailyRewardAdminBase = admin.ModelAdmin
     DailyRewardClaimAdminBase = admin.ModelAdmin
@@ -516,6 +519,14 @@ class AdsgramAssignmentAdmin(AdsgramAssignmentAdminBase):
     )
     list_filter = ("status", "placement_id")
     search_fields = ("external_assignment_id", "profile__user__username")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(AdsgramBlock)
+class AdsgramBlockAdmin(AdsgramBlockAdminBase):
+    list_display = ("block_id", "is_active", "created_at", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("block_id",)
     readonly_fields = ("created_at", "updated_at")
 
 
