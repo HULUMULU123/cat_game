@@ -155,9 +155,9 @@ const Simulation = () => {
     isError: isAdsBlockError,
     error: adsBlockError,
   } = useAdsgramBlock();
-  console.log("blockId: ", adsgramBlock!.block_id);
+  console.log("blockId: ", adsgramBlock?.block_id);
   const { show } = useAdsgram({
-    blockId: adsgramBlock!.block_id as `${number}`,
+    blockId: adsgramBlock?.block_id as `${number}`,
     onReward: () => {},
     onError: () => {},
   });
