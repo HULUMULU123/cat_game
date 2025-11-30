@@ -1,5 +1,4 @@
 import { BrowserRouter, useLocation } from "react-router-dom";
-
 import { Fragment, useEffect } from "react";
 
 import AppRoutes from "./routes/AppRoutes";
@@ -16,8 +15,6 @@ const AppContent = () => {
 
   const tokens = useGlobalStore((state) => state.tokens);
   const loadProfile = useGlobalStore((state) => state.loadProfile);
-
-  // useTelegramInit();
 
   useEffect(() => {
     if (tokens) {

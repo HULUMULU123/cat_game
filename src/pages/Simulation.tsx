@@ -21,6 +21,8 @@ import Droplets from "../components/failure/droplets/Droplets";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../shared/components/LoadingSpinner";
 
+import { useAdsgram } from "@adsgram/react";
+
 const StyledWrapper = styled.div`
   position: relative;
   height: 100vh;
@@ -146,6 +148,12 @@ const Simulation = () => {
     error: adsError,
     reset: resetAds,
   } = useAdsgramAd();
+
+  const { load, showFullscreen, showRewarded } = useAdsgram({
+    blockId: "18438",
+    onReward: () => {},
+    onError: () => {},
+  });
 
   const [modalState, setModalState] = useState<ModalState>("");
   const [modalMessage, setModalMessage] = useState<string>("");
@@ -337,7 +345,8 @@ const Simulation = () => {
     }
 
     try {
-      await startAdFlow();
+      // await startAdFlow();
+      await showRewarded();
       const rewardResponse = await request<SimulationAdRewardResponse>(
         "/simulation/ad-reward/",
         {
