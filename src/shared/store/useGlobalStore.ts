@@ -445,6 +445,7 @@ const useGlobalStore = create<GlobalState>()(
         },
 
         fetchAdsgramBlock: async () => {
+          console.log('in block')
           const { tokens } = get();
           if (!tokens) return;
 
