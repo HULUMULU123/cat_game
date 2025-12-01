@@ -19,8 +19,11 @@ const AppContent = () => {
 
   useEffect(() => {
     if (tokens) {
+      console.log('----------------')
       void loadProfile();
+      console.log('================')
       void fetchAdsgramBlock();
+      console.log('=================')
     }
   }, [tokens, loadProfile, fetchAdsgramBlock]);
 
