@@ -447,9 +447,10 @@ const useGlobalStore = create<GlobalState>()(
         fetchAdsgramBlock: async () => {
           console.log('in block')
           const { tokens } = get();
-          if (!tokens) return;
+          if (!tokens) {console.log(tokens, 'tokens'); return};
 
           if (adsgramBlockPromise) {
+            console.log('in block promise')
             return adsgramBlockPromise;
           }
 
