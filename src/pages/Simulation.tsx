@@ -141,6 +141,7 @@ const Simulation = () => {
   const tokens = useGlobalStore((state) => state.tokens);
   const updateBalance = useGlobalStore((state) => state.updateBalance);
   const balance = useGlobalStore((state) => state.balance);
+  const adsgramBlockId = useGlobalStore((state)=>state.adsgramBlockId)
 
   const {
     startAdFlow,
@@ -150,7 +151,7 @@ const Simulation = () => {
     reset: resetAds,
   } = useAdsgramAd();
 
-  const { blockId: adsgramBlockId } = useAdsgramBlock();
+  // const { blockId: adsgramBlockId } = useAdsgramBlock();
   console.log("blockid ", adsgramBlockId);
   const { show } = useAdsgram({
     blockId: String(adsgramBlockId) as `${number}`,
@@ -169,6 +170,7 @@ const Simulation = () => {
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [practiceModalOpen, setPracticeModalOpen] = useState(false);
   const [practiceModalMessage, setPracticeModalMessage] = useState("");
+  
 
   const practiceWindowRef = useRef<Window | null>(null);
 
