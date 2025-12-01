@@ -460,6 +460,8 @@ const useGlobalStore = create<GlobalState>()(
                 set
               );
 
+              console.log(data)
+
               set({ adsgramBlockId: data.block_id });
             } catch (err) {
               console.error("Failed to fetch Adsgram block id", err);
