@@ -371,10 +371,10 @@ const Simulation = () => {
           if (parsed.detail) {
             setModalMessage(parsed.detail);
           } else {
-            setModalMessage("Не удалось воспроизвести рекламу.");
+            setModalMessage("Подождите...");
           }
         } catch {
-          setModalMessage("Не удалось воспроизвести рекламу.");
+          setModalMessage("Подождите...");
         }
       } else if (error instanceof Error) {
         setModalState("insufficient");
@@ -382,7 +382,7 @@ const Simulation = () => {
         return;
       } else {
         setModalState("insufficient");
-        setModalMessage("Не удалось воспроизвести рекламу.");
+        setModalMessage("Подождите...");
         return;
       }
 

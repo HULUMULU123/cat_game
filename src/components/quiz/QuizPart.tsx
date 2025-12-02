@@ -542,7 +542,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
       if (error instanceof Error) {
         setAdMessage(error.message);
       } else {
-        setAdMessage("Не удалось воспроизвести рекламу.");
+        setAdMessage("Подождите...");
       }
     }
   };
