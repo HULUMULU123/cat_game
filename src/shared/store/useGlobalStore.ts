@@ -418,9 +418,11 @@ const useGlobalStore = create<GlobalState>()(
           }
         },
 
-        loadProfile: async () => {
+        loadProfile: () => {
           const { tokens, hasHydratedProfile } = get();
-          if (!tokens || hasHydratedProfile) return;
+          if (!tokens || hasHydratedProfile) {
+            return Promise.resolve();
+          }
 
           if (loadProfilePromise) {
             return loadProfilePromise;
@@ -444,25 +446,29 @@ const useGlobalStore = create<GlobalState>()(
           return loadProfilePromise;
         },
 
-        fetchAdsgramBlock: async () => {
-          console.log('in block')
+        fetchAdsgramBlock: () => {
+          console.log("in block");
           const { tokens } = get();
-          if (!tokens) {console.log(tokens, 'tokens'); return};
+          if (!tokens) {
+            console.log(tokens, "tokens");
+            return Promise.resolve();
+          }
 
           if (adsgramBlockPromise) {
-            console.log('in block promise')
+            console.log("in block promise");
             return adsgramBlockPromise;
           }
 
           adsgramBlockPromise = (async () => {
             try {
+              console.log("start");
               const data = await authGetJson<AdsgramBlockResponse>(
-                "adsgram/block/",
+                "/adsgram/block/",
                 get,
                 set
               );
 
-              console.log(data)
+              console.log(data);
 
               set({ adsgramBlockId: data.block_id });
             } catch (err) {
