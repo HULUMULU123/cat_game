@@ -31,7 +31,11 @@ class TelegramAuthSerializer(serializers.Serializer):
         if not received_hash:
             raise serializers.ValidationError("hash is missing in init_data")
 
-        data_check_pairs = [f"{k}={params[k]}" for k in params if k != "hash"]
+        data_check_pairs = [
+            f"{k}={params[k]}"
+            for k in params
+            if k not in {"hash", "signature"}
+        ]
         data_check_pairs.sort()
         data_check_string = "\n".join(data_check_pairs)
 
