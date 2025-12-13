@@ -19,6 +19,7 @@ const StyledPromoWrapper = styled.div`
     border-radius: 7px;
     width: 50%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 15px 20px;
@@ -114,7 +115,7 @@ export default function PromoModal({handleCloseModal}) {
             </StyledPromoForm>
             {status !== 'idle' ? (
               <StyledStatus>
-                {status === 'loading' ? 'Проверяем...' : message}
+                {status === 'loading' ? 'Проверяем...' : 'Попробуйте другой промокод'}
               </StyledStatus>
             ) : null}
         </StyledPromoWrapper>
