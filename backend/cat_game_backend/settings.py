@@ -72,7 +72,7 @@ AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = "ru-ru"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Moscow"
 
 USE_I18N = True
 
@@ -119,6 +119,29 @@ JAZZMIN_SETTINGS = {
     "site_brand": "STAKAN",
     "welcome_sign": "Добро пожаловать в панель управления STAKAN",
     "copyright": "STAKAN",
+    "icons": {
+        "game.UserProfile": "fas fa-users",
+        "game.Task": "fas fa-tasks",
+        "game.TaskCompletion": "fas fa-check-double",
+        "game.AdsgramAssignment": "fas fa-ad",
+        "game.AdsgramBlock": "fas fa-th-large",
+        "game.SimulationConfig": "fas fa-sliders-h",
+        "game.SimulationRewardClaim": "fas fa-gift",
+        "game.AdvertisementButton": "fas fa-bullhorn",
+        "game.AdvertisementButtonRewardClaim": "fas fa-coins",
+        "game.FrontendConfig": "fas fa-tv",
+        "game.RuleCategory": "fas fa-book",
+        "game.DailyReward": "fas fa-calendar-check",
+        "game.DailyRewardClaim": "fas fa-hand-holding-usd",
+        "game.Failure": "fas fa-exclamation-triangle",
+        "game.FailureBonusPurchase": "fas fa-shopping-cart",
+        "game.QuizQuestion": "fas fa-question-circle",
+        "game.ScoreEntry": "fas fa-chart-line",
+        "game.QuizAttempt": "fas fa-clipboard-list",
+        "game.PromoCode": "fas fa-ticket-alt",
+        "game.PromoCodeRedemption": "fas fa-check-circle",
+        "game.ReferralProgramConfig": "fas fa-share-alt",
+    },
 }
 
 ADSGRAM_API_BASE_URL = os.environ.get("ADSGRAM_API_BASE_URL", "")
