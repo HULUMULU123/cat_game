@@ -2,11 +2,7 @@ import React, { Suspense, useRef, useEffect, useState } from "react";
 import styled from "styled-components";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, useGLTF, useProgress } from "@react-three/drei";
-import {
-  EffectComposer,
-  Bloom,
-  HueSaturation,
-} from "@react-three/postprocessing";
+import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import CatModel from "./CatModel";
@@ -370,6 +366,73 @@ const IconSpeakerHigh = () => (
   </svg>
 );
 
+/* ------------------------- Освещение (lite / full) ----------------------- */
+
+function Lights({
+  lite,
+  m,
+  shadows,
+  shadowMapSize,
+}: {
+  lite: boolean;
+  m: number;
+  shadows: boolean;
+  shadowMapSize: number;
+}) {
+  if (lite) {
+    return (
+      <>
+        {/* Мягкий нейтральный ambient */}
+        <ambientLight intensity={0.9 * m} color="#ffffff" />
+
+        {/* Ключевой свет сверху-слева */}
+        <directionalLight
+          position={[4.5, 6, 2.5]}
+          intensity={1.25 * m}
+          color="#fff4e6"
+          castShadow={false}
+        />
+
+        {/* Заполняющий свет (холоднее) */}
+        <directionalLight
+          position={[-3.5, 1.2, 5.5]}
+          intensity={0.55 * m}
+          color="#dbe7ff"
+          castShadow={false}
+        />
+
+        {/* Контровой (rim) — отделяет от фона */}
+        <directionalLight
+          position={[0.0, 4.5, -6.5]}
+          intensity={0.8 * m}
+          color="#eafff1"
+          castShadow={false}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <ambientLight intensity={0.55 * m} color="#dfffe9" />
+      <directionalLight
+        position={[5, 6, 3]}
+        intensity={1.1 * m}
+        color="#eafff1"
+        castShadow={shadows}
+        shadow-mapSize-width={shadowMapSize}
+        shadow-mapSize-height={shadowMapSize}
+      />
+      <pointLight
+        position={[0, 2.2, 1.2]}
+        intensity={1.1 * m}
+        color="#c8ffd8"
+        distance={8}
+      />
+    </>
+  );
+}
+
 /* ------------------------- Компонент комнаты ----------------------------- */
 
 function RoomWithCat({
@@ -442,32 +505,28 @@ function RoomWithCat({
         let video = videoCache.get(videoURL);
 
         if (!video && typeof document !== "undefined") {
-        video = document.createElement("video");
-        video.src = videoURL;
-        video.crossOrigin = "anonymous";
-        video.loop = true;
-        video.muted = true;
-        video.playsInline = true;
-        video.autoplay = true;
-        video.preload = "auto";
-        video.style.display = "none";
-        video.playbackRate = 0.7;
-        document.body.appendChild(video);
+          video = document.createElement("video");
+          video.src = videoURL;
+          video.crossOrigin = "anonymous";
+          video.loop = true;
+          video.muted = true;
+          video.playsInline = true;
+          video.autoplay = true;
+          video.preload = "auto";
+          video.style.display = "none";
+          video.playbackRate = 0.7;
+          document.body.appendChild(video);
           videoCache.set(videoURL, video);
         }
 
         if (video) {
           const videoReady = new Promise<void>((resolve) => {
-            if (
-              video!.readyState >= 2 &&
-              video!.videoWidth &&
-              video!.videoHeight
-            ) {
+            if (video!.readyState >= 2 && video!.videoWidth && video!.videoHeight) {
               resolve();
             } else {
               const done = () => {
                 if (video!.videoWidth && video!.videoHeight) resolve();
-                else resolve(); // всё равно даём шанс, но уже после реального кадра
+                else resolve();
               };
               video!.addEventListener("canplay", done, { once: true });
               video!.addEventListener("loadeddata", done, { once: true });
@@ -529,8 +588,8 @@ const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → �
 
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
-  const [manualHold, setManualHold] = useState(true); // короткий буфер от мерцаний
-  const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
+  const [manualHold, setManualHold] = useState(true);
+  const [postReadyHold, setPostReadyHold] = useState(true);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [webglState, setWebglState] = useState<"ok" | "lost">("ok");
   const [liteReason, setLiteReason] = useState<string | null>(null);
@@ -540,9 +599,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     settings: { render: renderQuality },
   } = useQualityProfile();
   const isLiteMode = qualityProfile === "lite";
-  const isBottomNavVisible = useGlobalStore(
-    (state) => state.isBottomNavVisible
-  );
+  const isBottomNavVisible = useGlobalStore((state) => state.isBottomNavVisible);
   const [screenTexture, setScreenTexture] = useState(DEFAULT_SCREEN_TEXTURE);
   const [glRenderer, setGlRenderer] = useState<THREE.WebGLRenderer | null>(null);
 
@@ -558,9 +615,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     const reason = getLiteModeReason();
-    if (reason) {
-      setLiteReason(reason);
-    }
+    if (reason) setLiteReason(reason);
   }, []);
 
   useEffect(() => {
@@ -571,11 +626,8 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     const incoming = frontendConfig?.screen_texture?.trim();
-    if (incoming) {
-      setScreenTexture(incoming);
-    } else {
-      setScreenTexture(DEFAULT_SCREEN_TEXTURE);
-    }
+    if (incoming) setScreenTexture(incoming);
+    else setScreenTexture(DEFAULT_SCREEN_TEXTURE);
   }, [frontendConfig]);
 
   useEffect(() => {
@@ -624,29 +676,22 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     };
   }, [glRenderer]);
 
-  // Условия готовности Canvas (для его появления)
   useEffect(() => {
     const t = setTimeout(() => setManualHold(false), 300);
     return () => clearTimeout(t);
   }, []);
+
   const hasFatalIssue = runtimeError !== null;
   const hasContextLoss = webglState === "lost";
   const readyCanvas =
-    !hasFatalIssue &&
-    !hasContextLoss &&
-    !active &&
-    progress === 100 &&
-    firstFrame &&
-    !manualHold;
+    !hasFatalIssue && !hasContextLoss && !active && progress === 100 && firstFrame && !manualHold;
 
-  // После того как Canvas стал видим, ещё немного держим лоадер (кроссфейд)
   useEffect(() => {
     if (!readyCanvas) return;
     const t = setTimeout(() => setPostReadyHold(false), 260);
     return () => clearTimeout(t);
   }, [readyCanvas]);
 
-  // аудио
   const rainRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const [volumeIndex, setVolumeIndex] = useState(0);
@@ -673,9 +718,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       if (!a) return;
       a.volume = vol;
       if (vol > 0) {
-        a.play().catch((e) => {
-          console.warn("[audio] autoplay failed", e);
-        });
+        a.play().catch((e) => console.warn("[audio] autoplay failed", e));
       } else {
         a.pause();
         a.currentTime = 0;
@@ -685,41 +728,29 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     setVol(musicRef.current);
   }, [volumeIndex]);
 
-  const cycleVolume = () =>
-    setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
+  const cycleVolume = () => setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
 
   const currentIcon =
-    volumeIndex === 0 ? (
-      <IconSpeakerMute />
-    ) : volumeIndex === 1 ? (
-      <IconSpeakerLow />
-    ) : volumeIndex === 2 ? (
-      <IconSpeakerMid />
-    ) : (
-      <IconSpeakerHigh />
-    );
+    volumeIndex === 0 ? <IconSpeakerMute /> : volumeIndex === 1 ? <IconSpeakerLow /> : volumeIndex === 2 ? <IconSpeakerMid /> : <IconSpeakerHigh />;
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
-  // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на зелёный
   const canvasBg = readyCanvas && !postReadyHold ? "#002200" : "#000000";
   const showLoader = !hasFatalIssue && !hasContextLoss && (!readyCanvas || postReadyHold);
+
   const fallbackMessage =
     runtimeError !== null
       ? "3D сцена остановлена из-за ошибки. Мы включили fallback, чтобы приложение не упало."
       : webglState === "lost"
       ? "WebGL отключён: контекст потерян. Попробуйте обновить страницу или открыть lite режим."
       : null;
+
   const showFallback = Boolean(fallbackMessage);
+
   const fogEnabled = renderQuality.enableFog && canvasBg === "#002200";
-  const ambientIntensity = 0.6 * renderQuality.lightIntensityMultiplier;
-  const directionalIntensity = 1 * renderQuality.lightIntensityMultiplier;
-  const pointBottomIntensity = 1.2 * renderQuality.lightIntensityMultiplier;
-  const pointTopIntensity = 2 * renderQuality.lightIntensityMultiplier;
   const shadowOpacity = renderQuality.enableShadows ? 0.3 : 0;
 
   return (
     <ModelWrapper>
-      {/* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд без «зелёной» щели */}
       <CanvasFade $visible={readyCanvas}>
         {!hasFatalIssue && (
           <Canvas
@@ -741,32 +772,12 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
             <FirstFrame onReady={() => setFirstFrame(true)} />
 
-            <ambientLight intensity={ambientIntensity} color="#00ff1d" />
-            <directionalLight
-              position={[5, 5, 5]}
-              intensity={directionalIntensity}
-              color="#00ff1d"
-              castShadow={renderQuality.enableShadows}
-              shadow-mapSize-width={renderQuality.shadowMapSize}
-              shadow-mapSize-height={renderQuality.shadowMapSize}
+            <Lights
+              lite={isLiteMode}
+              m={renderQuality.lightIntensityMultiplier}
+              shadows={renderQuality.enableShadows}
+              shadowMapSize={renderQuality.shadowMapSize}
             />
-            <pointLight
-              position={[0, -1, 0]}
-              intensity={pointBottomIntensity}
-              color="#00ff1d"
-              distance={15}
-            />
-            <pointLight
-              position={[0, 2, 0]}
-              intensity={pointTopIntensity}
-              distance={5}
-              color="lime"
-            />
-
-            <mesh position={[0, 2, 0]}>
-              <sphereGeometry args={[0.2, 32, 32]} />
-              <meshBasicMaterial color="lime" transparent opacity={0.4} />
-            </mesh>
 
             <Suspense fallback={null}>
               <RoomWithCat
@@ -776,8 +787,8 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 textureSizeLimit={renderQuality.maxTextureSize}
                 disableVideo={isLiteMode}
               />
-              {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
-              {!showLoader && renderQuality.enableEnvironment && (
+              {/* Environment НЕ монтируем в lite */}
+              {!showLoader && renderQuality.enableEnvironment && !isLiteMode && (
                 <Environment preset="forest" background />
               )}
             </Suspense>
@@ -812,7 +823,6 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         </FallbackMessage>
       ) : null}
 
-      {/* Лоадер сверху — уходит ПОСЛЕ появления Canvas */}
       {createPortal(
         <LoaderTopLayer $visible={showLoader}>
           <StakanLoader
@@ -825,14 +835,8 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         document.body
       )}
 
-      {/* Кнопка громкости */}
       {isBottomNavVisible ? (
-        <SoundFab
-          onClick={cycleVolume}
-          aria-label="Volume"
-          title="Volume"
-          $level={volumeIndex}
-        >
+        <SoundFab onClick={cycleVolume} aria-label="Volume" title="Volume" $level={volumeIndex}>
           {currentIcon}
           <LevelBadge>{levelLabel}</LevelBadge>
         </SoundFab>
