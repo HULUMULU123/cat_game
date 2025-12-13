@@ -45,13 +45,14 @@ class TelegramAuthSerializer(serializers.Serializer):
             msg=bot_token.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).digest()
-
+        
         computed_hash = hmac.new(
             key=secret_key,
             msg=data_check_string.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).hexdigest()
 
+        print(secret_key, computed_hash)
         # ✅ timing-safe compare
         if not hmac.compare_digest(computed_hash, received_hash):
             raise serializers.ValidationError("Invalid Telegram init_data signature")
