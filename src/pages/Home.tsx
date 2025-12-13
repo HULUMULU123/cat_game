@@ -1,6 +1,5 @@
-import { useCallback, useState } from "react";
+import { Suspense, lazy, useCallback, useState } from "react";
 import Header from "../components/home/Header";
-import Model from "../components/home/Model";
 import CrashCount from "../components/home/CrashCount";
 import AdevertSection from "../components/home/AdevertSection";
 import MainAction from "../components/home/MainAction";
@@ -9,6 +8,8 @@ import HomeModal from "../components/homeExtraInfo/HomeModal";
 import type { HomeModalType, RuleCategory } from "../components/home/types";
 
 import usePageReady from "../shared/hooks/usePageReady";
+
+const Model = lazy(() => import("../components/home/Model"));
 
 const Home = () => {
   usePageReady();
@@ -38,22 +39,24 @@ const Home = () => {
   }, []);
 
   return (
-    <Model>
-      <Header onOpenModal={handleOpenModal} />
-      <CrashCount />
-      <AdevertSection />
-      <MainAction onOpenModal={handleOpenModal} />
-      {isModalOpen ? (
-        <HomeModal
-          infoType={infoType}
-          isOpen={isModalOpen}
-          handleClose={handleModalClose}
-          ruleCategory={ruleCategory}
-          handleRuleClose={handleRuleCategoryClose}
-          openRuleCategory={openRuleCategory}
-        />
-      ) : null}
-    </Model>
+    <Suspense fallback={<div style={{ height: "100vh", background: "#000", color: "#c7ffe0", display: "flex", alignItems: "center", justifyContent: "center" }}>Загружаем 3D…</div>}>
+      <Model>
+        <Header onOpenModal={handleOpenModal} />
+        <CrashCount />
+        <AdevertSection />
+        <MainAction onOpenModal={handleOpenModal} />
+        {isModalOpen ? (
+          <HomeModal
+            infoType={infoType}
+            isOpen={isModalOpen}
+            handleClose={handleModalClose}
+            ruleCategory={ruleCategory}
+            handleRuleClose={handleRuleCategoryClose}
+            openRuleCategory={openRuleCategory}
+          />
+        ) : null}
+      </Model>
+    </Suspense>
   );
 };
 

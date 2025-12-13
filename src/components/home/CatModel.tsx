@@ -3,7 +3,6 @@ import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import useQualityProfile from "../../shared/hooks/useQualityProfile";
 
 const primaryModelUrl = "/models/anim1.glb";
@@ -13,111 +12,39 @@ const secondaryModelUrls = [
   "/models/anim4.glb",
 ];
 
+// Предзагружаем основные ассеты, чтобы не блокировать Suspense
+useGLTF.preload(primaryModelUrl);
+secondaryModelUrls.forEach((url) => useGLTF.preload(url));
+
 const getClipKey = (clip: THREE.AnimationClip): string =>
   clip.uuid || clip.name || String(clip.id);
 
-interface CatModelProps {
-  liteMode?: boolean;
-}
-
-export default function CatModel({ liteMode = false }: CatModelProps) {
+export default function CatModel() {
   const primaryModel = useGLTF(primaryModelUrl);
-  const [secondaryAnimations, setSecondaryAnimations] = useState<
-    THREE.AnimationClip[]
-  >([]);
+  const animModel2 = useGLTF(secondaryModelUrls[0]);
+  const animModel3 = useGLTF(secondaryModelUrls[1]);
+  const animModel4 = useGLTF(secondaryModelUrls[2]);
 
   const {
     settings: {
-      animation: { enableFrustumCulling },
+      animation: { enableFrustumCulling }, // сейчас игнорируем, но оставляем в коде
     },
-  } = useQualityProfile({
-    preferLiteProfile: liteMode,
-    forceProfile: liteMode ? "low" : undefined,
-    overrides: liteMode
-      ? {
-          animation: { enableFrustumCulling: true },
-        }
-      : undefined,
-  });
-
-  useEffect(() => {
-    if (liteMode) {
-      setSecondaryAnimations([]);
-      return;
-    }
-
-    let isCancelled = false;
-    const loader = new GLTFLoader();
-    loader.setCrossOrigin("anonymous");
-
-    const queue = [...secondaryModelUrls];
-
-    const loadNext = () => {
-      if (isCancelled) return;
-      const next = queue.shift();
-      if (!next) return;
-
-      loader.load(
-        next,
-        (gltf) => {
-          if (isCancelled) return;
-          setSecondaryAnimations((prev) => [...prev, ...(gltf.animations ?? [])]);
-          loadNext();
-        },
-        undefined,
-        (err) => {
-          if (isCancelled) return;
-          console.warn("[CatModel] failed to load animation", next, err);
-          loadNext();
-        }
-      );
-    };
-
-    loadNext();
-    return () => {
-      isCancelled = true;
-    };
-  }, [liteMode]);
-
-  const mixer = useRef<THREE.AnimationMixer>();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const currentIndexRef = useRef(0);
-  const currentAction = useRef<THREE.AnimationAction | null>(null);
-  const actionCache = useRef<Map<string, THREE.AnimationAction>>(new Map());
-  const clipRegistry = useRef<Map<string, THREE.AnimationClip>>(new Map());
-  const fadeCleanupTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  // Кость челюсти/подбородка, которую будем править вручную
-  const jawBoneRef = useRef<THREE.Bone | null>(null);
+  } = useQualityProfile();
 
   const scene = useMemo(() => {
     const cloned = SkeletonUtils.clone(primaryModel.scene) as THREE.Group;
 
     cloned.traverse((child) => {
-      // Для skinned-мешей отключаем frustum culling
+      // ВАЖНО: полностью отключаем frustum culling для всех мешей
       if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
         const skinned = child as THREE.SkinnedMesh;
         skinned.frustumCulled = false;
-
-        // Пытаемся найти кость челюсти/подбородка/рта по имени
-        if (skinned.skeleton && !jawBoneRef.current) {
-          const candidate = skinned.skeleton.bones.find((bone) => {
-            const n = bone.name.toLowerCase();
-            return (
-              n.includes("jaw") || n.includes("chin") || n.includes("mouth")
-            );
-          });
-          if (candidate) {
-            jawBoneRef.current = candidate;
-          }
-        }
-
         return;
       }
 
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        mesh.frustumCulled = enableFrustumCulling ? true : false;
+        mesh.frustumCulled = false;
       }
     });
 
@@ -127,20 +54,30 @@ export default function CatModel({ liteMode = false }: CatModelProps) {
   const animations = useMemo(() => {
     const clips = [
       ...(primaryModel.animations ?? []),
-      ...secondaryAnimations,
+      ...(animModel2.animations ?? []),
+      ...(animModel3.animations ?? []),
+      ...(animModel4.animations ?? []),
     ];
-    const limited = liteMode ? clips.slice(0, Math.min(2, clips.length)) : clips;
 
-    return limited.map((clip) => {
+    return clips.map((clip) => {
       const clone = clip.clone();
       clone.optimize();
       return clone;
     });
   }, [
     primaryModel.animations,
-    secondaryAnimations,
-    liteMode,
+    animModel2.animations,
+    animModel3.animations,
+    animModel4.animations,
   ]);
+
+  const mixer = useRef<THREE.AnimationMixer>();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(0);
+  const currentAction = useRef<THREE.AnimationAction | null>(null);
+  const actionCache = useRef<Map<string, THREE.AnimationAction>>(new Map());
+  const clipRegistry = useRef<Map<string, THREE.AnimationClip>>(new Map());
+  const fadeCleanupTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     const registry = clipRegistry.current;
@@ -256,40 +193,25 @@ export default function CatModel({ liteMode = false }: CatModelProps) {
   }, [animations, playAnimation]);
 
   useFrame((_, delta) => {
-    // Ручная коррекция кости челюсти — не даём её слишком сплющивать
-    if (jawBoneRef.current) {
-      const bone = jawBoneRef.current;
-      const minScale = 0.9; // можешь поиграть этим значением
-
-      bone.scale.set(
-        Math.max(bone.scale.x, minScale),
-        Math.max(bone.scale.y, minScale),
-        Math.max(bone.scale.z, minScale)
-      );
-      bone.updateMatrixWorld(true);
-    }
-
     mixer.current?.update(delta);
   });
 
   // Исправляем материалы
   useEffect(() => {
     if (!scene) return;
+
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        const name = mesh.name.toLowerCase();
-        const shouldUseDoubleSide =
-          name.includes("head") ||
-          name.includes("face") ||
-          name.includes("chin");
         const materials = Array.isArray(mesh.material)
           ? mesh.material
           : [mesh.material];
+
         materials.forEach((mat) => {
+          // Убираем прозрачность и делаем двусторонние полигоны
           mat.transparent = false;
           mat.depthWrite = true;
-          mat.side = shouldUseDoubleSide ? THREE.DoubleSide : THREE.FrontSide;
+          mat.side = THREE.DoubleSide;
         });
       }
     });
@@ -297,42 +219,7 @@ export default function CatModel({ liteMode = false }: CatModelProps) {
     return () => {};
   }, [scene]);
 
-  // Доп. лог, чтобы ты мог в консоли посмотреть имена костей
-  useEffect(() => {
-    if (!scene) return;
-    scene.traverse((child) => {
-      if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
-        const skinned = child as THREE.SkinnedMesh;
-        if (skinned.skeleton) {
-          console.log(
-            "SkinnedMesh:",
-            skinned.name,
-            "bones:",
-            skinned.skeleton.bones.map((b) => b.name)
-          );
-        }
-      }
-    });
-  }, [scene]);
-
   // Заворачиваем сцену в <group>, чтобы задать позицию и ротацию
-  useEffect(
-    () => () => {
-      if (!scene) return;
-      scene.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          mesh.geometry?.dispose();
-          const materials = Array.isArray(mesh.material)
-            ? mesh.material
-            : [mesh.material];
-          materials.forEach((mat) => mat.dispose?.());
-        }
-      });
-    },
-    [scene]
-  );
-
   return (
     <group
       scale={1.3}
