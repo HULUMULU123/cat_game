@@ -407,6 +407,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const musicRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    if (effectiveLite) return;
     if (!rainRef.current) rainRef.current = new Audio("/audio/rain.mp3");
     if (!musicRef.current) musicRef.current = new Audio("/audio/music.mp3");
     const rainAudio = rainRef.current;
@@ -425,6 +426,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (effectiveLite) return;
     const vol = VOLUME_STEPS[volumeIndex];
     const update = (audio?: HTMLAudioElement | null) => {
       if (!audio) return;
@@ -440,7 +442,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     };
     update(rainRef.current);
     update(musicRef.current);
-  }, [volumeIndex]);
+  }, [volumeIndex, effectiveLite]);
 
   const cycleVolume = () => setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
 
@@ -458,6 +460,17 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const canvasBg = readyCanvas && !postReadyHold ? "#002200" : "#000000";
   const showLoader = !readyCanvas || postReadyHold || !sceneMounted;
+
+  useEffect(() => {
+    if (!effectiveLite) return;
+    const audios = [rainRef.current, musicRef.current];
+    audios.forEach((a) => {
+      if (!a) return;
+      a.pause();
+      a.currentTime = 0;
+    });
+    setVolumeIndex(0);
+  }, [effectiveLite]);
 
   const handleProgress = useCallback(
     (payload: { active: boolean; progress: number }) => {

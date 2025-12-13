@@ -9,7 +9,7 @@ import type { QualityPreset } from "../../shared/hooks/useQualityProfile";
 type ProgressPayload = { active: boolean; progress: number };
 
 const DEFAULT_SCREEN_TEXTURE = "/textures/screen_image.jpeg";
-const LITE_MAX_TEXTURE_SIZE = 768;
+const LITE_MAX_TEXTURE_SIZE = 512;
 const MAX_TEXTURE_CACHE = 3;
 const textureCache = new Map<string, THREE.Texture>();
 const videoCache = new Map<string, HTMLVideoElement>();
