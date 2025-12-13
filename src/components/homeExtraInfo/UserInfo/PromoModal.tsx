@@ -115,7 +115,7 @@ export default function PromoModal({handleCloseModal}) {
             </StyledPromoForm>
             {status !== 'idle' ? (
               <StyledStatus>
-                {status === 'loading' ? 'Проверяем...' : 'Попробуйте другой промокод'}
+                {status === 'loading' ? 'Проверяем...' : 'Промокод применен'}
               </StyledStatus>
             ) : null}
         </StyledPromoWrapper>
