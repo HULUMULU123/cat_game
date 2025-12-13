@@ -10,7 +10,7 @@ import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
 const TELEGRAM_CHECK_URL =
   import.meta.env.VITE_TELEGRAM_CHECK_URL ||
-  "http://localhost:9000/check-sub";
+  "https://roodensky.ru/check-sub";
 const TELEGRAM_SECRET = "super_secret_key";
 
 const StyledContentWrapper = styled.div`
