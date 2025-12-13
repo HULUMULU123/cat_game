@@ -207,7 +207,7 @@ export default function UserFriendsContent() {
       } catch (error) {
         const message =
           error instanceof Error
-            ? error.message
+            ? error.message?.detail
             : "Не удалось активировать код";
         setStatus({ type: "error", message });
       } finally {
