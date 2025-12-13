@@ -27,7 +27,7 @@ const LoaderTopLayer = styled.div<{ $visible: boolean }>`
   z-index: 2147483647;
   pointer-events: none;
   opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 420ms ease; /* лоадер уходит ЧУТЬ позже Canvas */
+  transition: opacity 420ms ease;
 `;
 
 const ModelWrapper = styled.div`
@@ -41,7 +41,7 @@ const CanvasFade = styled.div<{ $visible: boolean }>`
   width: 100%;
   height: 100vh;
   opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 280ms ease; /* Canvas появляется раньше лоадера */
+  transition: opacity 280ms ease;
 `;
 
 const Content = styled.div`
@@ -382,32 +382,47 @@ function Lights({
   if (lite) {
     return (
       <>
-        {/* Мягкий нейтральный ambient */}
-        <ambientLight intensity={0.9 * m} color="#ffffff" />
+        {/* Наполняем комнату светом (мягкий, но не плоский) */}
+        <ambientLight intensity={0.85 * m} color="#eafff1" />
 
-        {/* Ключевой свет сверху-слева */}
+        {/* Key */}
         <directionalLight
-          position={[4.5, 6, 2.5]}
-          intensity={1.25 * m}
-          color="#fff4e6"
+          position={[4.8, 6.2, 2.6]}
+          intensity={1.2 * m}
+          color="#fff1df"
           castShadow={false}
         />
 
-        {/* Заполняющий свет (холоднее) */}
+        {/* Fill — фирменный зелёный, но мягче */}
         <directionalLight
-          position={[-3.5, 1.2, 5.5]}
-          intensity={0.55 * m}
-          color="#dbe7ff"
+          position={[-4.2, 2.2, 4.8]}
+          intensity={0.65 * m}
+          color="#00ff1d"
           castShadow={false}
         />
 
-        {/* Контровой (rim) — отделяет от фона */}
+        {/* Rim/back — чтобы силуэты отделялись */}
         <directionalLight
-          position={[0.0, 4.5, -6.5]}
-          intensity={0.8 * m}
-          color="#eafff1"
+          position={[0.0, 4.8, -6.5]}
+          intensity={0.6 * m}
+          color="#b6ffd0"
           castShadow={false}
         />
+
+        {/* Фиолетовая лампа */}
+        <pointLight
+          position={[0.0, 2.05, 0.35]}
+          intensity={1.55 * m}
+          color="#b84cff"
+          distance={7}
+          decay={2}
+        />
+
+        {/* Лёгкая "видимая" лампочка (дешёвая геометрия) */}
+        <mesh position={[0.0, 2.05, 0.35]}>
+          <sphereGeometry args={[0.06, 8, 8]} />
+          <meshBasicMaterial color="#b84cff" transparent opacity={0.55} />
+        </mesh>
       </>
     );
   }
@@ -584,7 +599,7 @@ useGLTF.preload("/models/stakan_room.glb");
 
 /* -------------------------- Основной компонент --------------------------- */
 
-const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → средн → макс
+const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const;
 
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
@@ -718,7 +733,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       if (!a) return;
       a.volume = vol;
       if (vol > 0) {
-        a.play().catch((e) => console.warn("[audio] autoplay failed", e));
+        a.play().catch((e) => {
+          console.warn("[audio] autoplay failed", e);
+        });
       } else {
         a.pause();
         a.currentTime = 0;
@@ -731,7 +748,15 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const cycleVolume = () => setVolumeIndex((i) => (i + 1) % VOLUME_STEPS.length);
 
   const currentIcon =
-    volumeIndex === 0 ? <IconSpeakerMute /> : volumeIndex === 1 ? <IconSpeakerLow /> : volumeIndex === 2 ? <IconSpeakerMid /> : <IconSpeakerHigh />;
+    volumeIndex === 0 ? (
+      <IconSpeakerMute />
+    ) : volumeIndex === 1 ? (
+      <IconSpeakerLow />
+    ) : volumeIndex === 2 ? (
+      <IconSpeakerMid />
+    ) : (
+      <IconSpeakerHigh />
+    );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
   const canvasBg = readyCanvas && !postReadyHold ? "#002200" : "#000000";
@@ -784,10 +809,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 url="/models/stakan_room.glb"
                 onLoaded={() => {}}
                 screenTexture={screenTexture}
-                textureSizeLimit={renderQuality.maxTextureSize}
+                textureSizeLimit={
+                  isLiteMode ? Math.min(renderQuality.maxTextureSize, 1024) : renderQuality.maxTextureSize
+                }
                 disableVideo={isLiteMode}
               />
-              {/* Environment НЕ монтируем в lite */}
               {!showLoader && renderQuality.enableEnvironment && !isLiteMode && (
                 <Environment preset="forest" background />
               )}
