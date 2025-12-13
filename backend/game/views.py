@@ -946,6 +946,14 @@ class AdsgramBlockView(APIView):
     def get(self, request: Request) -> Response:
         block = AdsgramBlock.objects.filter(is_active=True).order_by("?").first()
         if not block:
+            fallback_block_id = getattr(settings, "ADSGRAM_DEFAULT_PLACEMENT_ID", "") or None
+            if fallback_block_id:
+                logger.warning(
+                    "[adsgram] no active blocks, falling back to default placement id",
+                    extra={"user_id": request.user.id, "placement_id": fallback_block_id},
+                )
+                return Response({"block_id": fallback_block_id})
+
             return Response(
                 {"detail": "Нет доступных рекламных блоков."},
                 status=status.HTTP_404_NOT_FOUND,
