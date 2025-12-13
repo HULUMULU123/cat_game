@@ -17,7 +17,7 @@ width: 100vw;`
 const StyledPromoWrapper = styled.div`
     background: #28B092;
     border-radius: 7px;
-    width: 50%;
+    width: 70%;
     display: flex;
     flex-direction: column;
     align-items: center;
