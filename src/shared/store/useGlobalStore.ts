@@ -126,10 +126,7 @@ const verifyTelegramInitData = async (initData: string): Promise<void> => {
   const dataCheckString = buildDataCheckString(params);
 
   const encoder = new TextEncoder();
-  const secretKey = await crypto.subtle.digest(
-    "SHA-256",
-    encoder.encode(`WebAppData${TELEGRAM_BOT_TOKEN}`)
-  );
+  const secretKey = await crypto.subtle.digest("SHA-256", encoder.encode(TELEGRAM_BOT_TOKEN));
   const key = await crypto.subtle.importKey(
     "raw",
     secretKey,
