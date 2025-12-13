@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { detectAndroidTelegramWebView } from "../utils/env";
 
 export type QualityProfile = "low" | "medium" | "high";
 
@@ -21,6 +22,18 @@ export interface QualityPreset {
   animation: {
     enableFrustumCulling: boolean;
   };
+}
+
+export interface QualityPresetOverrides {
+  render?: Partial<QualityPreset["render"]>;
+  droplets?: Partial<QualityPreset["droplets"]>;
+  animation?: Partial<QualityPreset["animation"]>;
+}
+
+export interface UseQualityProfileOptions {
+  forceProfile?: QualityProfile;
+  preferLiteProfile?: boolean;
+  overrides?: QualityPresetOverrides;
 }
 
 type NavigatorWithMemory = Navigator & {
@@ -132,7 +145,7 @@ const detectQualityProfile = (): QualityProfile => {
   return "high";
 };
 
-const useQualityProfile = () => {
+const useQualityProfile = (options: UseQualityProfileOptions = {}) => {
   const [profile, setProfile] = useState<QualityProfile>(() => detectQualityProfile());
 
   useEffect(() => {
@@ -157,9 +170,35 @@ const useQualityProfile = () => {
     return () => connection.removeEventListener?.("change", handle);
   }, []);
 
-  const settings = useMemo(() => QUALITY_PRESETS[profile], [profile]);
+  const isLiteDevice = options.preferLiteProfile ? detectAndroidTelegramWebView() : false;
 
-  return { profile, settings };
+  const targetProfile: QualityProfile =
+    options.forceProfile ?? (isLiteDevice ? "low" : profile);
+
+  const baseSettings = QUALITY_PRESETS[targetProfile];
+  const overrides = options.overrides;
+
+  const settings = useMemo<QualityPreset>(() => {
+    const liteRenderOverride = isLiteDevice
+      ? {
+          dpr: [0.5, 0.75] as [number, number],
+          enableShadows: false,
+          enablePostprocessing: false,
+          enableEnvironment: false,
+          enableFog: false,
+          lightIntensityMultiplier: 0.7,
+          shadowMapSize: 512,
+        }
+      : {};
+
+    return {
+      render: { ...baseSettings.render, ...liteRenderOverride, ...overrides?.render },
+      droplets: { ...baseSettings.droplets, ...overrides?.droplets },
+      animation: { ...baseSettings.animation, ...overrides?.animation },
+    };
+  }, [baseSettings, isLiteDevice, overrides?.animation, overrides?.droplets, overrides?.render]);
+
+  return { profile: targetProfile, settings, isLiteDevice };
 };
 
 export default useQualityProfile;

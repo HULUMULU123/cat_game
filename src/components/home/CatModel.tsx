@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import useQualityProfile from "../../shared/hooks/useQualityProfile";
 
 const primaryModelUrl = "/models/anim1.glb";
@@ -12,24 +13,71 @@ const secondaryModelUrls = [
   "/models/anim4.glb",
 ];
 
-// Предзагружаем основные ассеты, чтобы не блокировать Suspense
-useGLTF.preload(primaryModelUrl);
-secondaryModelUrls.forEach((url) => useGLTF.preload(url));
-
 const getClipKey = (clip: THREE.AnimationClip): string =>
   clip.uuid || clip.name || String(clip.id);
 
-export default function CatModel() {
+interface CatModelProps {
+  liteMode?: boolean;
+}
+
+export default function CatModel({ liteMode = false }: CatModelProps) {
   const primaryModel = useGLTF(primaryModelUrl);
-  const animModel2 = useGLTF(secondaryModelUrls[0]);
-  const animModel3 = useGLTF(secondaryModelUrls[1]);
-  const animModel4 = useGLTF(secondaryModelUrls[2]);
+  const [secondaryAnimations, setSecondaryAnimations] = useState<
+    THREE.AnimationClip[]
+  >([]);
 
   const {
     settings: {
       animation: { enableFrustumCulling },
     },
-  } = useQualityProfile();
+  } = useQualityProfile({
+    preferLiteProfile: liteMode,
+    forceProfile: liteMode ? "low" : undefined,
+    overrides: liteMode
+      ? {
+          animation: { enableFrustumCulling: true },
+        }
+      : undefined,
+  });
+
+  useEffect(() => {
+    if (liteMode) {
+      setSecondaryAnimations([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const loader = new GLTFLoader();
+    loader.setCrossOrigin("anonymous");
+
+    const queue = [...secondaryModelUrls];
+
+    const loadNext = () => {
+      if (isCancelled) return;
+      const next = queue.shift();
+      if (!next) return;
+
+      loader.load(
+        next,
+        (gltf) => {
+          if (isCancelled) return;
+          setSecondaryAnimations((prev) => [...prev, ...(gltf.animations ?? [])]);
+          loadNext();
+        },
+        undefined,
+        (err) => {
+          if (isCancelled) return;
+          console.warn("[CatModel] failed to load animation", next, err);
+          loadNext();
+        }
+      );
+    };
+
+    loadNext();
+    return () => {
+      isCancelled = true;
+    };
+  }, [liteMode]);
 
   const mixer = useRef<THREE.AnimationMixer>();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -79,21 +127,19 @@ export default function CatModel() {
   const animations = useMemo(() => {
     const clips = [
       ...(primaryModel.animations ?? []),
-      ...(animModel2.animations ?? []),
-      ...(animModel3.animations ?? []),
-      ...(animModel4.animations ?? []),
+      ...secondaryAnimations,
     ];
+    const limited = liteMode ? clips.slice(0, Math.min(2, clips.length)) : clips;
 
-    return clips.map((clip) => {
+    return limited.map((clip) => {
       const clone = clip.clone();
       clone.optimize();
       return clone;
     });
   }, [
     primaryModel.animations,
-    animModel2.animations,
-    animModel3.animations,
-    animModel4.animations,
+    secondaryAnimations,
+    liteMode,
   ]);
 
   useEffect(() => {
@@ -270,6 +316,23 @@ export default function CatModel() {
   }, [scene]);
 
   // Заворачиваем сцену в <group>, чтобы задать позицию и ротацию
+  useEffect(
+    () => () => {
+      if (!scene) return;
+      scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.geometry?.dispose();
+          const materials = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material];
+          materials.forEach((mat) => mat.dispose?.());
+        }
+      });
+    },
+    [scene]
+  );
+
   return (
     <group
       scale={1.3}
