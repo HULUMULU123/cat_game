@@ -276,9 +276,18 @@ const TasksList = () => {
         }
 
         let executed = false;
+        let leftPage = false;
+        const cleanup = () => {
+          window.removeEventListener("focus", onFocus);
+          document.removeEventListener("visibilitychange", onVisibility);
+          window.clearTimeout(fallbackTimer);
+        };
+
         const runCheck = async () => {
           if (executed) return;
           executed = true;
+          cleanup();
+
           setPendingIds((prev) => {
             const s = new Set(prev);
             s.add(taskId);
@@ -301,12 +310,30 @@ const TasksList = () => {
           }
         };
 
-        const fallbackTimer = window.setTimeout(runCheck, 2000);
         const onFocus = () => {
-          window.clearTimeout(fallbackTimer);
-          runCheck();
+          if (leftPage) {
+            runCheck();
+          }
         };
-        window.addEventListener("focus", onFocus, { once: true });
+
+        const onVisibility = () => {
+          if (document.visibilityState === "hidden") {
+            leftPage = true;
+            return;
+          }
+          if (leftPage && document.visibilityState === "visible") {
+            runCheck();
+          }
+        };
+
+        document.addEventListener("visibilitychange", onVisibility);
+        window.addEventListener("focus", onFocus);
+
+        const fallbackTimer = window.setTimeout(() => {
+          if (leftPage) {
+            runCheck();
+          }
+        }, 8000);
         return;
       }
 
