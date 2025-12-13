@@ -26,7 +26,6 @@ class TelegramAuthView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request: Request) -> Response:
-        
         serializer = TelegramAuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, profile = serializer.create_or_update_user()

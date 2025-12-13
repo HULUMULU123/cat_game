@@ -383,7 +383,6 @@ const useGlobalStore = create<GlobalState>()(
               first_name: user.first_name,
               last_name: user.last_name,
               telegram_id: user.id,
-              init_data: initData,
             });
 
           const maxAttempts = 3;

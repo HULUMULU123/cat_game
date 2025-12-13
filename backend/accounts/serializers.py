@@ -11,7 +11,6 @@ class TelegramAuthSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
     telegram_id = serializers.IntegerField(required=False)
-    init_data = serializers.CharField(required=False, allow_blank=True)
 
     def create_or_update_user(self) -> tuple[User, UserProfile]:
         username: str = self.validated_data["username"].lower()
