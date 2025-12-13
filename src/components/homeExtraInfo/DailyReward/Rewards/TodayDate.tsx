@@ -18,6 +18,7 @@ const StyledSmallDate = styled.span`
 const StyledBigDate = styled.span`
   font-size: 28px;
   color: var(--color-white-text);
+  padding-bottom:4rem;
 `;
 
 interface TodayDateProps {
