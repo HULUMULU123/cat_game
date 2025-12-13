@@ -8,6 +8,9 @@ import useGlobalStore from "../../shared/store/useGlobalStore";
 import { useQuery, useQueryClient } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
+const TELEGRAM_CHECK_URL = "http://0.0.0.0:8000/check-sub";
+const TELEGRAM_SECRET = "super_secret_key";
+
 const StyledContentWrapper = styled.div`
   margin: 0 auto;
   width: 95%;
@@ -110,6 +113,7 @@ const openInNewTabSafe = (href: string): "win" | "a" | "none" => {
 
 const TasksList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
+  const userData = useGlobalStore((state) => state.userData);
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
 
@@ -136,36 +140,8 @@ const TasksList = () => {
     }
   }, [error, isError]);
 
-  // открыть ссылку и отметить выполненным
-  const handleOpenAndComplete = useCallback(
-    async (taskId: number, done: boolean, rawUrl?: string | null) => {
-      console.log("[Tasks] click task:", { taskId, done, rawUrl });
-
-      const url = normalizeUrl(rawUrl);
-      if (url) {
-        const method = openInNewTabSafe(url);
-        console.log("[Tasks] open method:", method);
-
-        // если вы в iframe/webview и попапы заблокированы — последний шанс:
-        if (method === "none") {
-          try {
-            console.warn("[Tasks] final fallback → location.assign");
-            window.location.assign(url);
-          } catch (e) {
-            console.error("[Tasks] location.assign failed:", e);
-          }
-        }
-      } else {
-        console.warn("[Tasks] link is empty/invalid, not opening a tab", {
-          rawUrl,
-        });
-      }
-
-      if (done) {
-        console.log("[Tasks] already completed → skip toggle");
-        return;
-      }
-
+  const markTaskCompleted = useCallback(
+    async (taskId: number) => {
       if (!tokens) {
         console.warn("[Tasks] no tokens, cannot toggle completion");
         return;
@@ -212,6 +188,131 @@ const TasksList = () => {
       }
     },
     [queryClient, tokens]
+  );
+
+  const parseTelegramChannel = useCallback((url?: string | null): string | null => {
+    if (!url) return null;
+    const normalized = normalizeUrl(url);
+    if (!normalized) return null;
+    try {
+      const parsed = new URL(normalized);
+      const host = parsed.host.toLowerCase();
+      if (!host.includes("t.me") && !host.includes("telegram.me")) return null;
+      const [first] = parsed.pathname.split("/").filter(Boolean);
+      if (!first) return null;
+      return first.startsWith("@") ? first : `@${first}`;
+    } catch (e) {
+      console.warn("[Tasks] failed to parse Telegram channel from url", {
+        url,
+        e,
+      });
+      return null;
+    }
+  }, []);
+
+  const checkTelegramSubscription = useCallback(
+    async (channelId: string, userId: number): Promise<boolean> => {
+      try {
+        const resp = await fetch(TELEGRAM_CHECK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            secret: TELEGRAM_SECRET,
+            user_id: userId,
+            channel_id: channelId,
+          }),
+        });
+        if (!resp.ok) {
+          console.warn("[Tasks] /check-sub responded with error", resp.status);
+          return false;
+        }
+        const data = (await resp.json()) as { subscribed?: boolean };
+        return Boolean(data.subscribed);
+      } catch (e) {
+        console.error("[Tasks] /check-sub failed", e);
+        return false;
+      }
+    },
+    []
+  );
+
+  // открыть ссылку и отметить выполненным (с телеграм-подпиской — после проверки)
+  const handleOpenAndComplete = useCallback(
+    async (taskId: number, done: boolean, rawUrl?: string | null) => {
+      console.log("[Tasks] click task:", { taskId, done, rawUrl });
+
+      const url = normalizeUrl(rawUrl);
+      if (url) {
+        const method = openInNewTabSafe(url);
+        console.log("[Tasks] open method:", method);
+
+        // если вы в iframe/webview и попапы заблокированы — последний шанс:
+        if (method === "none") {
+          try {
+            console.warn("[Tasks] final fallback → location.assign");
+            window.location.assign(url);
+          } catch (e) {
+            console.error("[Tasks] location.assign failed:", e);
+          }
+        }
+      } else {
+        console.warn("[Tasks] link is empty/invalid, not opening a tab", {
+          rawUrl,
+        });
+      }
+
+      if (done) {
+        console.log("[Tasks] already completed → skip toggle");
+        return;
+      }
+
+      const channelId = parseTelegramChannel(rawUrl);
+      const isTelegramTask = Boolean(channelId);
+
+      if (isTelegramTask) {
+        if (!userData?.id) {
+          console.warn("[Tasks] telegram task but no user id, skip completion");
+          return;
+        }
+
+        let executed = false;
+        const runCheck = async () => {
+          if (executed) return;
+          executed = true;
+          setPendingIds((prev) => {
+            const s = new Set(prev);
+            s.add(taskId);
+            return s;
+          });
+
+          const subscribed = await checkTelegramSubscription(
+            channelId!,
+            userData.id
+          );
+          if (subscribed) {
+            await markTaskCompleted(taskId);
+          } else {
+            console.warn("[Tasks] user is not subscribed yet");
+            setPendingIds((prev) => {
+              const copy = new Set(prev);
+              copy.delete(taskId);
+              return copy;
+            });
+          }
+        };
+
+        const fallbackTimer = window.setTimeout(runCheck, 2000);
+        const onFocus = () => {
+          window.clearTimeout(fallbackTimer);
+          runCheck();
+        };
+        window.addEventListener("focus", onFocus, { once: true });
+        return;
+      }
+
+      await markTaskCompleted(taskId);
+    },
+    [markTaskCompleted, parseTelegramChannel, checkTelegramSubscription, userData]
   );
 
   const listContent = useMemo(() => {
