@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hmac
+import hashlib
+from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
@@ -11,6 +14,45 @@ class TelegramAuthSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
     telegram_id = serializers.IntegerField(required=False)
+    init_data = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_init_data(self, value: str) -> str:
+        bot_token = settings.TELEGRAM_BOT_TOKEN
+        if not bot_token:
+            raise serializers.ValidationError("TELEGRAM_BOT_TOKEN is not configured on backend")
+        if not value:
+            raise serializers.ValidationError("init_data is required")
+
+        params = {}
+        for chunk in value.split("&"):
+            if "=" not in chunk:
+                continue
+            k, v = chunk.split("=", 1)
+            params[k] = v
+
+        received_hash = params.get("hash")
+        if not received_hash:
+            raise serializers.ValidationError("hash is missing in init_data")
+
+        data_check_pairs = [f"{k}={params[k]}" for k in params if k != "hash"]
+        data_check_pairs.sort()
+        data_check_string = "\n".join(data_check_pairs)
+
+        secret_key = hmac.new(
+            bot_token.encode("utf-8"),
+            msg="WebAppData".encode("utf-8"),
+            digestmod=hashlib.sha256,
+        ).digest()
+        computed_hash = hmac.new(
+            secret_key,
+            msg=data_check_string.encode("utf-8"),
+            digestmod=hashlib.sha256,
+        ).hexdigest()
+
+        if computed_hash != received_hash:
+            raise serializers.ValidationError("Invalid Telegram init_data signature")
+
+        return value
 
     def create_or_update_user(self) -> tuple[User, UserProfile]:
         username: str = self.validated_data["username"].lower()
