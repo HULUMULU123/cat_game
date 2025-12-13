@@ -59,6 +59,11 @@ class UserProfile(TimestampedModel):
         related_name="profile",
         verbose_name="Пользователь",
     )
+    telegram_id = models.BigIntegerField(
+        default=0,
+        verbose_name="Telegram ID",
+        help_text="Числовой идентификатор пользователя Telegram для проверок подписок",
+    )
     balance = models.PositiveIntegerField(default=0, verbose_name="Баланс монет")
     referral_code = models.CharField(
         max_length=12,

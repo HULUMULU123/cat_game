@@ -10,11 +10,13 @@ class TelegramAuthSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
+    telegram_id = serializers.IntegerField(required=False)
 
     def create_or_update_user(self) -> tuple[User, UserProfile]:
         username: str = self.validated_data["username"].lower()
         first_name: str = self.validated_data["first_name"].strip()
         last_name: str = self.validated_data.get("last_name", "").strip()
+        telegram_id: int = int(self.validated_data.get("telegram_id") or 0)
         user, _ = User.objects.get_or_create(username=username)
         user.first_name = first_name
         user.last_name = last_name
@@ -24,6 +26,9 @@ class TelegramAuthSerializer(serializers.Serializer):
         user.save()
 
         profile, _ = UserProfile.objects.get_or_create(user=user)
+        if telegram_id and profile.telegram_id != telegram_id:
+            profile.telegram_id = telegram_id
+            profile.save(update_fields=["telegram_id", "updated_at"])
         return user, profile
 
 

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import logging
+import threading
+from typing import Optional
 
+import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
@@ -63,6 +67,103 @@ from .services import (
 )
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
+
+
+# ---------- helpers ----------
+
+
+def _parse_telegram_channel(url: Optional[str]) -> Optional[str]:
+    if not url:
+        return None
+    normalized = url.strip()
+    if not normalized:
+        return None
+    if not normalized.startswith("http"):
+        normalized = f"https://{normalized}"
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(normalized)
+        host = (parsed.netloc or "").lower()
+        if "t.me" not in host and "telegram.me" not in host:
+            return None
+        path_parts = [p for p in (parsed.path or "").split("/") if p]
+        if not path_parts:
+            return None
+        channel = path_parts[0]
+        return channel if channel.startswith("@") else f"@{channel}"
+    except Exception:
+        return None
+
+
+def _run_telegram_check(profile_id: int, task_id: int, channel_id: str, telegram_user_id: int) -> None:
+    if not telegram_user_id:
+        logger.warning("[tasks] telegram check skipped: missing telegram_id", extra={"profile_id": profile_id})
+        return
+
+    try:
+        resp = requests.post(
+            settings.TELEGRAM_CHECK_URL,
+            json={
+                "secret": settings.TELEGRAM_CHECK_SECRET,
+                "user_id": telegram_user_id,
+                "channel_id": channel_id,
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        subscribed = bool(data.get("subscribed"))
+    except Exception as exc:  # pragma: no cover - network failure path
+        logger.error("[tasks] telegram check failed", exc_info=exc)
+        return
+
+    if not subscribed:
+        logger.info(
+            "[tasks] telegram check: not subscribed",
+            extra={"profile_id": profile_id, "task_id": task_id, "channel": channel_id},
+        )
+        return
+
+    with transaction.atomic():
+        try:
+            assignment = TaskCompletion.objects.select_for_update().select_related("task", "profile").get(
+                profile_id=profile_id, task_id=task_id
+            )
+        except TaskCompletion.DoesNotExist:
+            logger.warning(
+                "[tasks] telegram check: assignment missing",
+                extra={"profile_id": profile_id, "task_id": task_id},
+            )
+            return
+
+        if assignment.is_completed:
+            return
+
+        task = assignment.task
+        profile = assignment.profile
+        assignment.is_completed = True
+        assignment.save(update_fields=["is_completed", "updated_at"])
+        profile.balance = F("balance") + task.reward
+        profile.save(update_fields=["balance", "updated_at"])
+        profile.refresh_from_db(fields=["balance"])
+
+    logger.info(
+        "[tasks] telegram check: completed and rewarded",
+        extra={"profile_id": profile_id, "task_id": task_id, "channel": channel_id},
+    )
+
+
+def _schedule_telegram_check(profile: UserProfile, task: Task, channel_id: str) -> None:
+    delay = getattr(settings, "TELEGRAM_CHECK_DELAY_SECONDS", 60)
+
+    def runner():
+        _run_telegram_check(profile.id, task.id, channel_id, profile.telegram_id)
+
+    timer = threading.Timer(delay, runner)
+    timer.daemon = True
+    timer.start()
 
 
 # ---------- Tasks ----------
@@ -116,6 +217,20 @@ class TaskToggleCompleteView(APIView):
         assignment, _ = TaskCompletion.objects.select_for_update().get_or_create(
             profile=profile, task=task, defaults={"is_completed": False}
         )
+
+        channel_id = _parse_telegram_channel(getattr(task, "link", None))
+        if channel_id and is_completed:
+            _schedule_telegram_check(profile, task, channel_id)
+            return Response(
+                {
+                    "task_id": task.id,
+                    "is_completed": assignment.is_completed,
+                    "balance": profile.balance,
+                    "pending_check": True,
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+
         if is_completed and not assignment.is_completed:
             assignment.is_completed = True
             assignment.save(update_fields=["is_completed", "updated_at"])

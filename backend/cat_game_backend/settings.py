@@ -151,3 +151,7 @@ ADSGRAM_DEFAULT_PLACEMENT_ID = os.environ.get("ADSGRAM_DEFAULT_PLACEMENT_ID", ""
 ADSGRAM_REQUEST_PATH = os.environ.get("ADSGRAM_REQUEST_PATH", "/v1/tasks/request")
 ADSGRAM_COMPLETE_PATH = os.environ.get("ADSGRAM_COMPLETE_PATH", "/v1/tasks/complete")
 ADSGRAM_TIMEOUT = int(os.environ.get("ADSGRAM_TIMEOUT", "10"))
+
+TELEGRAM_CHECK_URL = os.environ.get("TELEGRAM_CHECK_URL", "https://roodensky.ru/check-sub")
+TELEGRAM_CHECK_SECRET = os.environ.get("TELEGRAM_CHECK_SECRET", "super_secret_key")
+TELEGRAM_CHECK_DELAY_SECONDS = int(os.environ.get("TELEGRAM_CHECK_DELAY_SECONDS", "30"))

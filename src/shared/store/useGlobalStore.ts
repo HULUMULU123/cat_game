@@ -393,8 +393,8 @@ const useGlobalStore = create<GlobalState>()(
             },
           });
 
-          try {
-            const data = await postJson<{
+          const attemptAuth = async () =>
+            postJson<{
               access: string;
               refresh: string;
               user: ProfileResponse;
@@ -402,19 +402,30 @@ const useGlobalStore = create<GlobalState>()(
               username: usernameForBackend,
               first_name: user.first_name,
               last_name: user.last_name,
+              telegram_id: user.id,
             });
 
-            set({ tokens: { access: data.access, refresh: data.refresh } });
-            applyProfileResponse(data.user);
-            // подтянем фото от Telegram
-            set((state) => ({
-              userData: {
-                ...state.userData!,
-                photo_url: user.photo_url,
-              },
-            }));
-          } catch (err) {
-            console.error("Failed to authorize with backend", err);
+          const maxAttempts = 2;
+          for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            try {
+              const data = await attemptAuth();
+              set({ tokens: { access: data.access, refresh: data.refresh } });
+              applyProfileResponse(data.user);
+              // подтянем фото от Telegram
+              set((state) => ({
+                userData: {
+                  ...state.userData!,
+                  photo_url: user.photo_url,
+                },
+              }));
+              return;
+            } catch (err) {
+              console.error("Failed to authorize with backend", { err, attempt });
+              if (attempt === maxAttempts) {
+                throw err;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 600));
+            }
           }
         },
 

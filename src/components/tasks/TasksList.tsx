@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import styled from "styled-components";
 import TaskItem from "./TaskItem";
 import advert from "../../assets/icons/advert.svg";
@@ -7,11 +7,6 @@ import type { TaskAssignmentResponse } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 import { useQuery, useQueryClient } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
-
-const TELEGRAM_CHECK_URL =
-  import.meta.env.VITE_TELEGRAM_CHECK_URL ||
-  "https://roodensky.ru/check-sub";
-const TELEGRAM_SECRET = "super_secret_key";
 
 const StyledContentWrapper = styled.div`
   margin: 0 auto;
@@ -115,10 +110,8 @@ const openInNewTabSafe = (href: string): "win" | "a" | "none" => {
 
 const TasksList = () => {
   const tokens = useGlobalStore((state) => state.tokens);
-  const userData = useGlobalStore((state) => state.userData);
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
-  const telegramCheckTimers = useRef<Map<number, number>>(new Map());
 
   const {
     data: tasks = [],
@@ -158,17 +151,18 @@ const TasksList = () => {
         });
 
         console.log("[Tasks] POST /tasks/toggle/", { taskId });
-        const resp = await request<{ is_completed: boolean; balance: number }>(
-          "/tasks/toggle/",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${tokens.access}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ task_id: taskId, is_completed: true }),
-          }
-        );
+        const resp = await request<{
+          is_completed: boolean;
+          balance: number;
+          pending_check?: boolean;
+        }>("/tasks/toggle/", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ task_id: taskId, is_completed: true }),
+        });
         console.log("[Tasks] toggle resp:", resp);
 
         queryClient.setQueryData<TaskAssignmentResponse[] | undefined>(
@@ -324,25 +318,10 @@ const TasksList = () => {
         return;
       }
 
-      const channelId = parseTelegramChannel(rawUrl);
-      const isTelegramTask = Boolean(channelId);
-
-      if (isTelegramTask) {
-        scheduleTelegramCheck(taskId, channelId!);
-        return;
-      }
-
       await markTaskCompleted(taskId);
     },
-    [markTaskCompleted, parseTelegramChannel, scheduleTelegramCheck]
+    [markTaskCompleted]
   );
-
-  useEffect(() => {
-    return () => {
-      telegramCheckTimers.current.forEach((id) => window.clearTimeout(id));
-      telegramCheckTimers.current.clear();
-    };
-  }, []);
 
   const listContent = useMemo(() => {
     if (!tokens)
