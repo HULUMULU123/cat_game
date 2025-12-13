@@ -9,6 +9,9 @@ from rest_framework import serializers
 
 from game.models import TaskCompletion, ScoreEntry, UserProfile, QuizAttempt
 
+import json
+import time
+
 
 class TelegramAuthSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
@@ -31,27 +34,53 @@ class TelegramAuthSerializer(serializers.Serializer):
         if not received_hash:
             raise serializers.ValidationError("hash is missing in init_data")
 
-        data_check_pairs = [
-            f"{k}={params[k]}"
-            for k in params
-            if k not in {"hash", "signature"}
-        ]
+        # data_check_string: sort key=value lines excluding hash
+        data_check_pairs = [f"{k}={params[k]}" for k in params if k != "hash"]
         data_check_pairs.sort()
         data_check_string = "\n".join(data_check_pairs)
 
+        # secret_key = HMAC_SHA256(key="WebAppData", msg=bot_token)
         secret_key = hmac.new(
-            bot_token.encode("utf-8"),
-            msg="WebAppData".encode("utf-8"),
+            key=b"WebAppData",
+            msg=bot_token.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).digest()
+
         computed_hash = hmac.new(
-            secret_key,
+            key=secret_key,
             msg=data_check_string.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).hexdigest()
 
-        if computed_hash != received_hash:
+        # ✅ timing-safe compare
+        if not hmac.compare_digest(computed_hash, received_hash):
             raise serializers.ValidationError("Invalid Telegram init_data signature")
+
+        # ✅ anti-replay: auth_date freshness (recommended)
+        auth_date = params.get("auth_date")
+        if auth_date and auth_date.isdigit():
+            now = int(time.time())
+            age = now - int(auth_date)
+            # выбери окно сам; 1 час обычно норм
+            if age < 0 or age > 3600:
+                raise serializers.ValidationError("init_data auth_date expired")
+
+        # ✅ bind telegram_id to signed user.id (optional but strongly recommended)
+        raw_user = params.get("user")
+        if raw_user:
+            try:
+                user_obj = json.loads(raw_user)
+                signed_tg_id = user_obj.get("id")
+                if signed_tg_id is not None:
+                    signed_tg_id = int(signed_tg_id)
+                    provided_tg_id = self.initial_data.get("telegram_id")
+                    if provided_tg_id is not None and int(provided_tg_id) != signed_tg_id:
+                        raise serializers.ValidationError("telegram_id does not match init_data user.id")
+            except serializers.ValidationError:
+                raise
+            except Exception:
+                # если user есть, но битый — лучше падать, чем принимать
+                raise serializers.ValidationError("init_data user is not valid JSON")
 
         return value
 
@@ -60,6 +89,7 @@ class TelegramAuthSerializer(serializers.Serializer):
         first_name: str = self.validated_data["first_name"].strip()
         last_name: str = self.validated_data.get("last_name", "").strip()
         telegram_id: int = int(self.validated_data.get("telegram_id") or 0)
+
         user, _ = User.objects.get_or_create(username=username)
         user.first_name = first_name
         user.last_name = last_name
