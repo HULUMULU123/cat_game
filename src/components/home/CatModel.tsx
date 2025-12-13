@@ -129,7 +129,7 @@ export default function CatModel({ liteMode = false }: CatModelProps) {
       ...(primaryModel.animations ?? []),
       ...secondaryAnimations,
     ];
-    const limited = liteMode ? clips.slice(0, Math.min(2, clips.length)) : clips;
+    const limited = liteMode ? clips.slice(0, 1) : clips;
 
     return limited.map((clip) => {
       const clone = clip.clone();

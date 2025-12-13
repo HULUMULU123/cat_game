@@ -21,3 +21,18 @@ export const isTelegram = (): boolean => {
   const ua = safeUA();
   return ua.includes("telegram") || Boolean((window as any).Telegram?.WebApp);
 };
+
+export const isLiteModeForced = (): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const paramLite = params.get("lite") || params.get("liteMode") || params.get("lite_mode");
+    const byParam = paramLite === "1" || paramLite === "true";
+    const byStorage =
+      typeof window.localStorage !== "undefined" &&
+      window.localStorage.getItem("forceLiteMode") === "1";
+    return Boolean(byParam || byStorage);
+  } catch {
+    return false;
+  }
+};

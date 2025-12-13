@@ -9,6 +9,8 @@ import type { QualityPreset } from "../../shared/hooks/useQualityProfile";
 type ProgressPayload = { active: boolean; progress: number };
 
 const DEFAULT_SCREEN_TEXTURE = "/textures/screen_image.jpeg";
+const LITE_MAX_TEXTURE_SIZE = 768;
+const MAX_TEXTURE_CACHE = 3;
 const textureCache = new Map<string, THREE.Texture>();
 const videoCache = new Map<string, HTMLVideoElement>();
 
@@ -121,6 +123,13 @@ const loadScreenTexture = async (
 
       const safeSource = downscaleIfNeeded(img, maxSize);
       const texture = createTextureFromImageSource(safeSource);
+      if (textureCache.size >= MAX_TEXTURE_CACHE) {
+        const firstKey = textureCache.keys().next().value;
+        if (firstKey) {
+          textureCache.get(firstKey)?.dispose();
+          textureCache.delete(firstKey);
+        }
+      }
       textureCache.set(cacheKey, texture);
       resolve(texture);
     };
@@ -329,12 +338,16 @@ const ModelScene: React.FC<ModelSceneProps> = ({
   }, [active, progress, onProgress]);
 
   const fogEnabled = renderQuality.enableFog && canvasBg === "#002200";
-  const ambientIntensity = 0.6 * renderQuality.lightIntensityMultiplier;
-  const directionalIntensity = 1 * renderQuality.lightIntensityMultiplier;
-  const pointBottomIntensity = 1.2 * renderQuality.lightIntensityMultiplier;
-  const pointTopIntensity = 2 * renderQuality.lightIntensityMultiplier;
+  const ambientIntensity =
+    (liteMode ? 0.9 : 0.6) * renderQuality.lightIntensityMultiplier;
+  const directionalIntensity =
+    (liteMode ? 1.1 : 1) * renderQuality.lightIntensityMultiplier;
+  const pointBottomIntensity =
+    (liteMode ? 1.5 : 1.2) * renderQuality.lightIntensityMultiplier;
+  const pointTopIntensity =
+    (liteMode ? 2.2 : 2) * renderQuality.lightIntensityMultiplier;
   const shadowOpacity = renderQuality.enableShadows ? 0.3 : 0;
-  const maxTextureSize = liteMode ? 1024 : renderQuality.shadowMapSize * 2;
+  const maxTextureSize = liteMode ? LITE_MAX_TEXTURE_SIZE : renderQuality.shadowMapSize * 2;
 
   const cleanupHandlers = useRef<(() => void) | null>(null);
 
@@ -375,6 +388,10 @@ const ModelScene: React.FC<ModelSceneProps> = ({
           canvas.removeEventListener("webglcontextlost", handleLost, false);
           canvas.removeEventListener("webglcontextrestored", handleRestored, false);
         };
+
+        if (liteMode) {
+          THREE.Cache.enabled = false;
+        }
       }}
     >
       <color attach="background" args={[canvasBg]} />
@@ -382,6 +399,13 @@ const ModelScene: React.FC<ModelSceneProps> = ({
 
       <FirstFrame onReady={onFirstFrame} />
 
+      {liteMode && (
+        <hemisphereLight
+          skyColor="#5fff9e"
+          groundColor="#0a1f10"
+          intensity={0.85 * renderQuality.lightIntensityMultiplier}
+        />
+      )}
       <ambientLight intensity={ambientIntensity} color="#00ff1d" />
       <directionalLight
         position={[5, 5, 5]}
@@ -390,6 +414,11 @@ const ModelScene: React.FC<ModelSceneProps> = ({
         castShadow={renderQuality.enableShadows && !liteMode}
         shadow-mapSize-width={renderQuality.shadowMapSize}
         shadow-mapSize-height={renderQuality.shadowMapSize}
+      />
+      <directionalLight
+        position={[-6, 4, -4]}
+        intensity={0.8 * renderQuality.lightIntensityMultiplier}
+        color="#80ffcf"
       />
       <pointLight
         position={[0, -1, 0]}

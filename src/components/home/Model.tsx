@@ -16,7 +16,7 @@ import type { FrontendConfigResponse } from "../../shared/api/types";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
 import useQualityProfile from "../../shared/hooks/useQualityProfile";
-import { detectAndroidTelegramWebView } from "../../shared/utils/env";
+import { detectAndroidTelegramWebView, isLiteModeForced } from "../../shared/utils/env";
 
 const LazyModelScene = React.lazy(() => import("./ModelScene"));
 
@@ -360,6 +360,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     setLiteMode(detectAndroidTelegramWebView());
+  }, []);
+  useEffect(() => {
+    if (isLiteModeForced()) {
+      setLiteMode(true);
+    }
   }, []);
 
   useEffect(() => {
