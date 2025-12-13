@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  getLiteModeReason,
-  isLiteModeRequested,
-  shouldUseLiteMode,
-} from "../utils/platform";
 
-export type QualityProfile = "lite" | "low" | "medium" | "high";
+export type QualityProfile = "low" | "medium" | "high";
 
 export interface QualityPreset {
   render: {
@@ -14,12 +9,8 @@ export interface QualityPreset {
     enablePostprocessing: boolean;
     enableEnvironment: boolean;
     enableFog: boolean;
-    enableAntialias: boolean;
     lightIntensityMultiplier: number;
     shadowMapSize: number;
-    maxTextureSize: number;
-    maxParallelAssetRequests: number;
-    powerPreference?: WebGLPowerPreference;
   };
   droplets: {
     spawnIntervalMultiplier: number;
@@ -50,12 +41,8 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
       enablePostprocessing: true,
       enableEnvironment: true,
       enableFog: true,
-      enableAntialias: true,
       lightIntensityMultiplier: 1,
       shadowMapSize: 2048,
-      maxTextureSize: 4096,
-      maxParallelAssetRequests: 8,
-      powerPreference: "high-performance",
     },
     droplets: {
       spawnIntervalMultiplier: 1,
@@ -74,11 +61,8 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
       enablePostprocessing: true,
       enableEnvironment: true,
       enableFog: true,
-      enableAntialias: true,
       lightIntensityMultiplier: 0.9,
       shadowMapSize: 1024,
-      maxTextureSize: 2048,
-      maxParallelAssetRequests: 5,
     },
     droplets: {
       spawnIntervalMultiplier: 1.3,
@@ -97,42 +81,14 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
       enablePostprocessing: false,
       enableEnvironment: false,
       enableFog: false,
-      enableAntialias: false,
       lightIntensityMultiplier: 0.8,
       shadowMapSize: 512,
-      maxTextureSize: 1024,
-      maxParallelAssetRequests: 3,
-      powerPreference: "low-power",
     },
     droplets: {
       spawnIntervalMultiplier: 1.8,
       maxDrops: 24,
       disableBombs: true,
       popDuration: 420,
-    },
-    animation: {
-      enableFrustumCulling: true,
-    },
-  },
-  lite: {
-    render: {
-      dpr: [1, 1],
-      enableShadows: false,
-      enablePostprocessing: false,
-      enableEnvironment: false,
-      enableFog: false,
-      enableAntialias: false,
-      lightIntensityMultiplier: 0.7,
-      shadowMapSize: 256,
-      maxTextureSize: 512,
-      maxParallelAssetRequests: 2,
-      powerPreference: "low-power",
-    },
-    droplets: {
-      spawnIntervalMultiplier: 2,
-      maxDrops: 16,
-      disableBombs: true,
-      popDuration: 360,
     },
     animation: {
       enableFrustumCulling: true,
@@ -148,14 +104,6 @@ const detectQualityProfile = (): QualityProfile => {
   const memory = typeof nav.deviceMemory === "number" ? nav.deviceMemory : undefined;
   const connectionType = nav.connection?.effectiveType ?? "";
   const userAgent = nav.userAgent?.toLowerCase?.() ?? "";
-  const liteReason = getLiteModeReason();
-  const liteRequested = isLiteModeRequested() || shouldUseLiteMode();
-
-  if (liteRequested && liteReason) {
-    console.info("[quality] force lite:", liteReason);
-    return "lite";
-  }
-  if (liteRequested) return "lite";
 
   const isLegacyMobile = /android\s(7|8)|iphone\s(6|7|8)|mali-|redmi|sm-j|sm-a10/.test(
     userAgent
@@ -211,7 +159,7 @@ const useQualityProfile = () => {
 
   const settings = useMemo(() => QUALITY_PRESETS[profile], [profile]);
 
-  return { profile, settings, isLiteMode: profile === "lite" };
+  return { profile, settings };
 };
 
 export default useQualityProfile;
