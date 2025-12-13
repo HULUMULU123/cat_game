@@ -159,31 +159,11 @@ async function authFetch(
     },
   };
 
-  let res = await fetch(`${API_BASE_URL}${path}`, withAuth);
+  const res = await fetch(`${API_BASE_URL}${path}`, withAuth);
 
-  if (res.status === 401 && tokens?.refresh) {
-    try {
-      const r = await fetch(`${API_BASE_URL}/auth/refresh/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh: tokens.refresh }),
-      });
-      if (!r.ok) throw new Error(await r.text());
-      const data = (await r.json()) as { access: string };
-      const next = { access: data.access, refresh: tokens.refresh };
-      set({ tokens: next });
-
-      res = await fetch(`${API_BASE_URL}${path}`, {
-        ...init,
-        headers: {
-          ...(init.headers || {}),
-          Authorization: `Bearer ${next.access}`,
-        },
-      });
-    } catch {
-      set({ tokens: null, hasHydratedProfile: false });
-      throw new Error("Сессия истекла. Войдите снова.");
-    }
+  if (res.status === 401) {
+    set({ tokens: null, hasHydratedProfile: false });
+    throw new Error("Сессия истекла. Войдите снова.");
   }
 
   if (!res.ok)
@@ -405,7 +385,7 @@ const useGlobalStore = create<GlobalState>()(
               telegram_id: user.id,
             });
 
-          const maxAttempts = 2;
+          const maxAttempts = 3;
           for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
             try {
               const data = await attemptAuth();
@@ -424,7 +404,7 @@ const useGlobalStore = create<GlobalState>()(
               if (attempt === maxAttempts) {
                 throw err;
               }
-              await new Promise((resolve) => setTimeout(resolve, 600));
+              await new Promise((resolve) => setTimeout(resolve, 800));
             }
           }
         },
