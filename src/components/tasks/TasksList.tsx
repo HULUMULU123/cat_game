@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import styled from "styled-components";
 import TaskItem from "./TaskItem";
 import advert from "../../assets/icons/advert.svg";
@@ -116,6 +116,7 @@ const TasksList = () => {
   const userData = useGlobalStore((state) => state.userData);
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
+  const telegramCheckTimers = useRef<Map<number, number>>(new Map());
 
   const {
     data: tasks = [],
@@ -236,6 +237,53 @@ const TasksList = () => {
     []
   );
 
+  const scheduleTelegramCheck = useCallback(
+    (taskId: number, channelId: string) => {
+      const timer = telegramCheckTimers.current.get(taskId);
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+
+      setPendingIds((prev) => {
+        const s = new Set(prev);
+        s.add(taskId);
+        return s;
+      });
+
+      const timeoutId = window.setTimeout(async () => {
+        telegramCheckTimers.current.delete(taskId);
+
+        if (!userData?.id) {
+          console.warn("[Tasks] telegram task but no user id, skip completion");
+          setPendingIds((prev) => {
+            const copy = new Set(prev);
+            copy.delete(taskId);
+            return copy;
+          });
+          return;
+        }
+
+        const subscribed = await checkTelegramSubscription(
+          channelId,
+          userData.id
+        );
+        if (subscribed) {
+          await markTaskCompleted(taskId);
+        } else {
+          console.warn("[Tasks] telegram subscription not confirmed after timer");
+          setPendingIds((prev) => {
+            const copy = new Set(prev);
+            copy.delete(taskId);
+            return copy;
+          });
+        }
+      }, 60_000);
+
+      telegramCheckTimers.current.set(taskId, timeoutId);
+    },
+    [checkTelegramSubscription, markTaskCompleted, userData]
+  );
+
   // открыть ссылку и отметить выполненным (с телеграм-подпиской — после проверки)
   const handleOpenAndComplete = useCallback(
     async (taskId: number, done: boolean, rawUrl?: string | null) => {
@@ -270,77 +318,21 @@ const TasksList = () => {
       const isTelegramTask = Boolean(channelId);
 
       if (isTelegramTask) {
-        if (!userData?.id) {
-          console.warn("[Tasks] telegram task but no user id, skip completion");
-          return;
-        }
-
-        let executed = false;
-        let leftPage = false;
-        const cleanup = () => {
-          window.removeEventListener("focus", onFocus);
-          document.removeEventListener("visibilitychange", onVisibility);
-          window.clearTimeout(fallbackTimer);
-        };
-
-        const runCheck = async () => {
-          if (executed) return;
-          executed = true;
-          cleanup();
-
-          setPendingIds((prev) => {
-            const s = new Set(prev);
-            s.add(taskId);
-            return s;
-          });
-
-          const subscribed = await checkTelegramSubscription(
-            channelId!,
-            userData.id
-          );
-          if (subscribed) {
-            await markTaskCompleted(taskId);
-          } else {
-            console.warn("[Tasks] user is not subscribed yet");
-            setPendingIds((prev) => {
-              const copy = new Set(prev);
-              copy.delete(taskId);
-              return copy;
-            });
-          }
-        };
-
-        const onFocus = () => {
-          if (leftPage) {
-            runCheck();
-          }
-        };
-
-        const onVisibility = () => {
-          if (document.visibilityState === "hidden") {
-            leftPage = true;
-            return;
-          }
-          if (leftPage && document.visibilityState === "visible") {
-            runCheck();
-          }
-        };
-
-        document.addEventListener("visibilitychange", onVisibility);
-        window.addEventListener("focus", onFocus);
-
-        const fallbackTimer = window.setTimeout(() => {
-          if (leftPage) {
-            runCheck();
-          }
-        }, 8000);
+        scheduleTelegramCheck(taskId, channelId!);
         return;
       }
 
       await markTaskCompleted(taskId);
     },
-    [markTaskCompleted, parseTelegramChannel, checkTelegramSubscription, userData]
+    [markTaskCompleted, parseTelegramChannel, scheduleTelegramCheck]
   );
+
+  useEffect(() => {
+    return () => {
+      telegramCheckTimers.current.forEach((id) => window.clearTimeout(id));
+      telegramCheckTimers.current.clear();
+    };
+  }, []);
 
   const listContent = useMemo(() => {
     if (!tokens)
