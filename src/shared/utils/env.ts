@@ -21,3 +21,9 @@ export const isTelegram = (): boolean => {
   const ua = safeUA();
   return ua.includes("telegram") || Boolean((window as any).Telegram?.WebApp);
 };
+
+export const TELEGRAM_BOT_TOKEN =
+  (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    (import.meta.env.VITE_TELEGRAM_BOT_TOKEN as string | undefined)?.trim()) ||
+  "";

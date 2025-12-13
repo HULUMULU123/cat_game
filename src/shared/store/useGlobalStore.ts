@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { AdsgramBlockResponse } from "../api/types";
+import { TELEGRAM_BOT_TOKEN } from "../utils/env";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
@@ -97,6 +98,55 @@ const postJson = async <T>(path: string, body: unknown): Promise<T> => {
 
 const sanitizePhotoUrl = (url: unknown): string =>
   typeof url === "string" ? url.split("\\/").join("/") : "";
+
+const toHex = (buffer: ArrayBuffer): string =>
+  Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+const buildDataCheckString = (params: URLSearchParams): string => {
+  const pairs: string[] = [];
+  params.forEach((value, key) => {
+    if (key === "hash") return;
+    pairs.push(`${key}=${value}`);
+  });
+  pairs.sort();
+  return pairs.join("\n");
+};
+
+const verifyTelegramInitData = async (initData: string): Promise<void> => {
+  if (!TELEGRAM_BOT_TOKEN) {
+    throw new Error("TELEGRAM_BOT_TOKEN is not set");
+  }
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  if (!hash) {
+    throw new Error("initData hash is missing");
+  }
+  const dataCheckString = buildDataCheckString(params);
+
+  const encoder = new TextEncoder();
+  const secretKey = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(`WebAppData${TELEGRAM_BOT_TOKEN}`)
+  );
+  const key = await crypto.subtle.importKey(
+    "raw",
+    secretKey,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(dataCheckString)
+  );
+  const hex = toHex(signature);
+  if (hex !== hash) {
+    throw new Error("Invalid Telegram initData signature");
+  }
+};
 
 const parseTelegramUser = (initData: string): TelegramUser | null => {
   const params = new URLSearchParams(initData);
@@ -358,6 +408,8 @@ const useGlobalStore = create<GlobalState>()(
 
         setUserFromInitData: async (initData) => {
           if (!initData) return;
+
+          await verifyTelegramInitData(initData);
 
           const user = parseTelegramUser(initData);
           if (!user) return;
