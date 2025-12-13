@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hmac
 import hashlib
+from urllib.parse import parse_qsl
 from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import serializers
@@ -23,12 +24,8 @@ class TelegramAuthSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("init_data is required")
 
-        params = {}
-        for chunk in value.split("&"):
-            if "=" not in chunk:
-                continue
-            k, v = chunk.split("=", 1)
-            params[k] = v
+        parsed_pairs = parse_qsl(value, keep_blank_values=True, strict_parsing=False)
+        params = {k: v for k, v in parsed_pairs}
 
         received_hash = params.get("hash")
         if not received_hash:

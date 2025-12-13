@@ -359,6 +359,8 @@ const useGlobalStore = create<GlobalState>()(
         setUserFromInitData: async (initData) => {
           if (!initData) return;
 
+          console.log("[auth] initData payload:", initData);
+
           const user = parseTelegramUser(initData);
           if (!user) return;
 
