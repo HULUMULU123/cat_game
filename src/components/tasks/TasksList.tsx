@@ -8,7 +8,7 @@ import useGlobalStore from "../../shared/store/useGlobalStore";
 import { useQuery, useQueryClient } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
-const TELEGRAM_CHECK_URL = "http://0.0.0.0:8000/check-sub";
+const TELEGRAM_CHECK_URL = "http://0.0.0.0:9000/check-sub";
 const TELEGRAM_SECRET = "super_secret_key";
 
 const StyledContentWrapper = styled.div`
