@@ -25,5 +25,5 @@ export const isTelegram = (): boolean => {
 export const TELEGRAM_BOT_TOKEN =
   (typeof import.meta !== "undefined" &&
     import.meta.env &&
-    (import.meta.env.TELEGRAM_BOT_TOKEN as string | undefined)?.trim()) ||
+    (import.meta.env.VITE_TELEGRAM_BOT_TOKEN as string | undefined)?.trim()) ||
   "";
