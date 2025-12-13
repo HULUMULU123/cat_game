@@ -4,10 +4,6 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-
-load_dotenv()  
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-cat-game")
@@ -159,4 +155,3 @@ ADSGRAM_TIMEOUT = int(os.environ.get("ADSGRAM_TIMEOUT", "10"))
 TELEGRAM_CHECK_URL = os.environ.get("TELEGRAM_CHECK_URL", "https://roodensky.ru/check-sub")
 TELEGRAM_CHECK_SECRET = os.environ.get("TELEGRAM_CHECK_SECRET", "super_secret_key")
 TELEGRAM_CHECK_DELAY_SECONDS = int(os.environ.get("TELEGRAM_CHECK_DELAY_SECONDS", "30"))
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
