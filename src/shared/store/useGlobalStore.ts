@@ -408,13 +408,15 @@ const useGlobalStore = create<GlobalState>()(
 
         setUserFromInitData: async (initData) => {
           if (!initData) return;
-          try {
-            await verifyTelegramInitData(initData);
-          } catch (err) {
-            console.error("Telegram initData signature verification failed", err);
-            // не снимаем лоадер и не продолжаем — ждём валидные данные
-            return;
-          }
+
+          console.log("[auth] verifying telegram initData signature…");
+          await verifyTelegramInitData(initData).then(
+            () => console.log("[auth] telegram initData signature valid"),
+            (err) => {
+              console.error("[auth] telegram initData signature verification failed", err);
+              throw err;
+            }
+          );
 
           const user = parseTelegramUser(initData);
           if (!user) return;

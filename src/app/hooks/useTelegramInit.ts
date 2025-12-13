@@ -27,10 +27,12 @@ const useTelegramInit = () => {
     (async () => {
       try {
         await setUserFromInitData(webApp.initData);
-      } finally {
         if (isMounted) {
           timer = window.setTimeout(() => stopLoading(), 300);
         }
+      } catch (err) {
+        console.error("[auth] init failed", err);
+        // намеренно не снимаем лоадер — ждём валидные данные
       }
     })();
 
