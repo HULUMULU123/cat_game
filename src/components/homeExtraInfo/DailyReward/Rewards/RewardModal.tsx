@@ -21,6 +21,7 @@ const StyledWrapper = styled.div`
 
   overflow-y: auto;
   overflow-x: hidden;
+  padding-bottom: 10rem;
 `;
 
 interface RewardModalProps {
