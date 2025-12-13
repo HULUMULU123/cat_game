@@ -8,7 +8,9 @@ import useGlobalStore from "../../shared/store/useGlobalStore";
 import { useQuery, useQueryClient } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
 
-const TELEGRAM_CHECK_URL = "http://0.0.0.0:9000/check-sub";
+const TELEGRAM_CHECK_URL =
+  import.meta.env.VITE_TELEGRAM_CHECK_URL ||
+  "http://localhost:9000/check-sub";
 const TELEGRAM_SECRET = "super_secret_key";
 
 const StyledContentWrapper = styled.div`
@@ -244,6 +246,13 @@ const TasksList = () => {
         window.clearTimeout(timer);
       }
 
+      console.log("[Tasks] schedule telegram check", {
+        taskId,
+        channelId,
+        delayMs: 60_000,
+        checkUrl: TELEGRAM_CHECK_URL,
+      });
+
       setPendingIds((prev) => {
         const s = new Set(prev);
         s.add(taskId);
@@ -251,6 +260,7 @@ const TasksList = () => {
       });
 
       const timeoutId = window.setTimeout(async () => {
+        console.log("[Tasks] run telegram check", { taskId, channelId });
         telegramCheckTimers.current.delete(taskId);
 
         if (!userData?.id) {
