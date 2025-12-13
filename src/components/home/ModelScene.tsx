@@ -338,14 +338,10 @@ const ModelScene: React.FC<ModelSceneProps> = ({
   }, [active, progress, onProgress]);
 
   const fogEnabled = renderQuality.enableFog && canvasBg === "#002200";
-  const ambientIntensity =
-    (liteMode ? 0.9 : 0.6) * renderQuality.lightIntensityMultiplier;
-  const directionalIntensity =
-    (liteMode ? 1.1 : 1) * renderQuality.lightIntensityMultiplier;
-  const pointBottomIntensity =
-    (liteMode ? 1.5 : 1.2) * renderQuality.lightIntensityMultiplier;
-  const pointTopIntensity =
-    (liteMode ? 2.2 : 2) * renderQuality.lightIntensityMultiplier;
+  const ambientIntensity = 0.7 * renderQuality.lightIntensityMultiplier;
+  const directionalIntensity = 1.1 * renderQuality.lightIntensityMultiplier;
+  const pointBottomIntensity = 1.3 * renderQuality.lightIntensityMultiplier;
+  const pointTopIntensity = 2.1 * renderQuality.lightIntensityMultiplier;
   const shadowOpacity = renderQuality.enableShadows ? 0.3 : 0;
   const maxTextureSize = liteMode ? LITE_MAX_TEXTURE_SIZE : renderQuality.shadowMapSize * 2;
 
