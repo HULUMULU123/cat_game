@@ -799,26 +799,26 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <FirstFrame onReady={() => setFirstFrame(true)} />
 
             <ambientLight
-              intensity={0.65 * renderQuality.lightIntensityMultiplier}
-              color="#f8f1e6"
+              intensity={0.85 * renderQuality.lightIntensityMultiplier}
+              color="#fff4e6"
             />
             <directionalLight
               position={[6, 6, 4]}
-              intensity={1.2 * renderQuality.lightIntensityMultiplier}
-              color="#ffe2bf"
+              intensity={1.45 * renderQuality.lightIntensityMultiplier}
+              color="#ffe7c4"
               castShadow={shadowsEnabled}
               shadow-mapSize-width={renderQuality.shadowMapSize}
               shadow-mapSize-height={renderQuality.shadowMapSize}
             />
             <pointLight
               position={[-3, 1.5, 2]}
-              intensity={0.55 * renderQuality.lightIntensityMultiplier}
-              color="#e3edff"
+              intensity={0.9 * renderQuality.lightIntensityMultiplier}
+              color="#eef2ff"
               distance={15}
             />
             <pointLight
               position={[1.5, 1.2, -1]}
-              intensity={0.95 * renderQuality.lightIntensityMultiplier}
+              intensity={1.15 * renderQuality.lightIntensityMultiplier}
               distance={6}
               color="#9f7aff"
             />
