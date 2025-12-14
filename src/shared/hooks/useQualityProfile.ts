@@ -130,7 +130,11 @@ const detectQualityProfile = (): QualityProfile => {
   const isSlowConnection = connectionType === "slow-2g" || connectionType === "2g";
   const isModerateConnection = connectionType === "3g";
 
-  if (isLiteQuery() || isAndroidTelegramWebView()) {
+  if (isLiteQuery()) {
+    return "low";
+  }
+
+  if (isAndroidTelegramWebView() && (isLowCore || isLowMemory || isLegacyMobile)) {
     return "low";
   }
 

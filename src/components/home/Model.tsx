@@ -706,7 +706,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
-  const baseCanvasBg = isLite ? "#111821" : "#002200";
+  const baseCanvasBg = isLite ? "#dfe7f2" : "#002200";
   // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на основной
   const canvasBg = readyCanvas && !postReadyHold ? baseCanvasBg : "#000000";
   const showLoader = !readyCanvas || postReadyHold;
@@ -719,14 +719,6 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     THREE.DefaultLoadingManager.setURLModifier((url) => url); // no-op to keep instance
     (THREE.DefaultLoadingManager as any).maxConnections = isLite ? 1 : 4;
   }, [isLite]);
-
-  useEffect(() => {
-    if (typeof navigator === "undefined") return;
-    const ua = navigator.userAgent?.toLowerCase?.() ?? "";
-    if (ua.includes("android") && (ua.includes("telegram") || ua.includes("tgapp"))) {
-      forceLowProfile("android-telegram");
-    }
-  }, [forceLowProfile]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -800,23 +792,23 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
             <ambientLight
               intensity={
-                (isLite ? 1.05 : 0.85) * renderQuality.lightIntensityMultiplier
+                (isLite ? 1.25 : 0.95) * renderQuality.lightIntensityMultiplier
               }
-              color="#fff7ed"
+              color={isLite ? "#fffaf0" : "#fff7ed"}
             />
             {isLite && (
               <hemisphereLight
-                skyColor="#ffeeda"
-                groundColor="#cfd7e8"
-                intensity={0.7 * renderQuality.lightIntensityMultiplier}
+                skyColor="#fff3d6"
+                groundColor="#e7eef8"
+                intensity={1.05 * renderQuality.lightIntensityMultiplier}
               />
             )}
             <directionalLight
               position={[6, 6, 4]}
               intensity={
-                (isLite ? 1.65 : 1.45) * renderQuality.lightIntensityMultiplier
+                (isLite ? 1.9 : 1.55) * renderQuality.lightIntensityMultiplier
               }
-              color="#ffe7c4"
+              color={isLite ? "#fff1d2" : "#ffe7c4"}
               castShadow={shadowsEnabled}
               shadow-mapSize-width={renderQuality.shadowMapSize}
               shadow-mapSize-height={renderQuality.shadowMapSize}
@@ -824,15 +816,15 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <pointLight
               position={[-3, 1.5, 2]}
               intensity={
-                (isLite ? 1.1 : 0.9) * renderQuality.lightIntensityMultiplier
+                (isLite ? 1.35 : 0.95) * renderQuality.lightIntensityMultiplier
               }
-              color="#eef4ff"
+              color={isLite ? "#f4f6ff" : "#eef4ff"}
               distance={15}
             />
             <pointLight
               position={[1.5, 1.2, -1]}
               intensity={
-                (isLite ? 1.25 : 1.15) * renderQuality.lightIntensityMultiplier
+                (isLite ? 1.35 : 1.2) * renderQuality.lightIntensityMultiplier
               }
               distance={6}
               color="#9f7aff"
@@ -840,9 +832,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             {isLite && (
               <pointLight
                 position={[0, 2.4, 2]}
-                intensity={0.9 * renderQuality.lightIntensityMultiplier}
+                intensity={1.1 * renderQuality.lightIntensityMultiplier}
                 distance={10}
-                color="#f7fbff"
+                color="#f6fbff"
               />
             )}
 
