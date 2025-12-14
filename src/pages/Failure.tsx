@@ -476,6 +476,27 @@ export default function Failure() {
     setScore(0);
   }, []);
 
+  const beginGame = useCallback(
+    (options?: { durationSeconds?: number; bombMin?: number; bombMax?: number }) => {
+      if (!failure) return;
+
+      const durationSeconds = options?.durationSeconds ?? duration;
+      const bombMin = options?.bombMin ?? bombConfig.min;
+      const bombMax = options?.bombMax ?? bombConfig.max;
+
+      setStoreOpen(false);
+      setScore(0);
+      setHasFinished(false);
+      setResultMessage(null);
+      setResultModalOpen(false);
+      setTimeLeft(durationSeconds);
+      endAtRef.current = Date.now() + durationSeconds * 1000;
+      scheduleBombs(durationSeconds, bombMin, bombMax);
+      setIsGameRunning(true);
+    },
+    [bombConfig.max, bombConfig.min, duration, failure, scheduleBombs]
+  );
+
   useEffect(() => {
     let alive = true;
 
@@ -597,6 +618,8 @@ export default function Failure() {
       });
 
       const dur = response.duration_seconds ?? 60;
+      const bombMin = response.bombs_min_count ?? 0;
+      const bombMax = response.bombs_max_count ?? 0;
 
       setDuration(dur);
       setTimeLeft(dur);
@@ -605,8 +628,8 @@ export default function Failure() {
       setResultMessage(null);
       setResultModalOpen(false);
       setBombConfig({
-        min: response.bombs_min_count ?? 0,
-        max: response.bombs_max_count ?? 0,
+        min: bombMin,
+        max: bombMax,
       });
       setBonusPrices((prev) => response.bonus_prices ?? prev);
       setMaxBonusesPerRun(response.max_bonuses_per_run ?? 3);
@@ -636,20 +659,14 @@ export default function Failure() {
     } finally {
       setIsStarting(false);
     }
-  }, [balance, failure, parseErrorDetail, tokens, updateBalance]);
-
-  const beginGame = useCallback(() => {
-    if (!failure) return;
-    setStoreOpen(false);
-    setScore(0);
-    setHasFinished(false);
-    setResultMessage(null);
-    setResultModalOpen(false);
-    setTimeLeft(duration);
-    endAtRef.current = Date.now() + duration * 1000;
-    scheduleBombs(duration, bombConfig.min, bombConfig.max);
-    setIsGameRunning(true);
-  }, [bombConfig.max, bombConfig.min, duration, failure, scheduleBombs]);
+  }, [
+    balance,
+    beginGame,
+    failure,
+    parseErrorDetail,
+    tokens,
+    updateBalance,
+  ]);
 
   const handleStoreClose = useCallback(() => {
     setShopError(null);

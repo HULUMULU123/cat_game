@@ -68,10 +68,19 @@ height: 25px;`
 const StyledSubmitImg = styled.img`
 width:100%;
 height: 100%;`
-const StyledStatus = styled.span`
+const StyledStatus = styled.span<{ $state: 'success' | 'error' | 'loading' }>`
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
-  color: #fff;
+  color: ${({ $state }) => {
+    switch ($state) {
+      case 'success':
+        return '#e7fff6';
+      case 'error':
+        return '#ffe0e0';
+      default:
+        return '#fff';
+    }
+  }};
   display: block;
   margin-top: 8px;
   text-align: center;
@@ -88,6 +97,7 @@ export default function PromoModal({handleCloseModal}) {
     if (status === 'loading') return;
     try {
       setStatus('loading');
+      setMessage('');
       const result = await redeemPromoCode(value);
       setStatus('success');
       setMessage(result.detail);
@@ -109,16 +119,20 @@ export default function PromoModal({handleCloseModal}) {
                   onChange={(event) => setValue(event.target.value)}
                   disabled={status === 'loading'}
                 />
-                <StyledPromoSubmit type='submit' disabled={status === 'loading'}>
-                  <StyledSubmitImg src={submit}/>
-                </StyledPromoSubmit>
-            </StyledPromoForm>
-            {status !== 'idle' ? (
-              <StyledStatus>
-                {status === 'loading' ? 'Проверяем...' : 'Промокод применен'}
-              </StyledStatus>
-            ) : null}
-        </StyledPromoWrapper>
-    </StyledLayout>
+            <StyledPromoSubmit type='submit' disabled={status === 'loading'}>
+              <StyledSubmitImg src={submit}/>
+            </StyledPromoSubmit>
+        </StyledPromoForm>
+        {status !== 'idle' ? (
+          <StyledStatus $state={status === 'error' ? 'error' : status === 'success' ? 'success' : 'loading'}>
+            {status === 'loading'
+              ? 'Проверяем...'
+              : status === 'success'
+              ? message || 'Промокод применен'
+              : message || 'Промокод не применен'}
+          </StyledStatus>
+        ) : null}
+    </StyledPromoWrapper>
+</StyledLayout>
   )
 }

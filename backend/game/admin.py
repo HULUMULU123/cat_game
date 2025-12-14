@@ -4,6 +4,7 @@ import string
 import zipfile
 from typing import TYPE_CHECKING
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 from django import forms
 from django.contrib import admin, messages
@@ -11,6 +12,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path
+from django.utils import timezone
 
 from .models import (
     AdvertisementButton,
@@ -170,6 +172,82 @@ def _read_xlsx_rows(payload: bytes) -> list[list[str]]:
             rows.append(row_values)
 
     return rows
+
+
+def _index_to_column_letters(index: int) -> str:
+    result = ""
+    n = max(1, index)
+    while n > 0:
+        n, remainder = divmod(n - 1, 26)
+        result = chr(65 + remainder) + result
+    return result
+
+
+def _build_simple_xlsx(rows: list[list[str]]) -> bytes:
+    """Минимальная генерация XLSX без внешних зависимостей."""
+
+    sheet_rows: list[str] = []
+    for r_idx, row in enumerate(rows, start=1):
+        cells: list[str] = []
+        for c_idx, value in enumerate(row, start=1):
+            ref = f"{_index_to_column_letters(c_idx)}{r_idx}"
+            safe_value = escape(str(value) if value is not None else "")
+            cells.append(
+                f'<c r="{ref}" t="inlineStr"><is><t>{safe_value}</t></is></c>'
+            )
+        cells_xml = "".join(cells)
+        sheet_rows.append(f'<row r="{r_idx}">{cells_xml}</row>')
+
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f"<sheetData>{''.join(sheet_rows)}</sheetData>"
+        "</worksheet>"
+    )
+
+    workbook_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        '<sheets><sheet name="Промокоды" sheetId="1" r:id="rId1"/></sheets>'
+        "</workbook>"
+    )
+
+    workbook_rels_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+        'Target="worksheets/sheet1.xml"/>'
+        "</Relationships>"
+    )
+
+    rels_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+        'Target="xl/workbook.xml"/>'
+        "</Relationships>"
+    )
+
+    content_types_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        "</Types>"
+    )
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", content_types_xml)
+        archive.writestr("_rels/.rels", rels_xml)
+        archive.writestr("xl/workbook.xml", workbook_xml)
+        archive.writestr("xl/_rels/workbook.xml.rels", workbook_rels_xml)
+        archive.writestr("xl/worksheets/sheet1.xml", sheet_xml)
+
+    return buffer.getvalue()
 
 
 # --- Регистрация моделей ---
@@ -553,6 +631,11 @@ class PromoCodeAdmin(PromoCodeAdminBase):
                 self.admin_site.admin_view(self.generate_view),
                 name="game_promocode_generate",
             ),
+            path(
+                "export/",
+                self.admin_site.admin_view(self.export_view),
+                name="game_promocode_export",
+            ),
         ]
         return custom + urls
 
@@ -607,6 +690,36 @@ class PromoCodeAdmin(PromoCodeAdminBase):
             "admin/game/promocode/generate.html",
             context,
         )
+
+    def export_view(self, request: HttpRequest) -> HttpResponse:
+        promos = self.get_queryset(request).order_by("-created_at")
+        rows: list[list[str]] = [
+            ["Код", "Награда", "Макс активаций", "Активаций", "Активен", "Создан"],
+        ]
+        for promo in promos:
+            created_at = (
+                timezone.localtime(promo.created_at).strftime("%Y-%m-%d %H:%M:%S")
+                if promo.created_at
+                else ""
+            )
+            rows.append(
+                [
+                    promo.code,
+                    promo.reward,
+                    promo.max_redemptions,
+                    promo.redemptions_count,
+                    "Да" if promo.is_active else "Нет",
+                    created_at,
+                ]
+            )
+
+        payload = _build_simple_xlsx(rows)
+        response = HttpResponse(
+            payload,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="promo-codes.xlsx"'
+        return response
 
 
 @admin.register(PromoCodeRedemption)

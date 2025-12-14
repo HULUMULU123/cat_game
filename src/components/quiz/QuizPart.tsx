@@ -181,6 +181,13 @@ const shuffle = <T,>(arr: T[]): T[] => {
   return a;
 };
 
+const selectQuestionsInRewardOrder = (list: QuizResponse[]): QuizResponse[] => {
+  if (list.length === 0) return [];
+  const randomized = shuffle(list);
+  const selected = randomized.slice(0, TOTAL_QUESTIONS);
+  return selected.sort((a, b) => a.reward - b.reward);
+};
+
 export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   const tokens = useGlobalStore((state) => state.tokens);
   const {
@@ -248,10 +255,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
 
       const list = data as QuizResponse[];
       if (list.length === 0) return [];
-      if (list.length >= TOTAL_QUESTIONS) {
-        return shuffle(list).slice(0, TOTAL_QUESTIONS);
-      }
-      return list.slice(0, TOTAL_QUESTIONS);
+      return selectQuestionsInRewardOrder(list);
     },
   });
 
@@ -272,7 +276,10 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     setAdSkipsUsed(0);
     resetAds();
     setRemaining(QUESTION_TIME_SEC);
-    onProgressChange?.({ current: 0, total: fetchedQuestions.length });
+    onProgressChange?.({
+      current: 0,
+      total: Math.min(fetchedQuestions.length, TOTAL_QUESTIONS),
+    });
     onTimerChange?.({
       remaining: QUESTION_TIME_SEC,
       total: QUESTION_TIME_SEC,
@@ -300,7 +307,7 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
     return questions[idx] ?? null;
   }, [questions, idx]);
 
-  const total = questions?.length || TOTAL_QUESTIONS;
+  const total = Math.min(questions?.length ?? TOTAL_QUESTIONS, TOTAL_QUESTIONS);
 
   const recordAnswer = useCallback(
     (question: QuizResponse, answer: string) => {
@@ -420,24 +427,28 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
   // ===== Следующий вопрос / Завершение =====
   const finishQuiz = useCallback(
     async (answers: AnswerLogEntry[]) => {
-      if (!tokens) {
-        setFinishMsg("Викторина завершена.");
-        return;
-      }
-
       const sanitized = answers.filter((entry): entry is AnswerLogEntry =>
         Boolean(entry)
       );
+      const answeredCount = sanitized.length;
+      const completedAll = answeredCount >= TOTAL_QUESTIONS;
 
-      if (sanitized.length === 0) {
+      setAdModalOpen(false);
+      resetAds();
+
+      if (!completedAll) {
+        setFinishMsg("Нужно ответить на все 5 вопросов, награда не начислена.");
+        onTimerChange?.({ remaining: 0, total: QUESTION_TIME_SEC });
+        return;
+      }
+
+      if (!tokens) {
         setFinishMsg("Викторина завершена.");
         onTimerChange?.({ remaining: 0, total: QUESTION_TIME_SEC });
         return;
       }
 
       setSubmitting(true);
-      setAdModalOpen(false);
-      resetAds();
       try {
         const payload = {
           mode: "quiz",
@@ -469,17 +480,17 @@ export default function QuizPart({ onProgressChange, onTimerChange }: Props) {
         const msg =
           resp?.detail ??
           `Готово! Правильных: ${correctCount} из ${
-            sanitized.length
+            answeredCount
           }. Награда: ${resp?.reward ?? 0}`;
         setFinishMsg(msg);
       } catch (e) {
         if (e instanceof ApiError) {
           setFinishMsg(
-            `Готово! Правильных: ${correctCount} из ${sanitized.length}. (Ошибка отправки результата)`
+            `Готово! Правильных: ${correctCount} из ${answeredCount}. (Ошибка отправки результата)`
           );
         } else {
           setFinishMsg(
-            `Готово! Правильных: ${correctCount} из ${sanitized.length}. (Ошибка сети)`
+            `Готово! Правильных: ${correctCount} из ${answeredCount}. (Ошибка сети)`
           );
         }
       } finally {
