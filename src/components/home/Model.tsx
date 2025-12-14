@@ -706,7 +706,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
-  const baseCanvasBg = isLite ? "#0b0f18" : "#002200";
+  const baseCanvasBg = isLite ? "#111821" : "#002200";
   // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на основной
   const canvasBg = readyCanvas && !postReadyHold ? baseCanvasBg : "#000000";
   const showLoader = !readyCanvas || postReadyHold;
@@ -799,12 +799,23 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <FirstFrame onReady={() => setFirstFrame(true)} />
 
             <ambientLight
-              intensity={0.85 * renderQuality.lightIntensityMultiplier}
-              color="#fff4e6"
+              intensity={
+                (isLite ? 1.05 : 0.85) * renderQuality.lightIntensityMultiplier
+              }
+              color="#fff7ed"
             />
+            {isLite && (
+              <hemisphereLight
+                skyColor="#ffeeda"
+                groundColor="#cfd7e8"
+                intensity={0.7 * renderQuality.lightIntensityMultiplier}
+              />
+            )}
             <directionalLight
               position={[6, 6, 4]}
-              intensity={1.45 * renderQuality.lightIntensityMultiplier}
+              intensity={
+                (isLite ? 1.65 : 1.45) * renderQuality.lightIntensityMultiplier
+              }
               color="#ffe7c4"
               castShadow={shadowsEnabled}
               shadow-mapSize-width={renderQuality.shadowMapSize}
@@ -812,16 +823,28 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             />
             <pointLight
               position={[-3, 1.5, 2]}
-              intensity={0.9 * renderQuality.lightIntensityMultiplier}
-              color="#eef2ff"
+              intensity={
+                (isLite ? 1.1 : 0.9) * renderQuality.lightIntensityMultiplier
+              }
+              color="#eef4ff"
               distance={15}
             />
             <pointLight
               position={[1.5, 1.2, -1]}
-              intensity={1.15 * renderQuality.lightIntensityMultiplier}
+              intensity={
+                (isLite ? 1.25 : 1.15) * renderQuality.lightIntensityMultiplier
+              }
               distance={6}
               color="#9f7aff"
             />
+            {isLite && (
+              <pointLight
+                position={[0, 2.4, 2]}
+                intensity={0.9 * renderQuality.lightIntensityMultiplier}
+                distance={10}
+                color="#f7fbff"
+              />
+            )}
 
             <Suspense fallback={null}>
               <RoomWithCat
