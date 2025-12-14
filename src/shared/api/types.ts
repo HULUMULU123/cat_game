@@ -154,6 +154,7 @@ export type FailureResponse = {
   is_completed: boolean;
   duration_seconds: number;
   attempt_cost: number;
+  shop_enabled: boolean;
   bombs_min_count: number;
   bombs_max_count: number;
   max_bonuses_per_run: number;

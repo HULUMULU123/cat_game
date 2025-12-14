@@ -477,8 +477,9 @@ export default function Failure() {
   }, []);
 
   const beginGame = useCallback(
-    (options?: { durationSeconds?: number; bombMin?: number; bombMax?: number }) => {
-      if (!failure) return;
+    (options?: { durationSeconds?: number; bombMin?: number; bombMax?: number; force?: boolean }) => {
+      const allowStart = options?.force || Boolean(failure);
+      if (!allowStart) return;
 
       const durationSeconds = options?.durationSeconds ?? duration;
       const bombMin = options?.bombMin ?? bombConfig.min;
@@ -647,7 +648,21 @@ export default function Failure() {
       setActiveMultiplier(1);
       setActiveMultiplierType(null);
       updateBalance(response.balance ?? balance);
-      setStoreOpen(true);
+      const failurePayload = response.failure ?? failure;
+      if (failurePayload) {
+        setFailure(failurePayload);
+      }
+      const shopEnabled = failurePayload?.shop_enabled ?? true;
+      if (shopEnabled) {
+        setStoreOpen(true);
+      } else {
+        beginGame({
+          durationSeconds: dur,
+          bombMin,
+          bombMax,
+          force: true,
+        });
+      }
       setStartModalOpen(false);
     } catch (error) {
       const message = parseErrorDetail(error, "Не удалось начать сбой.");

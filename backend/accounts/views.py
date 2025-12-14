@@ -112,9 +112,12 @@ class PromoCodeApplyView(APIView):
         code = serializer.validated_data["code"]
         profile = getattr(request.user, "profile", None) or request.user.userprofile
 
-        try:
-            promo = PromoCode.objects.select_for_update().get(code=code, is_active=True)
-        except PromoCode.DoesNotExist:
+        promo = (
+            PromoCode.objects.select_for_update()
+            .filter(code__iexact=code, is_active=True)
+            .first()
+        )
+        if not promo:
             return Response({"detail": "Промокод не найден."}, status=status.HTTP_404_NOT_FOUND)
 
         if PromoCodeRedemption.objects.filter(promo_code=promo, profile=profile).exists():

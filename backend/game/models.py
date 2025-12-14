@@ -461,6 +461,11 @@ class Failure(TimestampedModel):
         default=0,
         verbose_name="Стоимость попытки (монеты)",
     )
+    shop_enabled = models.BooleanField(
+        default=True,
+        verbose_name="Магазин бонусов включён",
+        help_text="Определяет, должен ли показываться магазин бонусов перед стартом сбоя.",
+    )
     bombs_min_count = models.PositiveSmallIntegerField(
         default=0, verbose_name="Минимум бомб за игру"
     )

@@ -394,10 +394,12 @@ class FailureAdmin(FailureAdminBase):
         "end_time",
         "duration_seconds",
         "attempt_cost",
+        "shop_enabled",
         "bombs_min_count",
         "bombs_max_count",
         "created_at",
     )
+    list_filter = ("start_time", "end_time", "shop_enabled")
     search_fields = ("name",)
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
@@ -408,6 +410,7 @@ class FailureAdmin(FailureAdminBase):
                 "fields": (
                     "duration_seconds",
                     "attempt_cost",
+                    "shop_enabled",
                     "bombs_min_count",
                     "bombs_max_count",
                     "max_bonuses_per_run",

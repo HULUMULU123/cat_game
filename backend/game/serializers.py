@@ -262,6 +262,7 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
             "bonus_prices",
             "main_prize_title",
             "main_prize_image",
+            "shop_enabled",
         )
 
     def get_is_active(self, obj: Failure) -> bool:
