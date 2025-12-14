@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import useQualityProfile from "../../shared/hooks/useQualityProfile";
 
 const primaryModelUrl = "/models/anim1.glb";
@@ -14,22 +15,22 @@ const secondaryModelUrls = [
 
 // Предзагружаем основные ассеты, чтобы не блокировать Suspense
 useGLTF.preload(primaryModelUrl);
-secondaryModelUrls.forEach((url) => useGLTF.preload(url));
 
 const getClipKey = (clip: THREE.AnimationClip): string =>
   clip.uuid || clip.name || String(clip.id);
 
 export default function CatModel() {
   const primaryModel = useGLTF(primaryModelUrl);
-  const animModel2 = useGLTF(secondaryModelUrls[0]);
-  const animModel3 = useGLTF(secondaryModelUrls[1]);
-  const animModel4 = useGLTF(secondaryModelUrls[2]);
+  const [extraClips, setExtraClips] = useState<THREE.AnimationClip[]>([]);
 
   const {
+    profile,
     settings: {
       animation: { enableFrustumCulling }, // сейчас игнорируем, но оставляем в коде
     },
   } = useQualityProfile();
+
+  const isLite = profile === "low";
 
   const scene = useMemo(() => {
     const cloned = SkeletonUtils.clone(primaryModel.scene) as THREE.Group;
@@ -51,25 +52,53 @@ export default function CatModel() {
     return cloned;
   }, [primaryModel.scene, enableFrustumCulling]);
 
+  useEffect(() => {
+    if (isLite) {
+      setExtraClips([]);
+      return;
+    }
+
+    let cancelled = false;
+    const loader = new GLTFLoader();
+
+    (async () => {
+      const collected: THREE.AnimationClip[] = [];
+      for (const url of secondaryModelUrls) {
+        try {
+          const gltf = await loader.loadAsync(url);
+          if (cancelled) return;
+          collected.push(...(gltf.animations ?? []));
+        } catch (e) {
+          console.warn("[CatModel] failed to load extra anim", url, e);
+        }
+      }
+      if (!cancelled) setExtraClips(collected);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLite]);
+
   const animations = useMemo(() => {
     const clips = [
       ...(primaryModel.animations ?? []),
-      ...(animModel2.animations ?? []),
-      ...(animModel3.animations ?? []),
-      ...(animModel4.animations ?? []),
+      ...extraClips,
     ];
 
-    return clips.map((clip) => {
+    const prepared = clips.map((clip) => {
       const clone = clip.clone();
       clone.optimize();
       return clone;
     });
-  }, [
-    primaryModel.animations,
-    animModel2.animations,
-    animModel3.animations,
-    animModel4.animations,
-  ]);
+
+    if (isLite) {
+      // Оставляем только лёгкие/базовые клипы: idle + первый вторичный (обычно blink)
+      return prepared.slice(0, 2);
+    }
+
+    return prepared;
+  }, [primaryModel.animations, extraClips, isLite]);
 
   const mixer = useRef<THREE.AnimationMixer>();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -193,7 +222,8 @@ export default function CatModel() {
   }, [animations, playAnimation]);
 
   useFrame((_, delta) => {
-    mixer.current?.update(delta);
+    const speed = isLite ? 0.6 : 1;
+    mixer.current?.update(delta * speed);
   });
 
   // Исправляем материалы

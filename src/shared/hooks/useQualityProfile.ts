@@ -4,7 +4,7 @@ export type QualityProfile = "low" | "medium" | "high";
 
 export interface QualityPreset {
   render: {
-    dpr: [number, number];
+    dpr: number;
     enableShadows: boolean;
     enablePostprocessing: boolean;
     enableEnvironment: boolean;
@@ -36,7 +36,7 @@ type NavigatorWithMemory = Navigator & {
 const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
   high: {
     render: {
-      dpr: [1, 2],
+      dpr: 1.5,
       enableShadows: true,
       enablePostprocessing: true,
       enableEnvironment: true,
@@ -56,7 +56,7 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
   },
   medium: {
     render: {
-      dpr: [1, 1.5],
+      dpr: 1.2,
       enableShadows: true,
       enablePostprocessing: true,
       enableEnvironment: true,
@@ -76,7 +76,7 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
   },
   low: {
     render: {
-      dpr: [0.75, 1],
+      dpr: 1,
       enableShadows: false,
       enablePostprocessing: false,
       enableEnvironment: false,
@@ -94,6 +94,21 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
       enableFrustumCulling: true,
     },
   },
+};
+
+const isLiteQuery = () => {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("lite") === "1";
+};
+
+const isAndroidTelegramWebView = () => {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent?.toLowerCase?.() ?? "";
+  const isAndroid = ua.includes("android");
+  const isTelegram = ua.includes("telegram") || ua.includes("tgapp");
+  const isWebView = ua.includes("; wv") || ua.includes("version/") || ua.includes("webview");
+  return isAndroid && (isTelegram || isWebView);
 };
 
 const detectQualityProfile = (): QualityProfile => {
@@ -115,6 +130,10 @@ const detectQualityProfile = (): QualityProfile => {
   const isSlowConnection = connectionType === "slow-2g" || connectionType === "2g";
   const isModerateConnection = connectionType === "3g";
 
+  if (isLiteQuery() || isAndroidTelegramWebView()) {
+    return "low";
+  }
+
   if (
     isVeryLowCore ||
     isVeryLowMemory ||
@@ -134,6 +153,7 @@ const detectQualityProfile = (): QualityProfile => {
 
 const useQualityProfile = () => {
   const [profile, setProfile] = useState<QualityProfile>(() => detectQualityProfile());
+  const [forcedReason, setForcedReason] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -157,9 +177,40 @@ const useQualityProfile = () => {
     return () => connection.removeEventListener?.("change", handle);
   }, []);
 
-  const settings = useMemo(() => QUALITY_PRESETS[profile], [profile]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleMemoryPressure = () => {
+      setForcedReason((prev) => prev ?? "memory-pressure");
+      setProfile("low");
+    };
+    window.addEventListener("memorypressure" as any, handleMemoryPressure);
+    return () => window.removeEventListener("memorypressure" as any, handleMemoryPressure);
+  }, []);
 
-  return { profile, settings };
+  const forceLowProfile = (reason?: string) => {
+    setForcedReason((prev) => prev ?? reason ?? null);
+    setProfile("low");
+  };
+
+  const settings = useMemo(() => {
+    const preset = QUALITY_PRESETS[profile];
+    const deviceDpr =
+      typeof window === "undefined"
+        ? preset.render.dpr
+        : profile === "low"
+        ? 1
+        : Math.min(window.devicePixelRatio || 1.5, 2);
+
+    return {
+      ...preset,
+      render: {
+        ...preset.render,
+        dpr: deviceDpr,
+      },
+    };
+  }, [profile]);
+
+  return { profile, settings, forceLowProfile, forcedReason };
 };
 
 export default useQualityProfile;

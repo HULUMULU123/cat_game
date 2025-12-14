@@ -123,13 +123,64 @@ const LevelBadge = styled.span`
   pointer-events: none;
 `;
 
+const Fallback = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 120% at 50% 30%, rgba(20, 16, 32, 0.7), rgba(6, 10, 18, 0.9));
+  color: #dfe6f7;
+  text-align: center;
+  z-index: 2147483650;
+`;
+
+const FallbackCard = styled.div`
+  max-width: 420px;
+  width: 100%;
+  padding: 20px 18px;
+  border-radius: 14px;
+  background: rgba(8, 12, 18, 0.8);
+  border: 1px solid rgba(159, 122, 255, 0.3);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+`;
+
+const FallbackTitle = styled.div`
+  font-size: 18px;
+  margin-bottom: 8px;
+  font-weight: 600;
+`;
+
+const FallbackText = styled.div`
+  font-size: 14px;
+  line-height: 1.5;
+  opacity: 0.9;
+  margin-bottom: 12px;
+`;
+
+const FallbackButton = styled.button`
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #9f7aff, #6d8cff);
+  color: #0b0f18;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
 /* ----------------------------- Кэш ресурсов ------------------------------ */
 
 const textureCache = new Map<string, THREE.Texture>();
 const videoCache = new Map<string, HTMLVideoElement>();
 
 const DEFAULT_SCREEN_TEXTURE = "/textures/screen_image.jpeg";
-const MAX_TEXTURE_SIZE = 4096;
 
 /* --------------------- Вспомогательные функции -------------------------- */
 
@@ -169,7 +220,8 @@ const downscaleIfNeeded = (
   img: HTMLImageElement,
   maxSize: number
 ): HTMLCanvasElement | HTMLImageElement => {
-  const { naturalWidth: width, naturalHeight: height } = img;
+  const width = (img as any).naturalWidth ?? (img as any).width;
+  const height = (img as any).naturalHeight ?? (img as any).height;
   if (!width || !height) return img;
 
   if (width <= maxSize && height <= maxSize) return img;
@@ -194,14 +246,45 @@ const createTextureFromImageSource = (
   const texture = new THREE.Texture(imageSource);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.flipY = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.anisotropy = 1;
   texture.needsUpdate = true;
   return texture;
 };
 
-const loadScreenTexture = async (url: string): Promise<THREE.Texture> => {
+const tuneExistingTexture = (
+  texture: THREE.Texture | null | undefined,
+  maxSize: number,
+  degrade: boolean
+) => {
+  if (!texture) return;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = !degrade;
+  texture.anisotropy = 1;
+
+  if (degrade) {
+    const img: any = (texture as any).image;
+    if (img && typeof img.width === "number" && typeof img.height === "number") {
+      const downscaled = downscaleIfNeeded(img, maxSize);
+      if (downscaled !== img) {
+        (texture as any).image = downscaled;
+        texture.needsUpdate = true;
+      }
+    }
+  }
+};
+
+const loadScreenTexture = async (
+  url: string,
+  maxSize: number
+): Promise<THREE.Texture> => {
   const targetURL = resolveTextureUrl(url);
-  if (textureCache.has(targetURL)) {
-    return textureCache.get(targetURL)!;
+  const cacheKey = `${targetURL}__${maxSize}`;
+  if (textureCache.has(cacheKey)) {
+    return textureCache.get(cacheKey)!;
   }
 
   return new Promise((resolve) => {
@@ -212,16 +295,16 @@ const loadScreenTexture = async (url: string): Promise<THREE.Texture> => {
       if (!img.naturalWidth || !img.naturalHeight) {
         console.error("[screen] image has no size", targetURL);
         if (targetURL !== resolveTextureUrl(DEFAULT_SCREEN_TEXTURE)) {
-          loadScreenTexture(DEFAULT_SCREEN_TEXTURE).then(resolve);
+          loadScreenTexture(DEFAULT_SCREEN_TEXTURE, maxSize).then(resolve);
         } else {
           resolve(new THREE.Texture());
         }
         return;
       }
 
-      const safeSource = downscaleIfNeeded(img, MAX_TEXTURE_SIZE);
+      const safeSource = downscaleIfNeeded(img, maxSize);
       const texture = createTextureFromImageSource(safeSource);
-      textureCache.set(targetURL, texture);
+      textureCache.set(cacheKey, texture);
       resolve(texture);
     };
 
@@ -229,7 +312,7 @@ const loadScreenTexture = async (url: string): Promise<THREE.Texture> => {
       console.error("[screen] image load error", targetURL, err);
       const fallbackURL = resolveTextureUrl(DEFAULT_SCREEN_TEXTURE);
       if (targetURL !== fallbackURL) {
-        loadScreenTexture(DEFAULT_SCREEN_TEXTURE).then(resolve);
+        loadScreenTexture(DEFAULT_SCREEN_TEXTURE, maxSize).then(resolve);
       } else {
         resolve(new THREE.Texture());
       }
@@ -317,10 +400,14 @@ function RoomWithCat({
   url,
   onLoaded,
   screenTexture,
+  isLite,
+  maxTextureSize,
 }: {
   url: string;
   onLoaded?: () => void;
   screenTexture: string;
+  isLite: boolean;
+  maxTextureSize: number;
 }) {
   const gltf = useGLTF(url);
   const { scene } = gltf;
@@ -353,21 +440,60 @@ function RoomWithCat({
     }
 
     const waiters: Promise<any>[] = [];
+    const materialsToDispose: THREE.Material[] = [];
+    const texturesToDispose: THREE.Texture[] = [];
+
+    const tuneMaterial = (mat: THREE.Material) => {
+      const typed = mat as any;
+      ["map", "emissiveMap", "normalMap", "roughnessMap", "metalnessMap"].forEach(
+        (key) => tuneExistingTexture(typed[key], maxTextureSize, isLite)
+      );
+      if (isLite && "metalness" in typed) typed.metalness = Math.min(typed.metalness ?? 0, 0.08);
+      if (isLite && "roughness" in typed) typed.roughness = Math.min(
+        Math.max(typed.roughness ?? 0.5, 0.45),
+        1
+      );
+    };
+
+    scene.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        const mesh = obj as THREE.Mesh;
+        mesh.castShadow = !isLite && mesh.castShadow;
+        mesh.receiveShadow = !isLite && mesh.receiveShadow;
+        const materials = Array.isArray(mesh.material)
+          ? mesh.material
+          : [mesh.material];
+        materials.forEach(tuneMaterial);
+      }
+    });
 
     if (screenMesh) {
       const textureURL = screenTexture || DEFAULT_SCREEN_TEXTURE;
-      const p = loadScreenTexture(textureURL).then((texture) => {
+      const p = loadScreenTexture(textureURL, maxTextureSize).then((texture) => {
         texture.needsUpdate = true;
-        screenMesh.material = new THREE.MeshBasicMaterial({
+        const material = new THREE.MeshBasicMaterial({
           map: texture,
           toneMapped: false,
         });
+        screenMesh.material = material;
+        materialsToDispose.push(material);
+        texturesToDispose.push(texture);
         (screenMesh.material as THREE.Material).needsUpdate = true;
       });
       waiters.push(p);
     }
 
     if (windowMesh) {
+      if (isLite) {
+        const material = new THREE.MeshBasicMaterial({
+          color: "#1c1f29",
+          toneMapped: false,
+          side: THREE.DoubleSide,
+        });
+        windowMesh.material = material;
+        materialsToDispose.push(material);
+        (windowMesh.material as THREE.Material).needsUpdate = true;
+      } else {
       const videoURL = "/videos/rain.mp4";
       let video = videoCache.get(videoURL);
 
@@ -425,20 +551,29 @@ function RoomWithCat({
           videoTexture.repeat.set(2.5, 2.5);
           videoTexture.offset.set(-0.1, 0);
 
-          windowMesh.material = new THREE.MeshBasicMaterial({
+          const material = new THREE.MeshBasicMaterial({
             map: videoTexture,
             toneMapped: false,
             side: THREE.DoubleSide,
           });
+          windowMesh.material = material;
+          materialsToDispose.push(material);
+          texturesToDispose.push(videoTexture);
           (windowMesh.material as THREE.Material).needsUpdate = true;
         });
 
         waiters.push(p);
       }
+      }
     }
 
     Promise.all(waiters).then(() => onLoaded?.());
-  }, [scene, onLoaded, screenTexture]);
+
+    return () => {
+      materialsToDispose.forEach((mat) => mat.dispose?.());
+      texturesToDispose.forEach((tex) => tex.dispose?.());
+    };
+  }, [scene, onLoaded, screenTexture, isLite, maxTextureSize]);
 
   return (
     <>
@@ -462,12 +597,21 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [postReadyHold, setPostReadyHold] = useState(true); // холд лоадера ПОСЛЕ появления Canvas
   const { active, progress } = useProgress();
   const {
+    profile,
     settings: { render: renderQuality },
+    forceLowProfile,
   } = useQualityProfile();
+  const isLite = profile === "low";
   const isBottomNavVisible = useGlobalStore(
     (state) => state.isBottomNavVisible
   );
   const [screenTexture, setScreenTexture] = useState(DEFAULT_SCREEN_TEXTURE);
+  const [isContextLost, setIsContextLost] = useState(false);
+  const [maxTextureSize, setMaxTextureSize] = useState(() =>
+    isLite ? 1024 : 4096
+  );
+  const glCleanupRef = useRef<(() => void) | null>(null);
+  const [showFallback, setShowFallback] = useState(false);
 
   const {
     data: frontendConfig,
@@ -562,91 +706,170 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
-  // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на зелёный
-  const canvasBg = readyCanvas && !postReadyHold ? "#002200" : "#000000";
+  const baseCanvasBg = isLite ? "#0b0f18" : "#002200";
+  // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на основной
+  const canvasBg = readyCanvas && !postReadyHold ? baseCanvasBg : "#000000";
   const showLoader = !readyCanvas || postReadyHold;
-  const fogEnabled = renderQuality.enableFog && canvasBg === "#002200";
-  const ambientIntensity = 0.6 * renderQuality.lightIntensityMultiplier;
-  const directionalIntensity = 1 * renderQuality.lightIntensityMultiplier;
-  const pointBottomIntensity = 1.2 * renderQuality.lightIntensityMultiplier;
-  const pointTopIntensity = 2 * renderQuality.lightIntensityMultiplier;
-  const shadowOpacity = renderQuality.enableShadows ? 0.3 : 0;
+  const fogEnabled = renderQuality.enableFog && canvasBg === baseCanvasBg;
+  const shadowsEnabled = renderQuality.enableShadows && !isLite && !isContextLost;
+  const shadowOpacity = shadowsEnabled ? 0.3 : 0;
+
+  useEffect(() => {
+    setMaxTextureSize(isLite ? 1024 : 4096);
+    THREE.DefaultLoadingManager.setURLModifier((url) => url); // no-op to keep instance
+    (THREE.DefaultLoadingManager as any).maxConnections = isLite ? 1 : 4;
+  }, [isLite]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const ua = navigator.userAgent?.toLowerCase?.() ?? "";
+    if (ua.includes("android") && (ua.includes("telegram") || ua.includes("tgapp"))) {
+      forceLowProfile("android-telegram");
+    }
+  }, [forceLowProfile]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleMemoryPressure = () => {
+      setShowFallback(true);
+      forceLowProfile("memory-pressure");
+    };
+    window.addEventListener("memorypressure" as any, handleMemoryPressure);
+    return () => window.removeEventListener("memorypressure" as any, handleMemoryPressure);
+  }, [forceLowProfile]);
+
+  const handleCanvasCreated = (state: { gl: THREE.WebGLRenderer }) => {
+    const { gl } = state;
+    gl.setPixelRatio(renderQuality.dpr);
+    gl.outputColorSpace = THREE.SRGBColorSpace;
+    const canvas = gl.domElement;
+    const onLost = (event: Event) => {
+      event.preventDefault();
+      setIsContextLost(true);
+      setShowFallback(true);
+      forceLowProfile("webgl-lost");
+    };
+    const onRestore = () => {
+      setIsContextLost(false);
+      setShowFallback(false);
+    };
+    canvas.addEventListener("webglcontextlost", onLost, { passive: false });
+    canvas.addEventListener("webglcontextrestored", onRestore, { passive: false });
+    glCleanupRef.current = () => {
+      canvas.removeEventListener("webglcontextlost", onLost as any);
+      canvas.removeEventListener("webglcontextrestored", onRestore as any);
+      gl.dispose();
+    };
+  };
+
+  useEffect(
+    () => () => {
+      glCleanupRef.current?.();
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (showFallback) {
+      glCleanupRef.current?.();
+      glCleanupRef.current = null;
+    }
+  }, [showFallback]);
 
   return (
     <ModelWrapper>
-      {/* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд без «зелёной» щели */}
-      <CanvasFade $visible={readyCanvas}>
-        <Canvas
-          shadows={renderQuality.enableShadows}
-          dpr={renderQuality.dpr}
-          camera={{ position: [10, 0.5, 5], fov: 50, rotation: [0, 0.77, 0] }}
-          style={{ width: "100%", height: "100vh", display: "block" }}
-        >
-          <color attach="background" args={[canvasBg]} />
-          {fogEnabled && <fog attach="fog" args={["#002200", 10, 40]} />}
-
-          <FirstFrame onReady={() => setFirstFrame(true)} />
-
-          <ambientLight intensity={ambientIntensity} color="#00ff1d" />
-          <directionalLight
-            position={[5, 5, 5]}
-            intensity={directionalIntensity}
-            color="#00ff1d"
-            castShadow={renderQuality.enableShadows}
-            shadow-mapSize-width={renderQuality.shadowMapSize}
-            shadow-mapSize-height={renderQuality.shadowMapSize}
-          />
-          <pointLight
-            position={[0, -1, 0]}
-            intensity={pointBottomIntensity}
-            color="#00ff1d"
-            distance={15}
-          />
-          <pointLight
-            position={[0, 2, 0]}
-            intensity={pointTopIntensity}
-            distance={5}
-            color="lime"
-          />
-
-          <mesh position={[0, 2, 0]}>
-            <sphereGeometry args={[0.2, 32, 32]} />
-            <meshBasicMaterial color="lime" transparent opacity={0.4} />
-          </mesh>
-
-          <Suspense fallback={null}>
-            <RoomWithCat
-              url="/models/stakan_room.glb"
-              onLoaded={() => {}}
-              screenTexture={screenTexture}
-            />
-            {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
-            {!showLoader && renderQuality.enableEnvironment && (
-              <Environment preset="forest" background />
-            )}
-          </Suspense>
-
-          <mesh
-            receiveShadow={renderQuality.enableShadows}
-            rotation={[-Math.PI / 2, 0, 0]}
-            position={[0, -1.5, 0]}
+      {!showFallback && (
+        /* Canvas появляется первым (на чёрном фоне), лоадер уходит вторым — кроссфейд без «зелёной» щели */
+        <CanvasFade $visible={readyCanvas}>
+          <Canvas
+            shadows={shadowsEnabled}
+            dpr={renderQuality.dpr}
+            camera={{ position: [10, 0.5, 5], fov: 50, rotation: [0, 0.77, 0] }}
+            style={{ width: "100%", height: "100vh", display: "block" }}
+            gl={{
+              powerPreference: isLite ? "low-power" : "high-performance",
+              alpha: false,
+              antialias: !isLite,
+            }}
+            onCreated={handleCanvasCreated}
           >
-            <planeGeometry args={[50, 50]} />
-            <shadowMaterial opacity={shadowOpacity} />
-          </mesh>
+            <color attach="background" args={[canvasBg]} />
+            {fogEnabled && <fog attach="fog" args={[baseCanvasBg, 10, 40]} />}
 
-          {renderQuality.enablePostprocessing && (
-            <EffectComposer>
-              <Bloom
-                intensity={0.4 * renderQuality.lightIntensityMultiplier}
-                luminanceThreshold={0.2}
-                luminanceSmoothing={0.9}
+            <FirstFrame onReady={() => setFirstFrame(true)} />
+
+            <ambientLight intensity={0.4 * renderQuality.lightIntensityMultiplier} color="#f0e8d9" />
+            <directionalLight
+              position={[6, 6, 4]}
+              intensity={0.9 * renderQuality.lightIntensityMultiplier}
+              color="#ffd8b1"
+              castShadow={shadowsEnabled}
+              shadow-mapSize-width={renderQuality.shadowMapSize}
+              shadow-mapSize-height={renderQuality.shadowMapSize}
+            />
+            <pointLight
+              position={[-3, 1.5, 2]}
+              intensity={0.3 * renderQuality.lightIntensityMultiplier}
+              color="#dbe5ff"
+              distance={15}
+            />
+            <pointLight
+              position={[1.5, 1.2, -1]}
+              intensity={0.7 * renderQuality.lightIntensityMultiplier}
+              distance={6}
+              color="#9f7aff"
+            />
+
+            <Suspense fallback={null}>
+              <RoomWithCat
+                url="/models/stakan_room.glb"
+                onLoaded={() => {}}
+                screenTexture={screenTexture}
+                isLite={isLite}
+                maxTextureSize={maxTextureSize}
               />
-              <HueSaturation hue={0.3} saturation={0.5} />
-            </EffectComposer>
-          )}
-        </Canvas>
-      </CanvasFade>
+              {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
+              {!showLoader && renderQuality.enableEnvironment && !isLite && (
+                <Environment preset="forest" background />
+              )}
+            </Suspense>
+
+            <mesh
+              receiveShadow={shadowsEnabled}
+              rotation={[-Math.PI / 2, 0, 0]}
+              position={[0, -1.5, 0]}
+            >
+              <planeGeometry args={[50, 50]} />
+              <shadowMaterial opacity={shadowOpacity} />
+            </mesh>
+
+            {renderQuality.enablePostprocessing && !isLite && (
+              <EffectComposer>
+                <Bloom
+                  intensity={0.4 * renderQuality.lightIntensityMultiplier}
+                  luminanceThreshold={0.2}
+                  luminanceSmoothing={0.9}
+                />
+                <HueSaturation hue={0.3} saturation={0.5} />
+              </EffectComposer>
+            )}
+          </Canvas>
+        </CanvasFade>
+      )}
+
+      {showFallback && (
+        <Fallback>
+          <FallbackCard>
+            <FallbackTitle>3D отключена</FallbackTitle>
+            <FallbackText>
+              WebGL недоступен или устройство испытывает нехватку ресурсов. Мы включили лёгкий режим, чтобы избежать вылета.
+            </FallbackText>
+            <FallbackButton onClick={() => window.location.reload()}>
+              Перезапустить сцену
+            </FallbackButton>
+          </FallbackCard>
+        </Fallback>
+      )}
 
       {/* Лоадер сверху — уходит ПОСЛЕ появления Canvas */}
       {createPortal(
