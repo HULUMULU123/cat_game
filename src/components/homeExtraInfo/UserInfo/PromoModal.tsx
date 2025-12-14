@@ -104,7 +104,16 @@ export default function PromoModal({handleCloseModal}) {
       setValue('');
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'Не удалось активировать промокод');
+      if (error instanceof Error) {
+        const msg = error.message.trim().toLowerCase();
+        if (msg.includes('не найден')) {
+          setMessage('Промокод не найден');
+          return;
+        }
+        setMessage(error.message);
+        return;
+      }
+      setMessage('Промокод не найден');
     }
   };
 
