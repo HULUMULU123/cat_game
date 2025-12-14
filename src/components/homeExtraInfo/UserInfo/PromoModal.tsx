@@ -110,6 +110,10 @@ export default function PromoModal({handleCloseModal}) {
           setMessage('Промокод не найден');
           return;
         }
+        if (msg.includes('уже был активирован')) {
+          setMessage('Этот промокод уже активирован вашим профилем');
+          return;
+        }
         setMessage(error.message);
         return;
       }
