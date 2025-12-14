@@ -104,6 +104,13 @@ interface DropModel {
   kind: DropKind;
 }
 
+type DropSlot = {
+  slotId: number;
+  active: boolean;
+  model: DropModel | null;
+  animationKey: number;
+};
+
 interface DropletsProps {
   spawnInterval?: number;
   hitboxPadding?: number;
@@ -125,7 +132,14 @@ const Droplets = ({
   disableBombs = false,
   bombEffectColor = "rgba(220, 80, 80, 0.6)",
 }: DropletsProps) => {
-  const [drops, setDrops] = useState<DropModel[]>([]);
+  const [pool, setPool] = useState<DropSlot[]>(() =>
+    Array.from({ length: 50 }).map((_, i) => ({
+      slotId: i,
+      active: false,
+      model: null,
+      animationKey: 0,
+    }))
+  );
   const [pops, setPops] = useState<
     { id: number; x: number; y: number; size: number; color: string }
   >([]);
@@ -158,19 +172,49 @@ const Droplets = ({
     return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
-  const removeDrop = useCallback((id: number) => {
-    setDrops((prev) => prev.filter((d) => d.id !== id));
-    dropletRefs.current.delete(id);
+  useEffect(() => {
+    const targetSize = Math.max(dropletQuality.maxDrops + 6, 32);
+    setPool((prev) => {
+      if (prev.length === targetSize) return prev;
+      if (prev.length > targetSize) {
+        const trimmed = prev.slice(0, targetSize).map((slot, idx) => ({
+          ...slot,
+          slotId: idx,
+          active: false,
+          model: null,
+        }));
+        dropletRefs.current.clear();
+        return trimmed;
+      }
+      const extra = Array.from({ length: targetSize - prev.length }).map((_, i) => ({
+        slotId: prev.length + i,
+        active: false,
+        model: null,
+        animationKey: 0,
+      }));
+      return [...prev, ...extra];
+    });
+  }, [dropletQuality.maxDrops]);
+
+  const markInactive = useCallback((slotId: number) => {
+    dropletRefs.current.delete(slotId);
+    setPool((prev) =>
+      prev.map((slot) =>
+        slot.slotId === slotId
+          ? { ...slot, active: false, model: null, animationKey: slot.animationKey + 1 }
+          : slot
+      )
+    );
   }, []);
 
   const createDrop = useCallback(
     (kind: DropKind) => {
-      const id = Date.now() + Math.random();
-      const size = Math.random() * 40 + 20;
-      const { width, height } = viewportRef.current;
-      const safeWidth = width || (typeof window !== "undefined" ? window.innerWidth : 0);
-      const safeHeight = height || (typeof window !== "undefined" ? window.innerHeight : 0);
-      const x = Math.random() * Math.max(0, safeWidth - size);
+    const id = Date.now() + Math.random();
+    const size = Math.random() * 40 + 20;
+    const { width, height } = viewportRef.current;
+    const safeWidth = width || (typeof window !== "undefined" ? window.innerWidth : 0);
+    const safeHeight = height || (typeof window !== "undefined" ? window.innerHeight : 0);
+    const x = Math.random() * Math.max(0, safeWidth - size);
       const start = -size;
       const distance = safeHeight + 50 - start;
       const baseDuration = Math.random() * 1800 + 1800;
@@ -180,20 +224,23 @@ const Droplets = ({
           ? bombDrop
           : dropletSvgs[Math.floor(Math.random() * dropletSvgs.length)];
 
-      setDrops((prev) => {
-        const next = [
-          ...prev,
-          { id, x, size, svg, duration, start, distance, kind },
-        ];
+      setPool((prev) => {
+        const maxSlots = dropletQuality.maxDrops;
+        const existingActive = prev.filter((s) => s.active).length;
+        if (existingActive >= maxSlots) return prev;
 
-        if (next.length <= dropletQuality.maxDrops) {
-          return next;
-        }
+        const next = prev.slice();
+        const freeIndex = next.findIndex((s) => !s.active);
+        if (freeIndex === -1) return prev;
 
-        const overflow = next.slice(0, next.length - dropletQuality.maxDrops);
-        overflow.forEach((drop) => dropletRefs.current.delete(drop.id));
-
-        return next.slice(next.length - dropletQuality.maxDrops);
+        const target = next[freeIndex];
+        next[freeIndex] = {
+          ...target,
+          active: true,
+          model: { id, x, size, svg, duration, start, distance, kind },
+          animationKey: target.animationKey + 1,
+        };
+        return next;
       });
     },
     [dropletQuality.maxDrops, normalizedSpeed]
@@ -238,23 +285,26 @@ const Droplets = ({
 
   useEffect(() => {
     if (!bombsDisabled) return;
-    setDrops((prev) => {
-      const next = prev.filter((drop) => {
-        const keep = drop.kind !== "bomb";
-        if (!keep) {
-          dropletRefs.current.delete(drop.id);
-        }
-        return keep;
-      });
-      return next;
+    const bombsToClear: number[] = [];
+    setPool((prev) => {
+      const updated = prev.map((slot) =>
+        slot.model?.kind === "bomb"
+          ? ((bombsToClear.push(slot.slotId),
+            { ...slot, active: false, model: null, animationKey: slot.animationKey + 1 }))
+          : slot
+      );
+      return updated;
     });
+    bombsToClear.forEach((id) => dropletRefs.current.delete(id));
   }, [bombsDisabled]);
 
-  const handlePop = (drop: DropModel) => {
-    const el = dropletRefs.current.get(drop.id);
+  const handlePop = (slot: DropSlot) => {
+    const drop = slot.model;
+    if (!drop) return;
+    const el = dropletRefs.current.get(slot.slotId);
     const wrapper = wrapperRef.current;
 
-    removeDrop(drop.id);
+    markInactive(slot.slotId);
 
     if (drop.kind === "bomb") {
       if (onBomb) onBomb();
@@ -280,33 +330,37 @@ const Droplets = ({
   return (
     <StyledWrapper>
       <Wrapper ref={wrapperRef}>
-        {drops.map((drop) => (
-          <DropletWrapper
-            key={drop.id}
-            ref={(el) => {
-              if (el) dropletRefs.current.set(drop.id, el);
-              else dropletRefs.current.delete(drop.id);
-            }}
-            x={drop.x}
-            size={drop.size}
-            duration={drop.duration}
-            start={drop.start}
-            pad={hitboxPadding}
-            onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId);
-              handlePop(drop);
-            }}
-            onAnimationEnd={() => removeDrop(drop.id)}
-            onAnimationCancel={() => removeDrop(drop.id)}
-            style={
-              {
-                "--fall-distance": `${drop.distance}px`,
-              } as React.CSSProperties
-            }
-          >
-            <DropletImg src={drop.svg} size={drop.size} draggable={false} />
-          </DropletWrapper>
-        ))}
+        {pool.map((slot) => {
+          if (!slot.active || !slot.model) return null;
+          const drop = slot.model;
+          return (
+            <DropletWrapper
+              key={`${slot.slotId}-${slot.animationKey}`}
+              ref={(el) => {
+                if (el) dropletRefs.current.set(slot.slotId, el);
+                else dropletRefs.current.delete(slot.slotId);
+              }}
+              x={drop.x}
+              size={drop.size}
+              duration={drop.duration}
+              start={drop.start}
+              pad={hitboxPadding}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                handlePop(slot);
+              }}
+              onAnimationEnd={() => markInactive(slot.slotId)}
+              onAnimationCancel={() => markInactive(slot.slotId)}
+              style={
+                {
+                  "--fall-distance": `${drop.distance}px`,
+                } as React.CSSProperties
+              }
+            >
+              <DropletImg src={drop.svg} size={drop.size} draggable={false} />
+            </DropletWrapper>
+          );
+        })}
 
         {pops.map((pop) => (
           <PopEffect
