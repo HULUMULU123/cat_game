@@ -57,6 +57,10 @@ TEMPLATES = [
         },
     },
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://roodensky.ru",
+    "https://www.roodensky.ru",
+]
 
 WSGI_APPLICATION = "cat_game_backend.wsgi.application"
 ASGI_APPLICATION = "cat_game_backend.asgi.application"
