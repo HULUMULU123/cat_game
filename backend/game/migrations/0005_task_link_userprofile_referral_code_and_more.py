@@ -145,7 +145,13 @@ class Migration(migrations.Migration):
         # ---- 5) Заполняем referral_code уникальными значениями
         migrations.RunPython(fill_referral_codes, migrations.RunPython.noop),
 
-        # ---- 6) Ужесточаем ограничения: теперь unique + not null
+        # ---- 6) Если индекс уже создан частично, удаляем его, чтобы AlterField прошёл
+        migrations.RunSQL(
+            'DROP INDEX IF EXISTS "профили_пользователей_referral_code_c3c85ba";',
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+
+        # ---- 7) Ужесточаем ограничения: теперь unique + not null
         migrations.AlterField(
             model_name="userprofile",
             name="referral_code",
