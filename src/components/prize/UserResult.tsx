@@ -92,13 +92,14 @@ const UserResult = ({ entry }: UserResultProps) => {
   }
 
   const displayName = entry.first_name || entry.username;
+  const avatarSrc = entry.photo_url?.trim() ? entry.photo_url : avatar;
 
   return (
     <StyledUserItem>
       <StyledContentWrapper>
         <StyledNumberSpan>#{entry.position}</StyledNumberSpan>
         <StyledUserProfile>
-          <StyledUserImg src={avatar} alt={displayName} />
+          <StyledUserImg src={avatarSrc} alt={displayName} />
           <StyledUserSpan>{displayName}</StyledUserSpan>
         </StyledUserProfile>
         <StyledUserInfo>

@@ -31,6 +31,7 @@ type ProfileResponse = {
   username: string;
   first_name: string;
   last_name: string;
+  photo_url?: string | null;
   balance: number;
   referral_code: string;
   referred_by_code: string | null;
@@ -216,7 +217,7 @@ const useGlobalStore = create<GlobalState>()(
             first_name: payload.first_name,
             last_name: payload.last_name,
             username: state.userData?.username ?? payload.username,
-            photo_url: state.userData?.photo_url ?? "",
+            photo_url: state.userData?.photo_url ?? payload.photo_url ?? "",
           },
           balance: payload.balance,
           referralCode: payload.referral_code,
@@ -380,10 +381,11 @@ const useGlobalStore = create<GlobalState>()(
               user: ProfileResponse;
             }>("/auth/telegram/", {
               username: usernameForBackend,
-              first_name: user.first_name,
-              last_name: user.last_name,
-              telegram_id: user.id,
-            });
+            first_name: user.first_name,
+            last_name: user.last_name,
+            telegram_id: user.id,
+            photo_url: user.photo_url,
+          });
 
           const maxAttempts = 3;
           for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {

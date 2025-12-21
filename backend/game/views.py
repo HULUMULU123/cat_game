@@ -1204,6 +1204,7 @@ class LeaderboardView(APIView):
                     "username": entry.profile.user.username,
                     "first_name": entry.profile.user.first_name or "",
                     "last_name": entry.profile.user.last_name or "",
+                    "photo_url": entry.profile.photo_url or "",
                     "score": int(entry.points or 0),
                     "duration_seconds": 0,  # legacy поле, больше не используем
                     "achieved_at": entry.earned_at.isoformat() if entry.earned_at else None,

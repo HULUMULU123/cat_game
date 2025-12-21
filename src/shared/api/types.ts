@@ -34,6 +34,7 @@ export type LeaderboardEntryResponse = {
   username: string;
   first_name: string;
   last_name: string;
+  photo_url?: string | null;
   score: number;
   achieved_at?: string | null; // ← новое поле
   display_time?: string; // фронтовая вспомогательная строка HH:MM

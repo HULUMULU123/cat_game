@@ -11,12 +11,14 @@ class TelegramAuthSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
     telegram_id = serializers.IntegerField(required=False)
+    photo_url = serializers.URLField(required=False, allow_blank=True)
 
     def create_or_update_user(self) -> tuple[User, UserProfile]:
         username: str = self.validated_data["username"].lower()
         first_name: str = self.validated_data["first_name"].strip()
         last_name: str = self.validated_data.get("last_name", "").strip()
         telegram_id: int = int(self.validated_data.get("telegram_id") or 0)
+        photo_url: str = (self.validated_data.get("photo_url") or "").strip()
         user, _ = User.objects.get_or_create(username=username)
         user.first_name = first_name
         user.last_name = last_name
@@ -26,9 +28,16 @@ class TelegramAuthSerializer(serializers.Serializer):
         user.save()
 
         profile, _ = UserProfile.objects.get_or_create(user=user)
+        fields_to_update = []
         if telegram_id and profile.telegram_id != telegram_id:
             profile.telegram_id = telegram_id
-            profile.save(update_fields=["telegram_id", "updated_at"])
+            fields_to_update.append("telegram_id")
+        if photo_url and profile.photo_url != photo_url:
+            profile.photo_url = photo_url
+            fields_to_update.append("photo_url")
+        if fields_to_update:
+            fields_to_update.append("updated_at")
+            profile.save(update_fields=fields_to_update)
         return user, profile
 
 
@@ -54,6 +63,7 @@ class UserProfileSerializer(serializers.ModelSerializer[UserProfile]):
             "referred_by_code",
             "referrals_count",
             "stats",
+            "photo_url",
         )
 
     def get_referrals_count(self, obj: UserProfile) -> int:

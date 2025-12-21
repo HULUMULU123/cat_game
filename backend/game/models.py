@@ -72,6 +72,11 @@ class UserProfile(TimestampedModel):
         editable=False,
         verbose_name="Реферальный код",
     )
+    photo_url = models.URLField(
+        blank=True,
+        default="",
+        verbose_name="Ссылка на аватар Telegram",
+    )
     referred_by = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,

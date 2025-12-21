@@ -80,13 +80,14 @@ const buildDisplayName = (entry: LeaderboardEntryResponse) => {
 
 export default function UserResults({ entry }: UserResultsProps) {
   if (!entry) return null;
+  const avatarSrc = entry.photo_url?.trim() ? entry.photo_url : avatar;
 
   return (
     <StyledUserItem>
       <StyledContentWrapper>
         <StyledNumberSpan>#{entry.position}</StyledNumberSpan>
         <StyledUserProfile>
-          <StyledUserImg src={avatar} alt="Профиль" />
+          <StyledUserImg src={avatarSrc} alt="Профиль" />
           <StyledUserSpan>{buildDisplayName(entry)}</StyledUserSpan>
         </StyledUserProfile>
         <StyledUserInfo>

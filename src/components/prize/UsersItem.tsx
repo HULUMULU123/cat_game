@@ -90,13 +90,14 @@ const UsersItem = ({ entry }: UsersItemProps) => {
     entry.display_time && entry.display_time.trim().length > 0
       ? entry.display_time
       : formatHHMM(entry.achieved_at);
+  const avatarSrc = entry.photo_url?.trim() ? entry.photo_url : avatar;
 
   return (
     <StyledUserItem>
       <StyledContentWrapper>
         <StyledNumberSpan>#{entry.position}</StyledNumberSpan>
         <StyledUserProfile>
-          <StyledUserImg src={avatar} alt={displayName} />
+          <StyledUserImg src={avatarSrc} alt={displayName} />
           <StyledUserSpan>{displayName}</StyledUserSpan>
         </StyledUserProfile>
         <StyledUserInfo>
