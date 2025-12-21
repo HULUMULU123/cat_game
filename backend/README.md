@@ -1,8 +1,8 @@
 # Cat Game Backend
 
-Django REST backend that powers the Cat Game frontend. It provides Telegram-based authentication, user balances, tasks, quiz questions, leaderboard data and gift information.
+Django REST API для фронтенда Cat Game. Обрабатывает авторизацию через Telegram Web App, балансы, задания, викторины, лидерборды и промокоды.
 
-## Quick start
+## Быстрый старт
 
 ```bash
 python -m venv .venv
@@ -12,9 +12,38 @@ python manage.py migrate
 python manage.py runserver 0.0.0.0:8000
 ```
 
-## Available API endpoints
+Админ-панель доступна по `http://localhost:8000/admin/`.
 
-- `POST /api/auth/telegram/` — регистрация/вход по данным из Telegram Web App.
+## Переменные окружения
+
+### Django
+
+- `DJANGO_SECRET_KEY` — секретный ключ Django.
+- `DJANGO_DEBUG` — `1` или `0` для включения/выключения debug-режима.
+
+### Adsgram
+
+- `ADSGRAM_API_BASE_URL`
+- `ADSGRAM_API_TOKEN`
+- `ADSGRAM_APP_ID`
+- `ADSGRAM_DEFAULT_PLACEMENT_ID`
+- `ADSGRAM_REQUEST_PATH` (по умолчанию `/v1/tasks/request`)
+- `ADSGRAM_COMPLETE_PATH` (по умолчанию `/v1/tasks/complete`)
+- `ADSGRAM_TIMEOUT` (по умолчанию `10`)
+
+### Проверка подписки Telegram
+
+- `TELEGRAM_CHECK_URL` (по умолчанию `https://roodensky.ru/check-sub`)
+- `TELEGRAM_CHECK_SECRET`
+- `TELEGRAM_CHECK_DELAY_SECONDS` (по умолчанию `30`)
+
+## Авторизация
+
+Используется JWT через `rest_framework_simplejwt`. Все эндпоинты, кроме входа/регистрации, требуют `Authorization: Bearer <token>`.
+
+## Доступные API эндпоинты
+
+- `POST /api/auth/telegram/` — регистрация/вход по данным Telegram Web App.
 - `GET /api/auth/me/` — профиль текущего пользователя.
 - `GET /api/tasks/` — задания для инфо-узлов.
 - `GET /api/gift/` — активный подарок на главной странице.
@@ -23,4 +52,3 @@ python manage.py runserver 0.0.0.0:8000
 - `GET /api/simulation/` — конфигурация симуляции.
 - `POST /api/simulation/start/` — запуск симуляции, списывает монеты при успехе.
 
-Все эндпоинты, кроме регистрации, требуют JWT-токен, полученный от `simple_jwt`.

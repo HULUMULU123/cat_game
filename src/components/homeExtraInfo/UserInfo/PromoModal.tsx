@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import styled from 'styled-components'
 import submit from '../../../assets/icons/submit.svg'
 import useGlobalStore from '../../../shared/store/useGlobalStore'
+// Полупрозрачный фон модалки
 const StyledLayout = styled.div`
 position: fixed;
 top:0;
@@ -14,6 +15,7 @@ justify-content: center;
 height: 100vh;
 width: 100vw;`
 
+// Контейнер с формой и статусом
 const StyledPromoWrapper = styled.div`
     background: #28B092;
     border-radius: 7px;
@@ -25,12 +27,14 @@ const StyledPromoWrapper = styled.div`
     padding: 15px 20px;
 `
 
+// Горизонтальная форма ввода промокода
 const StyledPromoForm = styled.form`
     display: flex;
     align-items: center;
     gap: 10px;
 `
 
+// Инпут под промокод с минимальными стилями
 const StyledPromoInput = styled.input`
     font-family: 'Roboto', sans-serif;
     font-weight: 800;
@@ -59,6 +63,7 @@ const StyledPromoInput = styled.input`
   }
 `;
 
+// Кнопка отправки (иконка)
 const StyledPromoSubmit = styled.button`
 background: transparent;
 border: none;
@@ -68,6 +73,7 @@ height: 25px;`
 const StyledSubmitImg = styled.img`
 width:100%;
 height: 100%;`
+// Строка статуса под формой
 const StyledStatus = styled.span<{ $state: 'success' | 'error' | 'loading' }>`
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
@@ -86,14 +92,21 @@ const StyledStatus = styled.span<{ $state: 'success' | 'error' | 'loading' }>`
   text-align: center;
 `;
 
+// Модальное окно для активации промокода
 export default function PromoModal({handleCloseModal}) {
+  // Берем экшен из глобального стора
   const redeemPromoCode = useGlobalStore((state) => state.redeemPromoCode);
+  // Значение инпута
   const [value, setValue] = useState('');
+  // Статус запроса для UI
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  // Сообщение пользователю
   const [message, setMessage] = useState('');
 
+  // Отправка промокода на сервер
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // Защита от повторной отправки
     if (status === 'loading') return;
     try {
       setStatus('loading');
@@ -104,6 +117,7 @@ export default function PromoModal({handleCloseModal}) {
       setValue('');
     } catch (error) {
       setStatus('error');
+      // Переводим типовые сообщения в понятный текст для пользователя
       if (error instanceof Error) {
         const msg = error.message.trim().toLowerCase();
         if (msg.includes('не найден')) {
@@ -122,7 +136,9 @@ export default function PromoModal({handleCloseModal}) {
   };
 
   return (
+    // Закрываем модалку при клике по фону
     <StyledLayout onClick={()=>handleCloseModal(false)}>
+        {/* Останавливаем всплытие, чтобы клик внутри не закрывал модалку */}
         <StyledPromoWrapper onClick={(e) => e.stopPropagation()}>
             <StyledPromoForm onSubmit={handleSubmit}>
                 <StyledPromoInput
@@ -136,6 +152,7 @@ export default function PromoModal({handleCloseModal}) {
               <StyledSubmitImg src={submit}/>
             </StyledPromoSubmit>
         </StyledPromoForm>
+        {/* Показываем статус после первой попытки */}
         {status !== 'idle' ? (
           <StyledStatus $state={status === 'error' ? 'error' : status === 'success' ? 'success' : 'loading'}>
             {status === 'loading'
