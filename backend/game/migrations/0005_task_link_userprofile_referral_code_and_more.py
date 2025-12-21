@@ -145,9 +145,13 @@ class Migration(migrations.Migration):
         # ---- 5) Заполняем referral_code уникальными значениями
         migrations.RunPython(fill_referral_codes, migrations.RunPython.noop),
 
-        # ---- 6) Если индекс уже создан частично, удаляем его, чтобы AlterField прошёл
+        # ---- 6) Если constraint или индекс уже созданы частично, удаляем их, чтобы AlterField прошёл
         migrations.RunSQL(
-            'DROP INDEX IF EXISTS "профили_пользователей_referral_code_c3c85ba";',
+            '\n'.join([
+                'ALTER TABLE "профили_пользователей" '
+                'DROP CONSTRAINT IF EXISTS "профили_пользователей_referral_code_c3c85ba";',
+                'DROP INDEX IF EXISTS "профили_пользователей_referral_code_c3c85ba";',
+            ]),
             reverse_sql=migrations.RunSQL.noop,
         ),
 
