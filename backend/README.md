@@ -33,7 +33,7 @@ python manage.py runserver 0.0.0.0:8000
 
 ### Проверка подписки Telegram
 
-- `TELEGRAM_CHECK_URL` (по умолчанию `https://roodensky.ru/check-sub`)
+- `TELEGRAM_CHECK_URL` (по умолчанию `https://stakanonline.ru/check-sub`)
 - `TELEGRAM_CHECK_SECRET`
 - `TELEGRAM_CHECK_DELAY_SECONDS` (по умолчанию `30`)
 

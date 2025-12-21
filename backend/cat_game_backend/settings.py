@@ -58,8 +58,8 @@ TEMPLATES = [
     },
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "https://roodensky.ru",
-    "https://www.roodensky.ru",
+    "https://stakanonline.ru",
+    "https://www.stakanonline.ru",
 ]
 
 WSGI_APPLICATION = "cat_game_backend.wsgi.application"
@@ -171,6 +171,6 @@ ADSGRAM_REQUEST_PATH = os.environ.get("ADSGRAM_REQUEST_PATH", "/v1/tasks/request
 ADSGRAM_COMPLETE_PATH = os.environ.get("ADSGRAM_COMPLETE_PATH", "/v1/tasks/complete")
 ADSGRAM_TIMEOUT = int(os.environ.get("ADSGRAM_TIMEOUT", "10"))
 
-TELEGRAM_CHECK_URL = os.environ.get("TELEGRAM_CHECK_URL", "https://roodensky.ru/check-sub")
+TELEGRAM_CHECK_URL = os.environ.get("TELEGRAM_CHECK_URL", "https://stakanonline.ru/check-sub")
 TELEGRAM_CHECK_SECRET = os.environ.get("TELEGRAM_CHECK_SECRET", "super_secret_key")
 TELEGRAM_CHECK_DELAY_SECONDS = int(os.environ.get("TELEGRAM_CHECK_DELAY_SECONDS", "30"))
