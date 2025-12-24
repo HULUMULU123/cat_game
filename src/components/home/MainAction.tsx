@@ -49,7 +49,7 @@ const StyledActionName = styled.span`
   font-size: 12px;
   @media (max-width: 370px) {
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
   }
 `;
 
