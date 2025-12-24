@@ -19,6 +19,8 @@ const useTelegramInit = () => {
 
     // обозначаем готовность веб-приложения Telegram
     webApp.ready();
+    const tg = webApp ?? (window as any)?.Telegram?.WebApp;
+    tg?.expand?.();
 
     let isMounted = true;
     let timer: number | undefined;

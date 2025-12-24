@@ -109,6 +109,32 @@ const postJson = async <T>(path: string, body: unknown): Promise<T> => {
 const sanitizePhotoUrl = (url: unknown): string =>
   typeof url === "string" ? url.split("\\/").join("/") : "";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const withRetry = async <T>(
+  fn: () => Promise<T>,
+  options?: { attempts?: number; delayMs?: number }
+): Promise<T> => {
+  const attempts = options?.attempts ?? 3;
+  const delayMs = options?.delayMs ?? 500;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("Сессия истекла")) {
+        throw err;
+      }
+      lastError = err;
+      if (attempt === attempts) break;
+      await sleep(delayMs * attempt);
+    }
+  }
+
+  throw lastError;
+};
+
 const parseTelegramUser = (initData: string): TelegramUser | null => {
   const params = new URLSearchParams(initData);
   const rawUser = params.get("user");
@@ -329,10 +355,8 @@ const useGlobalStore = create<GlobalState>()(
           const { tokens } = get();
           if (!tokens) return;
           try {
-            const data = await authGetJson<ProfileResponse>(
-              "/auth/me/",
-              get,
-              set
+            const data = await withRetry(() =>
+              authGetJson<ProfileResponse>("/auth/me/", get, set)
             );
             applyProfileResponse(data);
           } catch (err) {
@@ -472,10 +496,8 @@ const useGlobalStore = create<GlobalState>()(
 
           loadProfilePromise = (async () => {
             try {
-              const data = await authGetJson<ProfileResponse>(
-                "/auth/me/",
-                get,
-                set
+              const data = await withRetry(() =>
+                authGetJson<ProfileResponse>("/auth/me/", get, set)
               );
               applyProfileResponse(data);
               void attemptLegalCheck(Boolean(data.legal_accepted));
@@ -505,10 +527,8 @@ const useGlobalStore = create<GlobalState>()(
           adsgramBlockPromise = (async () => {
             try {
               console.log("start");
-              const data = await authGetJson<AdsgramBlockResponse>(
-                "/adsgram/block/",
-                get,
-                set
+              const data = await withRetry(() =>
+                authGetJson<AdsgramBlockResponse>("/adsgram/block/", get, set)
               );
 
               console.log(data);
