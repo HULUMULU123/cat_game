@@ -48,7 +48,8 @@ const StyledActionName = styled.span`
   color: #1a9480;
   font-size: 12px;
   @media (max-width: 370px) {
-    font-size: 10px;
+    font-size: 15px;
+    font-weight: 500;
   }
 `;
 
