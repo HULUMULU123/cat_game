@@ -149,6 +149,7 @@ export type FailureBonusType = "x2" | "x5" | "x10" | "freeze" | "no_bombs";
 export type FailureResponse = {
   id: number;
   name: string;
+  reward: number;
   start_time: string | null;
   end_time: string | null;
   is_active: boolean;

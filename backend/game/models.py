@@ -95,6 +95,10 @@ class UserProfile(TimestampedModel):
         blank=True,
         verbose_name="Дата последней ежедневной награды",
     )
+    legal_accepted = models.BooleanField(
+        default=False,
+        verbose_name="Ознакомлен с юридическими правилами",
+    )
 
     class Meta:
         db_table = "профили_пользователей"
@@ -457,6 +461,7 @@ class DailyRewardClaim(TimestampedModel):
 
 class Failure(TimestampedModel):
     name = models.CharField(max_length=255, verbose_name="Название сбоя")
+    reward = models.PositiveIntegerField(default=0, verbose_name="Награда (монеты)")
     start_time = models.DateTimeField(null=True, blank=True, verbose_name="Время начала")
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="Время окончания")
     duration_seconds = models.PositiveIntegerField(

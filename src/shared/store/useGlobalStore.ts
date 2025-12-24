@@ -37,12 +37,18 @@ type ProfileResponse = {
   referred_by_code: string | null;
   referrals_count: number;
   stats: ProfileStatsResponse;
+  legal_accepted: boolean;
 };
 
 type ProfileStatsState = {
   failuresCompleted: number;
   quizzesCompleted: number;
   tasksCompleted: number;
+};
+
+type LegalCheckResponse = {
+  legal_accepted: boolean;
+  detail?: string;
 };
 
 interface GlobalState {
@@ -57,6 +63,8 @@ interface GlobalState {
   tokens: AuthTokens | null;
   adsgramBlockId: string | null;
   hasHydratedProfile: boolean;
+  legalAccepted: boolean | null;
+  legalCheckPending: boolean;
 
   setUserFromInitData: (initData: string | undefined | null) => Promise<void>;
   loadProfile: () => Promise<void>;
@@ -229,7 +237,33 @@ const useGlobalStore = create<GlobalState>()(
             tasksCompleted: payload.stats?.tasks_completed ?? 0,
           },
           hasHydratedProfile: true,
+          legalAccepted: payload.legal_accepted,
         }));
+      };
+
+      const attemptLegalCheck = async (initialAccepted: boolean) => {
+        const { tokens } = get();
+        if (!tokens) return;
+        if (initialAccepted) {
+          set({ legalAccepted: true, legalCheckPending: false });
+          return;
+        }
+
+        set({ legalCheckPending: true });
+        try {
+          const data = await authPostJson<LegalCheckResponse>(
+            "/auth/legal-check/",
+            {},
+            get,
+            set
+          );
+          set({ legalAccepted: data.legal_accepted });
+        } catch (err) {
+          console.error("Failed to check legal acceptance", err);
+          set({ legalAccepted: false });
+        } finally {
+          set({ legalCheckPending: false });
+        }
       };
 
       return {
@@ -247,6 +281,8 @@ const useGlobalStore = create<GlobalState>()(
         tokens: null,
         adsgramBlockId: null,
         hasHydratedProfile: false,
+        legalAccepted: null,
+        legalCheckPending: false,
 
         isLoading: true,
         startLoading: () => set({ isLoading: true }),
@@ -393,6 +429,7 @@ const useGlobalStore = create<GlobalState>()(
               const data = await attemptAuth();
               set({ tokens: { access: data.access, refresh: data.refresh } });
               applyProfileResponse(data.user);
+              void attemptLegalCheck(Boolean(data.user.legal_accepted));
               // подтянем фото от Telegram
               set((state) => ({
                 userData: {
@@ -412,8 +449,8 @@ const useGlobalStore = create<GlobalState>()(
         },
 
         loadProfile: () => {
-          const { tokens, hasHydratedProfile } = get();
-          if (!tokens || hasHydratedProfile) {
+          const { tokens, hasHydratedProfile, legalAccepted } = get();
+          if (!tokens || (hasHydratedProfile && legalAccepted !== null)) {
             return Promise.resolve();
           }
 
@@ -429,6 +466,7 @@ const useGlobalStore = create<GlobalState>()(
                 set
               );
               applyProfileResponse(data);
+              void attemptLegalCheck(Boolean(data.legal_accepted));
             } catch (err) {
               console.error("Failed to load profile", err);
             } finally {
@@ -491,6 +529,8 @@ const useGlobalStore = create<GlobalState>()(
             },
             completedFailures: {},
             adsgramBlockId: null,
+            legalAccepted: null,
+            legalCheckPending: false,
           }),
       };
     },

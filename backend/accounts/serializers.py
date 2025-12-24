@@ -64,6 +64,7 @@ class UserProfileSerializer(serializers.ModelSerializer[UserProfile]):
             "referrals_count",
             "stats",
             "photo_url",
+            "legal_accepted",
         )
 
     def get_referrals_count(self, obj: UserProfile) -> int:

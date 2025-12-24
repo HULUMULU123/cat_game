@@ -259,6 +259,7 @@ class UserProfileAdmin(UserProfileAdminBase):
         "balance",
         "daily_reward_streak",
         "daily_reward_last_claimed_at",
+        "legal_accepted",
         "created_at",
         "updated_at",
     )
@@ -268,7 +269,18 @@ class UserProfileAdmin(UserProfileAdminBase):
     readonly_fields = ("created_at", "updated_at", "referral_code")
 
     fieldsets = (
-        (None, {"fields": ("user", "balance", "daily_reward_streak", "daily_reward_last_claimed_at")}),
+        (
+            None,
+            {
+                "fields": (
+                    "user",
+                    "balance",
+                    "daily_reward_streak",
+                    "daily_reward_last_claimed_at",
+                    "legal_accepted",
+                )
+            },
+        ),
         ("Реферальная программа", {"fields": ("referral_code", "referred_by")}),
         ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
@@ -390,6 +402,7 @@ class SimulationRewardClaimAdmin(SimulationRewardClaimAdminBase):
 class FailureAdmin(FailureAdminBase):
     list_display = (
         "name",
+        "reward",
         "start_time",
         "end_time",
         "duration_seconds",
@@ -403,7 +416,7 @@ class FailureAdmin(FailureAdminBase):
     search_fields = ("name",)
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
-        (None, {"fields": ("name", "start_time", "end_time")}),
+        (None, {"fields": ("name", "reward", "start_time", "end_time")}),
         (
             "Параметры игры",
             {

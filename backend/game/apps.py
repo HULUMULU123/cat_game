@@ -32,4 +32,5 @@ class GameConfig(AppConfig):
     name = "game"
 
     def ready(self):
+        from . import signals  # noqa: F401
         post_migrate.connect(ensure_role_permissions, sender=self)

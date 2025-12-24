@@ -250,6 +250,7 @@ class FailureSerializer(serializers.ModelSerializer[Failure]):
         fields = (
             "id",
             "name",
+            "reward",
             "start_time",
             "end_time",
             "is_active",

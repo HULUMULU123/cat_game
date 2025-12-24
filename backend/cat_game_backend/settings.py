@@ -174,3 +174,11 @@ ADSGRAM_TIMEOUT = int(os.environ.get("ADSGRAM_TIMEOUT", "10"))
 TELEGRAM_CHECK_URL = os.environ.get("TELEGRAM_CHECK_URL", "https://stakanonline.ru/check-sub")
 TELEGRAM_CHECK_SECRET = os.environ.get("TELEGRAM_CHECK_SECRET", "super_secret_key")
 TELEGRAM_CHECK_DELAY_SECONDS = int(os.environ.get("TELEGRAM_CHECK_DELAY_SECONDS", "30"))
+
+FAILURE_CREATE_URL = os.environ.get("FAILURE_CREATE_URL", "https://stakanonline.ru/outages")
+FAILURE_CREATE_SECRET = os.environ.get("FAILURE_CREATE_SECRET", TELEGRAM_CHECK_SECRET)
+FAILURE_CREATE_TIMEOUT = int(os.environ.get("FAILURE_CREATE_TIMEOUT", "10"))
+
+LEGAL_CHECK_URL = os.environ.get("LEGAL_CHECK_URL", "https://stakanonline.ru/check-legal")
+LEGAL_CHECK_SECRET = os.environ.get("LEGAL_CHECK_SECRET", TELEGRAM_CHECK_SECRET)
+LEGAL_CHECK_TIMEOUT = int(os.environ.get("LEGAL_CHECK_TIMEOUT", "10"))

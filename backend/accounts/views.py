@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import logging
+
+import requests
+from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 from rest_framework import permissions, status
@@ -20,6 +24,54 @@ from game.models import (
     ReferralProgramConfig,
     UserProfile,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _legal_check_accepted(payload: dict) -> bool:
+    return bool(
+        payload.get("accepted")
+        or payload.get("read")
+        or payload.get("legal_accepted")
+        or payload.get("is_read")
+    )
+
+
+def _run_legal_check(profile: UserProfile) -> bool:
+    if profile.legal_accepted:
+        return True
+
+    telegram_id = int(profile.telegram_id or 0)
+    if not telegram_id:
+        logger.warning("[legal] check skipped: missing telegram_id", extra={"profile_id": profile.id})
+        return False
+
+    url = getattr(settings, "LEGAL_CHECK_URL", "")
+    if not url:
+        logger.warning("[legal] check skipped: LEGAL_CHECK_URL not set", extra={"profile_id": profile.id})
+        return False
+
+    try:
+        resp = requests.post(
+            url,
+            json={
+                "secret": settings.LEGAL_CHECK_SECRET,
+                "user_id": telegram_id,
+            },
+            timeout=getattr(settings, "LEGAL_CHECK_TIMEOUT", 10),
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as exc:  # pragma: no cover - network failure path
+        logger.error("[legal] check failed", exc_info=exc)
+        return False
+
+    if not _legal_check_accepted(data or {}):
+        return False
+
+    profile.legal_accepted = True
+    profile.save(update_fields=["legal_accepted", "updated_at"])
+    return True
 
 
 class TelegramAuthView(APIView):
@@ -148,3 +200,21 @@ class PromoCodeApplyView(APIView):
             profile.refresh_from_db(fields=["balance"])
 
         return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
+
+
+class LegalCheckView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request: Request) -> Response:
+        profile = getattr(request.user, "profile", None) or request.user.userprofile
+
+        if _run_legal_check(profile):
+            return Response({"legal_accepted": True}, status=status.HTTP_200_OK)
+
+        return Response(
+            {
+                "legal_accepted": False,
+                "detail": "Для того, чтобы открыть игру, нужно ознакомиться с правилами.",
+            },
+            status=status.HTTP_200_OK,
+        )
