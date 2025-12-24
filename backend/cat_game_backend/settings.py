@@ -179,7 +179,7 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 FAILURE_CREATE_URL = os.environ.get("FAILURE_CREATE_URL", "https://stakanonline.ru/outages")
 FAILURE_CREATE_SECRET = os.environ.get("FAILURE_CREATE_SECRET", TELEGRAM_CHECK_SECRET)
 FAILURE_CREATE_TIMEOUT = int(os.environ.get("FAILURE_CREATE_TIMEOUT", "10"))
-FAILURE_DELETE_URL = os.environ.get("FAILURE_DELETE_URL", "")
+FAILURE_DELETE_URL = os.environ.get("FAILURE_DELETE_URL", "https://stakanonline.ru/outages/delete")
 FAILURE_DELETE_SECRET = os.environ.get("FAILURE_DELETE_SECRET", FAILURE_CREATE_SECRET)
 FAILURE_DELETE_TIMEOUT = int(os.environ.get("FAILURE_DELETE_TIMEOUT", "10"))
 
