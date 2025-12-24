@@ -213,9 +213,13 @@ export default function AdvertSection() {
                 $busy={claimingId === button.id}
                 aria-disabled={claimingId === button.id}
               >
-                <StyledBadge $claimable={button.available_claims > 0}>
-                  {Math.max(button.available_claims, 0)}
-                </StyledBadge>
+                {button.available_claims > 0 && (
+                  <StyledBadge $claimable>
+                    {new Intl.NumberFormat("ru-RU").format(
+                      Math.max(button.reward_amount, 0)
+                    )}
+                  </StyledBadge>
+                )}
                 <StyledButtonImg src={img} alt={button.title} />
                 <StyledButtonSpan>{button.title}</StyledButtonSpan>
               </StyledButton>
@@ -237,9 +241,13 @@ export default function AdvertSection() {
                 $busy={claimingId === button.id}
                 aria-disabled={claimingId === button.id}
               >
-                <StyledBadge $claimable={button.available_claims > 0}>
-                  {Math.max(button.available_claims, 0)}
-                </StyledBadge>
+                {button.available_claims > 0 && (
+                  <StyledBadge $claimable>
+                    {new Intl.NumberFormat("ru-RU").format(
+                      Math.max(button.reward_amount, 0)
+                    )}
+                  </StyledBadge>
+                )}
                 <StyledButtonImg src={img} alt={button.title} />
                 <StyledButtonSpan>{button.title}</StyledButtonSpan>
               </StyledButton>
