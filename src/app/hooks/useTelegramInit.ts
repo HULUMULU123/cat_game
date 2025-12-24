@@ -9,7 +9,9 @@ const useTelegramInit = () => {
   const setTelegramAuthInvalid = useGlobalStore((s) => s.setTelegramAuthInvalid);
 
   useEffect(() => {
-    if (!webApp) {
+    const initData = webApp?.initData ?? (window as any)?.Telegram?.WebApp?.initData ?? "";
+
+    if (!webApp || !initData || !initData.includes("hash=")) {
       setTelegramAuthInvalid(true);
       stopLoading();
       return;
@@ -31,7 +33,7 @@ const useTelegramInit = () => {
 
     (async () => {
       try {
-        await setUserFromInitData(webApp.initData);
+        await setUserFromInitData(initData);
         if (isMounted) {
           timer = window.setTimeout(() => stopLoading(), 300);
         }
