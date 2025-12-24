@@ -6,9 +6,14 @@ const useTelegramInit = () => {
   const webApp = useWebApp();
   const setUserFromInitData = useGlobalStore((s) => s.setUserFromInitData);
   const stopLoading = useGlobalStore((s) => s.stopLoading);
+  const setTelegramAuthInvalid = useGlobalStore((s) => s.setTelegramAuthInvalid);
 
   useEffect(() => {
-    if (!webApp) return;
+    if (!webApp) {
+      setTelegramAuthInvalid(true);
+      stopLoading();
+      return;
+    }
 
     // обозначаем готовность веб-приложения Telegram
     webApp.ready();
@@ -32,6 +37,7 @@ const useTelegramInit = () => {
         }
       } catch (err) {
         console.error("[auth] init failed", err);
+        setTelegramAuthInvalid(true);
         // намеренно не снимаем лоадер — ждём валидные данные
       }
     })();
@@ -42,7 +48,7 @@ const useTelegramInit = () => {
       document.body.style.overflow = previousOverflow;
       document.body.style.touchAction = previousTouchAction;
     };
-  }, [webApp, setUserFromInitData, stopLoading]);
+  }, [webApp, setUserFromInitData, stopLoading, setTelegramAuthInvalid]);
 };
 
 export default useTelegramInit;

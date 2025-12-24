@@ -1,9 +1,39 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+from urllib.parse import parse_qsl
+
+from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from game.models import TaskCompletion, ScoreEntry, UserProfile, QuizAttempt
+
+
+def _is_valid_telegram_init_data(init_data: str) -> bool:
+    if not init_data:
+        return False
+
+    try:
+        data = dict(parse_qsl(init_data, strict_parsing=True))
+    except ValueError:
+        return False
+
+    provided_hash = data.pop("hash", "")
+    if not provided_hash:
+        return False
+
+    bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
+    if not bot_token:
+        return False
+
+    data_check_string = "\n".join(f"{key}={value}" for key, value in sorted(data.items()))
+    secret_key = hmac.new(b"WebAppData", bot_token.encode("utf-8"), hashlib.sha256).digest()
+    calculated_hash = hmac.new(
+        secret_key, data_check_string.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(calculated_hash, provided_hash)
 
 
 class TelegramAuthSerializer(serializers.Serializer):
@@ -12,8 +42,13 @@ class TelegramAuthSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
     telegram_id = serializers.IntegerField(required=False)
     photo_url = serializers.URLField(required=False, allow_blank=True)
+    init_data = serializers.CharField(write_only=True)
 
     def create_or_update_user(self) -> tuple[User, UserProfile]:
+        init_data: str = self.validated_data.get("init_data", "")
+        if not _is_valid_telegram_init_data(init_data):
+            raise serializers.ValidationError({"init_data": "Invalid Telegram init data"})
+
         username: str = self.validated_data["username"].lower()
         first_name: str = self.validated_data["first_name"].strip()
         last_name: str = self.validated_data.get("last_name", "").strip()

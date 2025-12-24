@@ -65,6 +65,8 @@ interface GlobalState {
   hasHydratedProfile: boolean;
   legalAccepted: boolean | null;
   legalCheckPending: boolean;
+  telegramAuthInvalid: boolean;
+  setTelegramAuthInvalid: (value: boolean) => void;
 
   setUserFromInitData: (initData: string | undefined | null) => Promise<void>;
   loadProfile: () => Promise<void>;
@@ -238,6 +240,7 @@ const useGlobalStore = create<GlobalState>()(
           },
           hasHydratedProfile: true,
           legalAccepted: payload.legal_accepted,
+          telegramAuthInvalid: false,
         }));
       };
 
@@ -283,6 +286,8 @@ const useGlobalStore = create<GlobalState>()(
         hasHydratedProfile: false,
         legalAccepted: null,
         legalCheckPending: false,
+        telegramAuthInvalid: false,
+        setTelegramAuthInvalid: (value) => set({ telegramAuthInvalid: value }),
 
         isLoading: true,
         startLoading: () => set({ isLoading: true }),
@@ -417,11 +422,12 @@ const useGlobalStore = create<GlobalState>()(
               user: ProfileResponse;
             }>("/auth/telegram/", {
               username: usernameForBackend,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            telegram_id: user.id,
-            photo_url: user.photo_url,
-          });
+              first_name: user.first_name,
+              last_name: user.last_name,
+              telegram_id: user.id,
+              photo_url: user.photo_url,
+              init_data: initData,
+            });
 
           const maxAttempts = 3;
           for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -441,6 +447,12 @@ const useGlobalStore = create<GlobalState>()(
             } catch (err) {
               console.error("Failed to authorize with backend", { err, attempt });
               if (attempt === maxAttempts) {
+                if (err instanceof Error) {
+                  const message = err.message || "";
+                  if (message.includes("init_data") || message.includes("Invalid Telegram init data")) {
+                    set({ telegramAuthInvalid: true, isLoading: false });
+                  }
+                }
                 throw err;
               }
               await new Promise((resolve) => setTimeout(resolve, 800));
@@ -531,6 +543,7 @@ const useGlobalStore = create<GlobalState>()(
             adsgramBlockId: null,
             legalAccepted: null,
             legalCheckPending: false,
+            telegramAuthInvalid: false,
           }),
       };
     },

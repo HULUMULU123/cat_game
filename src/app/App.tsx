@@ -5,6 +5,7 @@ import AppRoutes from "./routes/AppRoutes";
 import RouteLoadingGate from "./components/RouteLoadingGate";
 import AppLoader from "./components/AppLoader";
 import LegalBlockScreen from "./components/LegalBlockScreen";
+import TelegramOnlyScreen from "./components/TelegramOnlyScreen";
 import useGlobalStore from "../shared/store/useGlobalStore";
 import useTelegramInit from "./hooks/useTelegramInit";
 
@@ -13,6 +14,7 @@ const AppContent = () => {
   const isLoading = useGlobalStore((state) => state.isLoading);
   const legalAccepted = useGlobalStore((state) => state.legalAccepted);
   const legalCheckPending = useGlobalStore((state) => state.legalCheckPending);
+  const telegramAuthInvalid = useGlobalStore((state) => state.telegramAuthInvalid);
 
   useTelegramInit();
 
@@ -32,6 +34,10 @@ const AppContent = () => {
 
   const isFailurePage = pathname.includes("failure");
   const shouldBlockForLegal = Boolean(tokens) && legalAccepted === false;
+
+  if (telegramAuthInvalid) {
+    return <TelegramOnlyScreen />;
+  }
 
   if (tokens && legalCheckPending) {
     return <AppLoader isVisible />;
