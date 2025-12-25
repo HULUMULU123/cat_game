@@ -185,6 +185,7 @@ class TaskCompletionListView(APIView):
     def get(self, request: Request) -> Response:
         # note: related_name="profile" → request.user.profile
         profile = request.user.profile
+        completed_cutoff = timezone.now() - timedelta(days=1)
         active_task_ids = set(
             Task.objects.annotate(
                 completed_count=Count(
@@ -201,9 +202,12 @@ class TaskCompletionListView(APIView):
         )
         assignments = (
             TaskCompletion.objects.filter(profile=profile)
-            .filter(Q(task_id__in=active_task_ids) | Q(is_completed=True))
+            .filter(
+                Q(task_id__in=active_task_ids)
+                | Q(is_completed=True, updated_at__gte=completed_cutoff)
+            )
             .select_related("task")
-            .order_by("-is_completed", "task__name")
+            .order_by("is_completed", "task__name")
         )
         # ensure every task is visible: create missing rows (not completed)
         existing_task_ids = set(assignments.values_list("task_id", flat=True))
@@ -216,9 +220,12 @@ class TaskCompletionListView(APIView):
         )
         assignments = (
             TaskCompletion.objects.filter(profile=profile)
-            .filter(Q(task_id__in=active_task_ids) | Q(is_completed=True))
+            .filter(
+                Q(task_id__in=active_task_ids)
+                | Q(is_completed=True, updated_at__gte=completed_cutoff)
+            )
             .select_related("task")
-            .order_by("-is_completed", "task__name")
+            .order_by("is_completed", "task__name")
         )
         serializer = TaskCompletionSerializer(
             assignments,
