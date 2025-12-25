@@ -1,6 +1,6 @@
 import React, { Suspense, useRef, useEffect, useState } from "react";
 import styled from "styled-components";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, useGLTF, useProgress } from "@react-three/drei";
 import {
   EffectComposer,
@@ -391,6 +391,36 @@ function FirstFrame({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+function FrameLimiter({
+  fps,
+  enabled,
+}: {
+  fps: number;
+  enabled: boolean;
+}) {
+  const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => {
+    if (!enabled || fps <= 0) return;
+    let rafId = 0;
+    let last = 0;
+    const frameDuration = 1000 / fps;
+
+    const tick = (time: number) => {
+      if (time - last >= frameDuration) {
+        last = time;
+        invalidate();
+      }
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    rafId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [enabled, fps, invalidate]);
+
+  return null;
+}
+
 function PerformanceGuard({
   enabled,
   onPoorPerformance,
@@ -558,7 +588,29 @@ function RoomWithCat({
         const materials = Array.isArray(mesh.material)
           ? mesh.material
           : [mesh.material];
-        materials.forEach(tuneMaterial);
+        materials.forEach((mat) => {
+          tuneMaterial(mat);
+
+          const typed = mat as any;
+          const geometry = mesh.geometry as THREE.BufferGeometry | undefined;
+
+          // Статичным объектам используем запечённый свет (если он есть в модели).
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+
+          if (typed.lightMap) {
+            if (geometry?.attributes?.uv && !geometry.attributes.uv2) {
+              geometry.setAttribute("uv2", geometry.attributes.uv);
+            }
+            typed.lightMapIntensity = isLite ? 0.8 : 1;
+          }
+
+          if (geometry?.attributes?.color) {
+            typed.vertexColors = true;
+          }
+
+          mat.needsUpdate = true;
+        });
       }
     });
 
@@ -906,6 +958,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             dpr={renderQuality.dpr}
             camera={{ position: [10, 0.5, 5], fov: 50, rotation: [0, 0.77, 0] }}
             style={{ width: "100%", height: "100vh", display: "block" }}
+            frameloop="demand"
             gl={{
               powerPreference: isLow ? "low-power" : "high-performance",
               alpha: false,
@@ -916,6 +969,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <color attach="background" args={[canvasBg]} />
             {fogEnabled && <fog attach="fog" args={[baseCanvasBg, 10, 40]} />}
 
+            <FrameLimiter fps={30} enabled={!showFallback} />
             <FirstFrame onReady={() => setFirstFrame(true)} />
             <PerformanceGuard
               enabled={readyCanvas && !showLoader && !isLow && !showFallback}
