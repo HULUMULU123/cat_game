@@ -390,6 +390,43 @@ function FirstFrame({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+function PerformanceGuard({
+  enabled,
+  onPoorPerformance,
+}: {
+  enabled: boolean;
+  onPoorPerformance: () => void;
+}) {
+  const frameCount = useRef(0);
+  const timeTotal = useRef(0);
+  const triggered = useRef(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      frameCount.current = 0;
+      timeTotal.current = 0;
+    }
+  }, [enabled]);
+
+  useFrame((_, delta) => {
+    if (!enabled || triggered.current) return;
+    frameCount.current += 1;
+    timeTotal.current += delta;
+    if (frameCount.current < 90) return;
+
+    const avgDelta = timeTotal.current / frameCount.current;
+    frameCount.current = 0;
+    timeTotal.current = 0;
+
+    if (avgDelta > 0.045) {
+      triggered.current = true;
+      onPoorPerformance();
+    }
+  });
+
+  return null;
+}
+
 /* ------------------------- Иконки громкости (SVG) ------------------------ */
 
 const IconSpeakerMute = () => (
@@ -456,12 +493,14 @@ function RoomWithCat({
   onLoaded,
   screenTexture,
   isLite,
+  videoEnabled,
   maxTextureSize,
 }: {
   url: string;
   onLoaded?: () => void;
   screenTexture: string;
   isLite: boolean;
+  videoEnabled: boolean;
   maxTextureSize: number;
 }) {
   const gltf = useGLTF(url);
@@ -539,7 +578,7 @@ function RoomWithCat({
     }
 
     if (windowMesh) {
-      if (isLite) {
+      if (!videoEnabled) {
         const material = new THREE.MeshBasicMaterial({
           color: "#1c1f29",
           toneMapped: false,
@@ -628,7 +667,7 @@ function RoomWithCat({
       materialsToDispose.forEach((mat) => mat.dispose?.());
       texturesToDispose.forEach((tex) => tex.dispose?.());
     };
-  }, [scene, onLoaded, screenTexture, isLite, maxTextureSize]);
+  }, [scene, onLoaded, screenTexture, isLite, videoEnabled, maxTextureSize]);
 
   return (
     <>
@@ -656,16 +695,20 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     settings: { render: renderQuality },
     forceLowProfile,
   } = useQualityProfile();
-  const isLite = profile === "low";
+  const isLow = profile === "low";
+  const isMedium = profile === "medium";
+  const isHigh = profile === "high";
   const isBottomNavVisible = useGlobalStore(
     (state) => state.isBottomNavVisible
   );
   const [screenTexture, setScreenTexture] = useState(DEFAULT_SCREEN_TEXTURE);
   const [isContextLost, setIsContextLost] = useState(false);
+  const [gpuMaxTextureSize, setGpuMaxTextureSize] = useState<number | null>(null);
   const [maxTextureSize, setMaxTextureSize] = useState(() =>
-    isLite ? 1024 : 4096
+    isLow ? 768 : isMedium ? 2048 : 4096
   );
   const glCleanupRef = useRef<(() => void) | null>(null);
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const [showFallback, setShowFallback] = useState(false);
 
   const {
@@ -765,19 +808,22 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
 
-  const baseCanvasBg = isLite ? "#dfe7f2" : "#002200";
+  const baseCanvasBg = isLow ? "#dfe7f2" : "#002200";
   // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на основной
   const canvasBg = readyCanvas && !postReadyHold ? baseCanvasBg : "#000000";
   const showLoader = !readyCanvas || postReadyHold;
   const fogEnabled = renderQuality.enableFog && canvasBg === baseCanvasBg;
-  const shadowsEnabled = renderQuality.enableShadows && !isLite && !isContextLost;
+  const shadowsEnabled = renderQuality.enableShadows && !isLow && !isContextLost;
   const shadowOpacity = shadowsEnabled ? 0.3 : 0;
+  const videoEnabled = isHigh;
 
   useEffect(() => {
-    setMaxTextureSize(isLite ? 1024 : 4096);
+    const baseSize = isLow ? 768 : isMedium ? 2048 : 4096;
+    const cap = gpuMaxTextureSize ?? baseSize;
+    setMaxTextureSize(Math.min(baseSize, cap));
     THREE.DefaultLoadingManager.setURLModifier((url) => url); // no-op to keep instance
-    (THREE.DefaultLoadingManager as any).maxConnections = isLite ? 1 : 4;
-  }, [isLite]);
+    (THREE.DefaultLoadingManager as any).maxConnections = isLow ? 1 : isMedium ? 2 : 4;
+  }, [isLow, isMedium, gpuMaxTextureSize]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -791,8 +837,15 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const handleCanvasCreated = (state: { gl: THREE.WebGLRenderer }) => {
     const { gl } = state;
+    glRef.current = gl;
     gl.setPixelRatio(renderQuality.dpr);
     gl.outputColorSpace = THREE.SRGBColorSpace;
+    const maxTexture = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+    const maxRenderBuffer = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number;
+    setGpuMaxTextureSize(maxTexture);
+    if (maxTexture <= 2048 || maxRenderBuffer <= 2048) {
+      forceLowProfile("gpu-cap");
+    }
     const canvas = gl.domElement;
     const onLost = (event: Event) => {
       event.preventDefault();
@@ -810,6 +863,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       canvas.removeEventListener("webglcontextlost", onLost as any);
       canvas.removeEventListener("webglcontextrestored", onRestore as any);
       gl.dispose();
+      glRef.current = null;
     };
   };
 
@@ -827,6 +881,12 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     }
   }, [showFallback]);
 
+  useEffect(() => {
+    if (glRef.current) {
+      glRef.current.setPixelRatio(renderQuality.dpr);
+    }
+  }, [renderQuality.dpr]);
+
   return (
     <ModelWrapper>
       {!showFallback && (
@@ -838,9 +898,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             camera={{ position: [10, 0.5, 5], fov: 50, rotation: [0, 0.77, 0] }}
             style={{ width: "100%", height: "100vh", display: "block" }}
             gl={{
-              powerPreference: isLite ? "low-power" : "high-performance",
+              powerPreference: isLow ? "low-power" : "high-performance",
               alpha: false,
-              antialias: !isLite,
+              antialias: !isLow,
             }}
             onCreated={handleCanvasCreated}
           >
@@ -848,14 +908,18 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             {fogEnabled && <fog attach="fog" args={[baseCanvasBg, 10, 40]} />}
 
             <FirstFrame onReady={() => setFirstFrame(true)} />
+            <PerformanceGuard
+              enabled={readyCanvas && !showLoader && !isLow && !showFallback}
+              onPoorPerformance={() => forceLowProfile("low-fps")}
+            />
 
             <ambientLight
               intensity={
-                (isLite ? 1.25 : 0.95) * renderQuality.lightIntensityMultiplier
+                (isLow ? 1.25 : 0.95) * renderQuality.lightIntensityMultiplier
               }
-              color={isLite ? "#fffaf0" : "#fff7ed"}
+              color={isLow ? "#fffaf0" : "#fff7ed"}
             />
-            {isLite && (
+            {isLow && (
               <hemisphereLight
                 skyColor="#fff3d6"
                 groundColor="#e7eef8"
@@ -865,36 +929,30 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <directionalLight
               position={[6, 6, 4]}
               intensity={
-                (isLite ? 1.9 : 1.55) * renderQuality.lightIntensityMultiplier
+                (isLow ? 1.9 : 1.55) * renderQuality.lightIntensityMultiplier
               }
-              color={isLite ? "#fff1d2" : "#ffe7c4"}
+              color={isLow ? "#fff1d2" : "#ffe7c4"}
               castShadow={shadowsEnabled}
               shadow-mapSize-width={renderQuality.shadowMapSize}
               shadow-mapSize-height={renderQuality.shadowMapSize}
             />
-            <pointLight
-              position={[-3, 1.5, 2]}
-              intensity={
-                (isLite ? 1.35 : 0.95) * renderQuality.lightIntensityMultiplier
-              }
-              color={isLite ? "#f4f6ff" : "#eef4ff"}
-              distance={15}
-            />
-            <pointLight
-              position={[1.5, 1.2, -1]}
-              intensity={
-                (isLite ? 1.35 : 1.2) * renderQuality.lightIntensityMultiplier
-              }
-              distance={6}
-              color="#9f7aff"
-            />
-            {isLite && (
-              <pointLight
-                position={[0, 2.4, 2]}
-                intensity={1.1 * renderQuality.lightIntensityMultiplier}
-                distance={10}
-                color="#f6fbff"
-              />
+            {!isLow && (
+              <>
+                <pointLight
+                  position={[-3, 1.5, 2]}
+                  intensity={0.95 * renderQuality.lightIntensityMultiplier}
+                  color="#eef4ff"
+                  distance={15}
+                />
+                {isHigh && (
+                  <pointLight
+                    position={[1.5, 1.2, -1]}
+                    intensity={1.2 * renderQuality.lightIntensityMultiplier}
+                    distance={6}
+                    color="#9f7aff"
+                  />
+                )}
+              </>
             )}
 
             <Suspense fallback={null}>
@@ -902,11 +960,12 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 url="/models/stakan_room.glb"
                 onLoaded={() => {}}
                 screenTexture={screenTexture}
-                isLite={isLite}
+                isLite={isLow}
+                videoEnabled={videoEnabled}
                 maxTextureSize={maxTextureSize}
               />
               {/* Монтируем Environment с background ТОЛЬКО после кроссфейда */}
-              {!showLoader && renderQuality.enableEnvironment && !isLite && (
+              {!showLoader && renderQuality.enableEnvironment && isHigh && (
                 <Environment preset="forest" background />
               )}
             </Suspense>
@@ -920,7 +979,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               <shadowMaterial opacity={shadowOpacity} />
             </mesh>
 
-            {renderQuality.enablePostprocessing && !isLite && (
+            {renderQuality.enablePostprocessing && isHigh && (
               <EffectComposer>
                 <Bloom
                   intensity={0.4 * renderQuality.lightIntensityMultiplier}

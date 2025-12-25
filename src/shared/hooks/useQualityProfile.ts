@@ -58,9 +58,9 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
     render: {
       dpr: 1.2,
       enableShadows: true,
-      enablePostprocessing: true,
-      enableEnvironment: true,
-      enableFog: true,
+      enablePostprocessing: false,
+      enableEnvironment: false,
+      enableFog: false,
       lightIntensityMultiplier: 0.9,
       shadowMapSize: 1024,
     },

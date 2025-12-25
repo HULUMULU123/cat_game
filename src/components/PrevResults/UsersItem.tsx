@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import styled, { css } from 'styled-components'
 import white_prize from '../../assets/icons/white_prize.svg'
 import empty_prize from '../../assets/icons/empty_prize.svg'
@@ -40,7 +41,10 @@ font-size: 12px;
 font-weight: 800;
 color: #fff;`
 
-const PrizeImg = styled.img`
+const PrizeImg = styled.img.attrs({
+  loading: 'lazy',
+  decoding: 'async',
+})`
 width: 19px;
 height: 19px;`
 
@@ -85,7 +89,7 @@ interface UsersItemProps {
   index: number;
 }
 
-export default function UsersItem({ entry, index }: UsersItemProps) {
+function UsersItem({ entry, index }: UsersItemProps) {
   const position = entry.position ?? index + 1;
   const prizeImg = getPrizeImg(position);
   const timeLabel = entry.display_time || '';
@@ -103,3 +107,5 @@ export default function UsersItem({ entry, index }: UsersItemProps) {
     </StyledItem>
   )
 }
+
+export default memo(UsersItem)

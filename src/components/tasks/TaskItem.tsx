@@ -1,3 +1,4 @@
+import { memo } from "react";
 import styled from "styled-components";
 import arrow from "../../assets/icons/arrow.svg";
 import check from "../../assets/icons/check.svg";
@@ -33,7 +34,10 @@ const StyledListItemContent = styled.div`
   gap: 12px;
 `;
 
-const StyledListImg = styled.img`
+const StyledListImg = styled.img.attrs({
+  loading: "lazy",
+  decoding: "async",
+})`
   width: 45px;
   margin-right: 15px;
   border-radius: 7px;
@@ -80,12 +84,16 @@ const StyledListButton = styled.button<{ $done: boolean }>`
   }
 `;
 
-const StyledButtonImg = styled.img`
+const StyledButtonImg = styled.img.attrs({
+  decoding: "async",
+})`
   width: 18px;
   margin: auto;
 `;
 
-const StyledCheck = styled.img<{ $done: boolean }>`
+const StyledCheck = styled.img.attrs({
+  decoding: "async",
+})<{ $done: boolean }>`
   width: 25px;
   position: absolute;
   z-index: 5;
@@ -117,11 +125,8 @@ const TaskItem = ({
   disabled = false,
 }: TaskItemProps) => {
   const handleClick = () => {
-    console.log("[TaskItem] button click", { id, name, url, done });
     onOpenAndComplete(id, done, url);
   };
-
-  console.log("[TaskItem] render", { id, name, url, done, disabled });
 
   return (
     <StyledListItem $done={done}>
@@ -151,4 +156,4 @@ const TaskItem = ({
   );
 };
 
-export default TaskItem;
+export default memo(TaskItem);

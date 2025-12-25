@@ -36,7 +36,7 @@ export default function CatModel() {
     const cloned = SkeletonUtils.clone(primaryModel.scene) as THREE.Group;
 
     cloned.traverse((child) => {
-      // ВАЖНО: полностью отключаем frustum culling для всех мешей
+      // Для skinned-мешей оставляем culling выключенным, чтобы избежать пропаданий.
       if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
         const skinned = child as THREE.SkinnedMesh;
         skinned.frustumCulled = false;
@@ -45,7 +45,7 @@ export default function CatModel() {
 
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        mesh.frustumCulled = false;
+        mesh.frustumCulled = enableFrustumCulling;
       }
     });
 

@@ -38,7 +38,10 @@ const StyledUserProfile = styled.div`
   margin: 0 auto 0 25px;
 `;
 
-const StyledUserImg = styled.img`
+const StyledUserImg = styled.img.attrs({
+  loading: "lazy",
+  decoding: "async",
+})`
   width: 25px;
   height: 25px;
   border-radius: 50%;
