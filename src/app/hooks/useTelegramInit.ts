@@ -19,7 +19,7 @@ const useTelegramInit = () => {
       webApp ?? (window as any)?.Telegram?.WebApp;
 
     const waitForInitData = async () => {
-      const maxAttempts = 10;
+      const maxAttempts = 20;
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
         const tg = getTelegramWebApp();
         const initData = tg?.initData ?? (window as any)?.Telegram?.WebApp?.initData ?? "";

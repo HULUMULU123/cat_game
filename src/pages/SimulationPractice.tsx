@@ -237,9 +237,9 @@ const SimulationPractice = () => {
   const finishedRef = useRef(isFinished);
   const scoreRef = useRef(score);
   const notifiedRef = useRef(false);
-  const claimedThresholdsRef = useRef<Set<number>>(new Set());
-  const pendingClaimsRef = useRef<Set<number>>(new Set());
+  const rewardClaimedRef = useRef(false);
   const rewardTimeoutRef = useRef<number | null>(null);
+  const [rewardMessage, setRewardMessage] = useState<string | null>(null);
 
   useEffect(() => {
     runningRef.current = isRunning;
@@ -293,25 +293,6 @@ const SimulationPractice = () => {
     }
   }, [configError, isConfigError]);
 
-  const thresholdValues = useMemo(() => {
-    const raw = config
-      ? [
-          config.reward_threshold_1 ?? 0,
-          config.reward_threshold_2 ?? 0,
-          config.reward_threshold_3 ?? 0,
-        ]
-      : [100, 200, 300];
-    const filtered = raw.filter((value) => Number.isFinite(value) && value > 0);
-    const unique = Array.from(new Set(filtered));
-    unique.sort((a, b) => a - b);
-    return unique;
-  }, [config]);
-
-  useEffect(() => {
-    claimedThresholdsRef.current.clear();
-    pendingClaimsRef.current.clear();
-  }, [thresholdValues]);
-
   const parseErrorDetail = useCallback((error: unknown): string => {
     if (error instanceof ApiError) {
       try {
@@ -338,51 +319,6 @@ const SimulationPractice = () => {
     }, 4000);
   }, []);
 
-  const checkThresholds = useCallback(
-    (nextScore: number) => {
-      if (!tokens) return;
-
-      thresholdValues.forEach((threshold) => {
-        if (nextScore < threshold) return;
-        if (claimedThresholdsRef.current.has(threshold)) return;
-        if (pendingClaimsRef.current.has(threshold)) return;
-
-        pendingClaimsRef.current.add(threshold);
-
-        (async () => {
-          try {
-            const response = await request<SimulationRewardClaimResponse>(
-              "/simulation/reward-claim/",
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${tokens.access}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ threshold }),
-              }
-            );
-            updateBalance(response.balance);
-            claimedThresholdsRef.current.add(threshold);
-            showBanner(
-              `+${response.reward} CRASH — ${threshold} капель`,
-              false
-            );
-          } catch (error) {
-            const detail = parseErrorDetail(error);
-            if (detail.toLowerCase().includes("уже")) {
-              claimedThresholdsRef.current.add(threshold);
-            }
-            showBanner(detail, true);
-          } finally {
-            pendingClaimsRef.current.delete(threshold);
-          }
-        })();
-      });
-    },
-    [parseErrorDetail, showBanner, thresholdValues, tokens, updateBalance]
-  );
-
   useEffect(() => {
     endRef.current = Date.now() + duration * 1000;
     setTimeLeft(duration);
@@ -390,6 +326,8 @@ const SimulationPractice = () => {
     setIsFinished(false);
     setIsRunning(true);
     notifiedRef.current = false;
+    rewardClaimedRef.current = false;
+    setRewardMessage(null);
   }, [duration]);
 
   useEffect(() => {
@@ -433,6 +371,35 @@ const SimulationPractice = () => {
   }, [isFinished, postMessageToOpener]);
 
   useEffect(() => {
+    if (!isFinished || rewardClaimedRef.current || !tokens) return;
+    rewardClaimedRef.current = true;
+
+    (async () => {
+      try {
+        const response = await request<SimulationRewardClaimResponse>(
+          "/simulation/reward-claim/",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${tokens.access}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ score: scoreRef.current }),
+          }
+        );
+        updateBalance(response.balance);
+        const message = `Награда начислена: +${response.reward} CRASH`;
+        setRewardMessage(message);
+        showBanner(message, false);
+      } catch (error) {
+        const detail = parseErrorDetail(error);
+        setRewardMessage(detail);
+        showBanner(detail, true);
+      }
+    })();
+  }, [isFinished, parseErrorDetail, showBanner, tokens, updateBalance]);
+
+  useEffect(() => {
     const handleBeforeUnload = () => {
       const interrupted = runningRef.current && !finishedRef.current;
       postMessageToOpener({
@@ -450,10 +417,9 @@ const SimulationPractice = () => {
     if (!runningRef.current) return;
     setScore((prev) => {
       const next = prev + 1;
-      checkThresholds(next);
       return next;
     });
-  }, [checkThresholds]);
+  }, []);
 
   const handleClose = useCallback(() => {
     const interrupted = runningRef.current && !finishedRef.current;
@@ -503,6 +469,7 @@ const SimulationPractice = () => {
           <ResultText>
             Вы собрали {scoreRef.current} капель. Продолжайте тренировки!
           </ResultText>
+          {rewardMessage ? <ResultText>{rewardMessage}</ResultText> : null}
           <ResultButton onClick={handleClose}>Закрыть тренировку</ResultButton>
         </ResultOverlay>
       ) : null}

@@ -13,6 +13,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils import timezone
+from django.db.models import Count, Q
 
 from .models import (
     AdvertisementButton,
@@ -290,6 +291,7 @@ class TaskAdmin(TaskAdminBase):
     list_display = ("name", "reward", "link", "created_at", "updated_at")
     search_fields = ("name",)
     readonly_fields = ("created_at", "updated_at")
+    change_list_template = "admin/game/task/change_list.html"
     fieldsets = (
         (None, {"fields": ("name", "description", "reward")}),
         ("Лимиты", {"fields": ("max_users",)}),
@@ -297,6 +299,54 @@ class TaskAdmin(TaskAdminBase):
         ("Ссылка", {"fields": ("link",)}),
         ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
+
+    def get_urls(self):  # type: ignore[override]
+        urls = super().get_urls()
+        custom = [
+            path(
+                "export/",
+                self.admin_site.admin_view(self.export_view),
+                name="game_task_export",
+            ),
+        ]
+        return custom + urls
+
+    def export_view(self, request: HttpRequest) -> HttpResponse:
+        changelist = self.get_changelist_instance(request)
+        tasks = (
+            changelist.get_queryset(request)
+            .annotate(
+                completed_count=Count(
+                    "completions",
+                    filter=Q(completions__is_completed=True),
+                )
+            )
+            .order_by("name")
+        )
+        rows: list[list[str]] = [
+            ["Задание", "Выполнили", "Требуется"],
+        ]
+        for task in tasks:
+            required = (
+                str(task.max_users)
+                if task.max_users and task.max_users > 0
+                else "Без лимита"
+            )
+            rows.append(
+                [
+                    task.name,
+                    str(task.completed_count or 0),
+                    required,
+                ]
+            )
+
+        payload = _build_simple_xlsx(rows)
+        response = HttpResponse(
+            payload,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="tasks.xlsx"'
+        return response
 
 
 @admin.register(TaskCompletion)
@@ -646,21 +696,6 @@ class ScoreEntryAdmin(ScoreEntryAdminBase):
     list_filter = ("failure",)
     search_fields = ("profile__user__username",)
     readonly_fields = ("earned_at", "created_at", "updated_at")
-
-
-@admin.register(AdsgramAssignment)
-class AdsgramAssignmentAdmin(AdsgramAssignmentAdminBase):
-    list_display = (
-        "external_assignment_id",
-        "profile",
-        "placement_id",
-        "status",
-        "created_at",
-        "completed_at",
-    )
-    list_filter = ("status", "placement_id")
-    search_fields = ("external_assignment_id", "profile__user__username")
-    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(AdsgramBlock)

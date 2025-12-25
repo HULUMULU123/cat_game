@@ -431,7 +431,7 @@ class SimulationRewardClaimView(APIView):
         serializer = SimulationRewardClaimSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        threshold = serializer.validated_data["threshold"]
+        score = int(serializer.validated_data["score"])
         profile = request.user.profile
 
         config = (
@@ -459,9 +459,14 @@ class SimulationRewardClaimView(APIView):
             int(config.reward_threshold_3): int(config.reward_amount_3),
         }
 
-        if threshold not in mapping:
+        sorted_thresholds = sorted(mapping)
+        threshold = 0
+        for value in sorted_thresholds:
+            if score >= value:
+                threshold = value
+        if threshold <= 0:
             return Response(
-                {"detail": "Награда для указанного порога не найдена."},
+                {"detail": "Награда за этот результат не предусмотрена."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

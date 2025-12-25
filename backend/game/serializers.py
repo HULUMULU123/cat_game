@@ -142,7 +142,7 @@ class SimulationConfigSerializer(serializers.ModelSerializer[SimulationConfig]):
 
 
 class SimulationRewardClaimSerializer(serializers.Serializer):
-    threshold = serializers.IntegerField(min_value=1)
+    score = serializers.IntegerField(min_value=0)
 
 
 # ---------- Rules ----------
