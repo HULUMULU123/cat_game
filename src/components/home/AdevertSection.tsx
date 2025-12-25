@@ -3,6 +3,7 @@ import styled from "styled-components";
 
 import advertFallback from "../../assets/icons/advert.svg";
 import { request } from "../../shared/api/httpClient";
+import { resolveMediaUrl } from "../../shared/api/urls";
 import type {
   AdvertisementButtonClaimResponse,
   AdvertisementButtonResponse,
@@ -107,12 +108,8 @@ const normalizeLink = (link: string): string => {
 };
 
 const toImgSrc = (raw?: string) => {
-  if (!raw) return advertFallback;
-  const s = raw.trim();
-  if (!s) return advertFallback;
-  if (s.startsWith("http")) return s;
-  if (s.startsWith("/")) return s;
-  return `/media/${s.replace(/^media\/?/, "")}`;
+  const resolved = resolveMediaUrl(raw);
+  return resolved ?? advertFallback;
 };
 
 export default function AdvertSection() {

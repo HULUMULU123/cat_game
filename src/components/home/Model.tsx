@@ -17,6 +17,7 @@ import wordmark from "../../assets/STAKAN.svg";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 import { request } from "../../shared/api/httpClient";
 import type { FrontendConfigResponse } from "../../shared/api/types";
+import { resolveMediaUrl } from "../../shared/api/urls";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
 import useQualityProfile from "../../shared/hooks/useQualityProfile";
@@ -730,7 +731,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const incoming = frontendConfig?.screen_texture?.trim();
     if (incoming) {
-      setScreenTexture(incoming);
+      setScreenTexture(resolveMediaUrl(incoming) ?? incoming);
     } else {
       setScreenTexture(DEFAULT_SCREEN_TEXTURE);
     }
