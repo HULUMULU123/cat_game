@@ -9,7 +9,7 @@ import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
-from django.db.models import Sum, F, Q
+from django.db.models import Sum, F, Q, Count
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.request import Request
@@ -141,8 +141,19 @@ def _run_telegram_check(profile_id: int, task_id: int, channel_id: str, telegram
         if assignment.is_completed:
             return
 
-        task = assignment.task
+        task = Task.objects.select_for_update().get(id=task_id)
         profile = assignment.profile
+        if task.max_users and task.max_users > 0:
+            completed_count = TaskCompletion.objects.filter(
+                task=task,
+                is_completed=True,
+            ).count()
+            if completed_count >= task.max_users:
+                logger.info(
+                    "[tasks] telegram check: task limit reached",
+                    extra={"profile_id": profile_id, "task_id": task_id},
+                )
+                return
         assignment.is_completed = True
         assignment.save(update_fields=["is_completed", "updated_at"])
         profile.balance = F("balance") + task.reward
@@ -174,20 +185,38 @@ class TaskCompletionListView(APIView):
     def get(self, request: Request) -> Response:
         # note: related_name="profile" → request.user.profile
         profile = request.user.profile
+        active_task_ids = set(
+            Task.objects.annotate(
+                completed_count=Count(
+                    "completions",
+                    filter=Q(completions__is_completed=True),
+                )
+            )
+            .filter(
+                Q(max_users__isnull=True)
+                | Q(max_users__lte=0)
+                | Q(completed_count__lt=F("max_users"))
+            )
+            .values_list("id", flat=True)
+        )
         assignments = (
             TaskCompletion.objects.filter(profile=profile)
+            .filter(Q(task_id__in=active_task_ids) | Q(is_completed=True))
             .select_related("task")
             .order_by("-is_completed", "task__name")
         )
         # ensure every task is visible: create missing rows (not completed)
         existing_task_ids = set(assignments.values_list("task_id", flat=True))
-        missing_tasks = Task.objects.exclude(id__in=existing_task_ids)
+        missing_tasks = Task.objects.filter(id__in=active_task_ids).exclude(
+            id__in=existing_task_ids
+        )
         TaskCompletion.objects.bulk_create(
             [TaskCompletion(profile=profile, task=t, is_completed=False) for t in missing_tasks],
             ignore_conflicts=True,
         )
         assignments = (
             TaskCompletion.objects.filter(profile=profile)
+            .filter(Q(task_id__in=active_task_ids) | Q(is_completed=True))
             .select_related("task")
             .order_by("-is_completed", "task__name")
         )
@@ -210,13 +239,25 @@ class TaskToggleCompleteView(APIView):
         is_completed = bool(request.data.get("is_completed", True))
 
         try:
-            task = Task.objects.get(id=task_id)
+            task = Task.objects.select_for_update().get(id=task_id)
         except Task.DoesNotExist:
             return Response({"detail": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
         assignment, _ = TaskCompletion.objects.select_for_update().get_or_create(
             profile=profile, task=task, defaults={"is_completed": False}
         )
+
+        if is_completed and not assignment.is_completed:
+            if task.max_users and task.max_users > 0:
+                completed_count = TaskCompletion.objects.filter(
+                    task=task,
+                    is_completed=True,
+                ).count()
+                if completed_count >= task.max_users:
+                    return Response(
+                        {"detail": "Задание больше не активно."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
         channel_id = _parse_telegram_channel(getattr(task, "link", None))
         if channel_id and is_completed:
@@ -434,8 +475,8 @@ class SimulationRewardClaimView(APIView):
         today = timezone.localdate()
         claim, created = SimulationRewardClaim.objects.get_or_create(
             profile=profile,
-            threshold=threshold,
             claimed_for_date=today,
+            defaults={"threshold": threshold},
         )
         if not created:
             return Response(

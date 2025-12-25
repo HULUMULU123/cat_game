@@ -127,6 +127,12 @@ class Task(TimestampedModel):
     name = models.CharField(max_length=255, verbose_name="Название задания")
     description = models.TextField(blank=True, verbose_name="Описание")
     reward = models.PositiveIntegerField(default=0, verbose_name="Награда (монеты)")
+    max_users = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Лимит пользователей",
+        help_text="Сколько пользователей могут выполнить задание. Пусто — без ограничений.",
+    )
     icon = models.ImageField(
     upload_to="icons/",
     blank=True,
@@ -288,7 +294,7 @@ class SimulationRewardClaim(TimestampedModel):
         db_table = "simulation_reward_claims"
         verbose_name = "Награда симуляции"
         verbose_name_plural = "Награды симуляции"
-        unique_together = ("profile", "threshold", "claimed_for_date")
+        unique_together = ("profile", "claimed_for_date")
 
     def __str__(self) -> str:
         return f"{self.profile_id}: {self.threshold} ({self.claimed_for_date})"

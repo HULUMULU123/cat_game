@@ -292,6 +292,7 @@ class TaskAdmin(TaskAdminBase):
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
         (None, {"fields": ("name", "description", "reward")}),
+        ("Лимиты", {"fields": ("max_users",)}),
         ("Оформление", {"fields": ("icon",)}),
         ("Ссылка", {"fields": ("link",)}),
         ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
@@ -301,9 +302,55 @@ class TaskAdmin(TaskAdminBase):
 @admin.register(TaskCompletion)
 class TaskCompletionAdmin(TaskCompletionAdminBase):
     list_display = ("profile", "task", "is_completed", "created_at")
-    list_filter = ("is_completed",)
+    list_filter = ("is_completed", "profile", "task")
     search_fields = ("profile__user__username", "task__name")
     readonly_fields = ("created_at", "updated_at")
+    change_list_template = "admin/game/taskcompletion/change_list.html"
+
+    def get_urls(self):  # type: ignore[override]
+        urls = super().get_urls()
+        custom = [
+            path(
+                "export/",
+                self.admin_site.admin_view(self.export_view),
+                name="game_taskcompletion_export",
+            ),
+        ]
+        return custom + urls
+
+    def export_view(self, request: HttpRequest) -> HttpResponse:
+        changelist = self.get_changelist_instance(request)
+        completions = changelist.get_queryset(request).order_by(
+            "-is_completed",
+            "task__name",
+            "profile__user__username",
+        )
+        rows: list[list[str]] = [
+            ["Пользователь", "Задание", "Статус", "Награда", "Создано"],
+        ]
+        for completion in completions:
+            created_at = (
+                timezone.localtime(completion.created_at).strftime("%Y-%m-%d %H:%M:%S")
+                if completion.created_at
+                else ""
+            )
+            rows.append(
+                [
+                    getattr(completion.profile.user, "username", ""),
+                    completion.task.name,
+                    "Выполнено" if completion.is_completed else "Не выполнено",
+                    completion.task.reward,
+                    created_at,
+                ]
+            )
+
+        payload = _build_simple_xlsx(rows)
+        response = HttpResponse(
+            payload,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="task-completions.xlsx"'
+        return response
 
 
 @admin.register(SimulationConfig)
