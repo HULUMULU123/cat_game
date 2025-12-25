@@ -840,10 +840,18 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     glRef.current = gl;
     gl.setPixelRatio(renderQuality.dpr);
     gl.outputColorSpace = THREE.SRGBColorSpace;
-    const maxTexture = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
-    const maxRenderBuffer = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number;
-    setGpuMaxTextureSize(maxTexture);
-    if (maxTexture <= 2048 || maxRenderBuffer <= 2048) {
+    const maxTexture = gl.capabilities.maxTextureSize;
+    let maxRenderBuffer = 0;
+    const context = gl.getContext();
+    if (context && "getParameter" in context) {
+      maxRenderBuffer = (context as WebGLRenderingContext).getParameter(
+        (context as WebGLRenderingContext).MAX_RENDERBUFFER_SIZE
+      ) as number;
+    }
+    if (maxTexture) {
+      setGpuMaxTextureSize(maxTexture);
+    }
+    if (maxTexture <= 2048 || (maxRenderBuffer > 0 && maxRenderBuffer <= 2048)) {
       forceLowProfile("gpu-cap");
     }
     const canvas = gl.domElement;
