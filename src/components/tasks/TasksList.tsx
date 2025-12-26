@@ -3,6 +3,7 @@ import styled from "styled-components";
 import TaskItem from "./TaskItem";
 import advert from "../../assets/icons/advert.svg";
 import { request } from "../../shared/api/httpClient";
+import { resolveMediaUrl } from "../../shared/api/urls";
 import type { TaskAssignmentResponse } from "../../shared/api/types";
 import useGlobalStore from "../../shared/store/useGlobalStore";
 import { useQuery, useQueryClient } from "react-query";
@@ -240,7 +241,7 @@ const TasksList = () => {
         key={task.task_id}
         id={task.task_id}
         name={task.name}
-        img={task.icon || advert}
+        img={resolveMediaUrl(task.icon) || advert}
         url={task.link || undefined}
         done={task.is_completed}
         reward={task.reward}
