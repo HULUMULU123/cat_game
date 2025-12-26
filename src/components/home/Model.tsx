@@ -919,7 +919,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const baseCanvasBg = isLow ? "#dfe7f2" : "#002200";
   // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на основной
   const canvasBg = readyCanvas && !postReadyHold ? baseCanvasBg : "#000000";
-  const showLoader = !readyCanvas || postReadyHold;
+  const showLoader = !showFallback && (!readyCanvas || postReadyHold);
   const fogEnabled = renderQuality.enableFog && canvasBg === baseCanvasBg;
   const shadowsEnabled = renderQuality.enableShadows && !isLow && !isContextLost;
   const shadowOpacity = shadowsEnabled ? 0.3 : 0;
@@ -1026,7 +1026,12 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
             <FrameLimiter fps={30} enabled={!showFallback} />
             <PerformanceGuard
-              enabled={!isLow && !showFallback}
+              enabled={
+                qualityMode === "auto" &&
+                detectedProfile !== "high" &&
+                !isLow &&
+                !showFallback
+              }
               onPoorPerformance={() => forceLowProfile("perf")}
             />
             <FirstFrame onReady={() => setFirstFrame(true)} />
