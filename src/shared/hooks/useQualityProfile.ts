@@ -103,15 +103,6 @@ const isLiteQuery = () => {
   return params.get("lite") === "1";
 };
 
-const isAndroidTelegramWebView = () => {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent?.toLowerCase?.() ?? "";
-  const isAndroid = ua.includes("android");
-  const isTelegram = ua.includes("telegram") || ua.includes("tgapp");
-  const isWebView = ua.includes("; wv") || ua.includes("version/") || ua.includes("webview");
-  return isAndroid && (isTelegram || isWebView);
-};
-
 const QUALITY_MODE_STORAGE_KEY = "quality-mode";
 
 const readStoredMode = (): QualityMode => {
@@ -130,11 +121,6 @@ const detectQualityProfile = (): QualityProfile => {
   const cores = nav.hardwareConcurrency ?? 4;
   const memory = typeof nav.deviceMemory === "number" ? nav.deviceMemory : undefined;
   const connectionType = nav.connection?.effectiveType ?? "";
-  const userAgent = nav.userAgent?.toLowerCase?.() ?? "";
-
-  const isLegacyMobile = /android\s(7|8)|iphone\s(6|7|8)|mali-|redmi|sm-j|sm-a10/.test(
-    userAgent
-  );
   const isVeryLowCore = cores <= 2;
   const isLowCore = cores <= 4;
   const isVeryLowMemory = typeof memory === "number" && memory <= 2;
@@ -146,18 +132,7 @@ const detectQualityProfile = (): QualityProfile => {
     return "low";
   }
 
-  const isLegacyMobileWeak = isLegacyMobile && (isLowCore || isLowMemory);
-
-  if (isAndroidTelegramWebView() && (isVeryLowCore || isVeryLowMemory || isLegacyMobileWeak)) {
-    return "low";
-  }
-
-  if (
-    isVeryLowCore ||
-    isVeryLowMemory ||
-    (isLowCore && isLowMemory) ||
-    isLegacyMobileWeak
-  ) {
+  if (isVeryLowCore || isVeryLowMemory || (isLowCore && isLowMemory)) {
     return "low";
   }
 
@@ -205,18 +180,13 @@ const useQualityProfile = () => {
     return () => connection.removeEventListener?.("change", handle);
   }, []);
 
-  const canOverrideManual = (reason?: string) =>
-    reason === "low-fps" ||
-    reason === "webgl-lost" ||
-    reason === "memory-pressure" ||
-    reason === "gpu-cap";
-
   const forceLowProfile = (reason?: string) => {
+    const currentMode = qualityModeRef.current;
+    const canDowngrade = reason === "low-fps" || reason === "webgl-lost";
+    if (!canDowngrade) return;
     setForcedReason((prev) => prev ?? reason ?? null);
     setDetectedProfile("low");
-    const currentMode = qualityModeRef.current;
     if (currentMode === "auto") return;
-    if (!canOverrideManual(reason)) return;
     suppressPersistRef.current = true;
     setQualityMode("low");
   };
