@@ -113,6 +113,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
+        "cat_game_backend.permissions.IsNotBanned",
     ),
 }
 

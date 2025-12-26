@@ -115,6 +115,11 @@ class UserProfile(TimestampedModel):
         default=False,
         verbose_name="Ознакомлен с юридическими правилами",
     )
+    is_banned = models.BooleanField(
+        default=False,
+        verbose_name="Доступ запрещён",
+        help_text="Блокирует доступ пользователя к приложению.",
+    )
 
     class Meta:
         db_table = "профили_пользователей"
@@ -553,6 +558,41 @@ class Failure(TimestampedModel):
             "freeze": int(self.bonus_price_freeze or 0),
             "no_bombs": int(self.bonus_price_no_bombs or 0),
         }
+
+
+class FailureBan(TimestampedModel):
+    profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="failure_bans",
+        verbose_name="Профиль",
+    )
+    failure = models.ForeignKey(
+        Failure,
+        on_delete=models.CASCADE,
+        related_name="bans",
+        verbose_name="Сбой",
+    )
+    reason = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Причина бана",
+    )
+
+    class Meta:
+        db_table = "баны_сбоев"
+        verbose_name = "Бан в сбое"
+        verbose_name_plural = "Баны в сбое"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("profile", "failure"),
+                name="uniq_failure_ban_per_profile",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.profile_id} → {self.failure_id}"
 
 
 class FailureBonusType(models.TextChoices):

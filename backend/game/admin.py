@@ -24,6 +24,7 @@ from .models import (
     DailyRewardClaim,
     FrontendConfig,
     Failure,
+    FailureBan,
     FailureBonusPurchase,
     PromoCode,
     PromoCodeRedemption,
@@ -261,10 +262,12 @@ class UserProfileAdmin(UserProfileAdminBase):
         "daily_reward_streak",
         "daily_reward_last_claimed_at",
         "legal_accepted",
+        "is_banned",
         "created_at",
         "updated_at",
     )
     search_fields = ("user__username",)
+    list_filter = ("legal_accepted", "is_banned")
 
     # ДОБАВИЛИ referral_code в readonly
     readonly_fields = ("created_at", "updated_at", "referral_code")
@@ -279,12 +282,21 @@ class UserProfileAdmin(UserProfileAdminBase):
                     "daily_reward_streak",
                     "daily_reward_last_claimed_at",
                     "legal_accepted",
+                    "is_banned",
                 )
             },
         ),
         ("Реферальная программа", {"fields": ("referral_code", "referred_by")}),
         ("Служебное", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
+
+
+@admin.register(FailureBan)
+class FailureBanAdmin(admin.ModelAdmin):
+    list_display = ("profile", "failure", "reason", "created_at")
+    search_fields = ("profile__user__username", "failure__name", "reason")
+    list_filter = ("failure",)
+    readonly_fields = ("created_at", "updated_at")
 
 @admin.register(Task)
 class TaskAdmin(TaskAdminBase):

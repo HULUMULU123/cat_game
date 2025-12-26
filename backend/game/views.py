@@ -16,6 +16,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from cat_game_backend.permissions import IsNotBanned
 from .models import (
     AdvertisementButton,
     AdvertisementButtonRewardClaim,
@@ -180,7 +181,7 @@ def _schedule_telegram_check(profile: UserProfile, task: Task, channel_id: str) 
 # ---------- Tasks ----------
 
 class TaskCompletionListView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         # note: related_name="profile" → request.user.profile
@@ -237,7 +238,7 @@ class TaskCompletionListView(APIView):
 
 class TaskToggleCompleteView(APIView):
     """POST {"task_id": int, "is_completed": bool}"""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -303,7 +304,7 @@ class TaskToggleCompleteView(APIView):
 # ---------- Quiz ----------
 
 class QuizQuestionView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         question = QuizQuestion.objects.order_by("-updated_at").first()
@@ -315,7 +316,7 @@ class QuizQuestionView(APIView):
 
 # --- НОВОЕ: 5 случайных вопросов ---
 class QuizRandomBatchView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         # можно передать count, по умолчанию 5
@@ -336,7 +337,7 @@ class QuizRandomBatchView(APIView):
 # ---------- Simulation ----------
 
 class SimulationConfigView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         config = SimulationConfig.objects.order_by("-updated_at").first()
@@ -360,7 +361,7 @@ class SimulationConfigView(APIView):
 
 
 class SimulationStartView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -411,7 +412,7 @@ class SimulationStartView(APIView):
 
 
 class SimulationAdRewardView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -431,7 +432,7 @@ class SimulationAdRewardView(APIView):
 
 
 class SimulationRewardClaimView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -513,7 +514,7 @@ class SimulationRewardClaimView(APIView):
 # ---------- Rules ----------
 
 class RuleCategoryListView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         rules = RuleCategory.objects.order_by("category")
@@ -564,7 +565,7 @@ def _next_reward_day(profile: UserProfile, today: date) -> int:
 
 class DailyRewardConfigView(APIView):
     """Возвращает конфиг наград на 7 дней."""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         _ensure_daily_reward_defaults()
@@ -591,7 +592,7 @@ class DailyRewardConfigView(APIView):
 
 class DailyRewardClaimTodayView(APIView):
     """POST {} — выдать награду за текущий день недели (1–7), если ещё не была получена сегодня."""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -676,7 +677,7 @@ class AdvertisementButtonListView(APIView):
 
 
 class AdvertisementButtonClaimView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request, button_id: int) -> Response:
@@ -731,7 +732,7 @@ class FrontendConfigView(APIView):
 # ---------- Failures ----------
 
 class FailureListView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         failures = Failure.objects.order_by("-created_at")
@@ -753,7 +754,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class FailureStartView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request):
@@ -841,7 +842,7 @@ class FailureStartView(APIView):
         )
 
 class FailureCompleteView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -900,7 +901,7 @@ class FailureCompleteView(APIView):
 
 
 class FailureBonusPurchaseView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -994,7 +995,7 @@ class FailureBonusPurchaseView(APIView):
 
 
 class AdsgramBlockView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         block = AdsgramBlock.objects.filter(is_active=True).order_by("?").first()
@@ -1016,7 +1017,7 @@ class AdsgramBlockView(APIView):
 
 
 class AdsgramAssignmentRequestView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -1086,7 +1087,7 @@ class AdsgramAssignmentRequestView(APIView):
 
 
 class AdsgramAssignmentCompleteView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -1133,7 +1134,7 @@ class AdsgramAssignmentCompleteView(APIView):
 class ScoreListView(APIView):
     """Список очков текущего пользователя и приём результатов квиза."""
 
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         profile = request.user.profile
@@ -1210,7 +1211,7 @@ class ScoreListView(APIView):
 class LeaderboardView(APIView):
     """Возвращает таблицу лидеров для выбранного сбоя."""
 
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         failure_param = request.query_params.get("failure")
@@ -1244,6 +1245,7 @@ class LeaderboardView(APIView):
         qs = ScoreEntry.objects.select_related("profile", "profile__user")
         if failure_obj is not None:
             qs = qs.filter(failure=failure_obj)
+            qs = qs.exclude(profile__failure_bans__failure=failure_obj)
         else:
             qs = qs.none()
 

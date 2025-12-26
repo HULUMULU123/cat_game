@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from cat_game_backend.permissions import IsNotBanned
 from .serializers import (
     PromoCodeApplySerializer,
     ReferralCodeApplySerializer,
@@ -81,6 +82,11 @@ class TelegramAuthView(APIView):
         serializer = TelegramAuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, profile = serializer.create_or_update_user()
+        if profile.is_banned:
+            return Response(
+                {"detail": "Доступ запрещен. Пользователь заблокирован."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         refresh = RefreshToken.for_user(user)
 
         profile_data = UserProfileSerializer(profile).data
@@ -95,7 +101,7 @@ class TelegramAuthView(APIView):
 
 
 class CurrentUserProfileView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def get(self, request: Request) -> Response:
         profile = getattr(request.user, "profile", None) or request.user.userprofile
@@ -104,7 +110,7 @@ class CurrentUserProfileView(APIView):
 
 
 class ReferralCodeApplyView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def post(self, request: Request) -> Response:
         serializer = ReferralCodeApplySerializer(data=request.data)
@@ -154,7 +160,7 @@ class ReferralCodeApplyView(APIView):
 
 
 class PromoCodeApplyView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -203,7 +209,7 @@ class PromoCodeApplyView(APIView):
 
 
 class LegalCheckView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsNotBanned)
 
     def post(self, request: Request) -> Response:
         profile = getattr(request.user, "profile", None) or request.user.userprofile
