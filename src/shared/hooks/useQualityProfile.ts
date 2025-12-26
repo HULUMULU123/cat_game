@@ -103,6 +103,12 @@ const isLiteQuery = () => {
   return params.get("lite") === "1";
 };
 
+export const isTelegramWebView = () => {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent?.toLowerCase?.() ?? "";
+  return ua.includes("telegram");
+};
+
 const QUALITY_MODE_STORAGE_KEY = "quality-mode";
 
 const readStoredMode = (): QualityMode => {
@@ -114,7 +120,7 @@ const readStoredMode = (): QualityMode => {
   return "low";
 };
 
-const detectQualityProfile = (): QualityProfile => {
+export const detectQualityProfile = (): QualityProfile => {
   if (typeof navigator === "undefined") return "high";
 
   const nav = navigator as NavigatorWithMemory;
@@ -146,6 +152,17 @@ const detectQualityProfile = (): QualityProfile => {
   }
 
   return "high";
+};
+
+export const shouldPreloadHeavyAssets = () => {
+  if (typeof window === "undefined") return false;
+  if (isTelegramWebView()) return false;
+  return detectQualityProfile() !== "low";
+};
+
+export const shouldForceFallbackOnStartup = () => {
+  if (typeof window === "undefined") return false;
+  return isTelegramWebView() && detectQualityProfile() === "low";
 };
 
 const useQualityProfile = () => {
@@ -189,6 +206,9 @@ const useQualityProfile = () => {
     const currentMode = qualityModeRef.current;
     const canDowngrade =
       reason === "gpu-cap" ||
+      reason === "memory-pressure" ||
+      reason === "webgl-lost" ||
+      reason === "perf" ||
       (typeof document !== "undefined" && document.hidden);
     if (!canDowngrade) return;
     setForcedReason((prev) => prev ?? reason ?? null);

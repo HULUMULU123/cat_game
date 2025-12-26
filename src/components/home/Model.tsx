@@ -20,7 +20,10 @@ import type { FrontendConfigResponse } from "../../shared/api/types";
 import { resolveMediaUrl } from "../../shared/api/urls";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
-import useQualityProfile from "../../shared/hooks/useQualityProfile";
+import useQualityProfile, {
+  shouldPreloadHeavyAssets,
+  shouldForceFallbackOnStartup,
+} from "../../shared/hooks/useQualityProfile";
 
 const LOADER_MESSAGES = [
   "Не делай вид, что случайно зашёл. Мы оба знаем правду.",
@@ -753,7 +756,9 @@ function RoomWithCat({
   );
 }
 
-useGLTF.preload("/models/stakan_room.glb");
+if (shouldPreloadHeavyAssets()) {
+  useGLTF.preload("/models/stakan_room.glb");
+}
 
 /* -------------------------- Основной компонент --------------------------- */
 
@@ -793,7 +798,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   );
   const glCleanupRef = useRef<(() => void) | null>(null);
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
-  const [showFallback, setShowFallback] = useState(false);
+  const [showFallback, setShowFallback] = useState(() =>
+    shouldForceFallbackOnStartup()
+  );
 
   const {
     data: frontendConfig,
@@ -1018,6 +1025,10 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             {fogEnabled && <fog attach="fog" args={[baseCanvasBg, 10, 40]} />}
 
             <FrameLimiter fps={30} enabled={!showFallback} />
+            <PerformanceGuard
+              enabled={!isLow && !showFallback}
+              onPoorPerformance={() => forceLowProfile("perf")}
+            />
             <FirstFrame onReady={() => setFirstFrame(true)} />
             <ambientLight
               intensity={
