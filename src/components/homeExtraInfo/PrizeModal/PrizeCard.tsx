@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import prizePhoto from "../../../assets/prize-photo.png";
 import { resolveMediaUrl } from "../../../shared/api/urls";
 
 const StyledWrapper = styled.div`
@@ -16,7 +15,9 @@ const StyledPrizeWrapper = styled.div`
   flex-direction: column;
   position: relative;
   width: 100%;
-  min-height: 250px;
+  min-height: 220px;
+  max-height: 320px;
+  height: clamp(220px, 40vw, 320px);
   border-radius: 7px;
   overflow: hidden;
   background: linear-gradient(
@@ -30,6 +31,19 @@ const StyledPrizeImg = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+`;
+
+const StyledEmptyPrize = styled.div`
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: "Conthrax", sans-serif;
+  font-size: 12px;
+  color: rgb(224, 255, 251);
 `;
 
 const StyledTimerInfo = styled.div`
@@ -98,13 +112,23 @@ export default function PrizeCard({
   timerValue,
   completionNote,
 }: PrizeCardProps) {
-  const imageSrc = resolveMediaUrl(mainPrizeImage) ?? prizePhoto;
-  const prizeName = mainPrizeTitle?.trim() || "Скоро объявим приз";
+  const hasPrizeInfo = Boolean(
+    mainPrizeTitle?.trim() || mainPrizeImage?.trim()
+  );
+  const imageSrc = mainPrizeImage ? resolveMediaUrl(mainPrizeImage) : null;
+  const prizeName = mainPrizeTitle?.trim();
 
   return (
     <StyledWrapper>
       <StyledPrizeWrapper>
-        <StyledPrizeImg src={imageSrc} alt={prizeName} />
+        {hasPrizeInfo && imageSrc ? (
+          <StyledPrizeImg src={imageSrc} alt={prizeName ?? "Главный приз"} />
+        ) : null}
+        {!hasPrizeInfo ? (
+          <StyledEmptyPrize>
+            Информации по главному призу пока нет
+          </StyledEmptyPrize>
+        ) : null}
         <StyledTimerInfo>
           <StyledTextSpan>{timerLabel}</StyledTextSpan>
           {timerValue ? <StyledTimerSpan>{timerValue}</StyledTimerSpan> : null}
@@ -116,7 +140,9 @@ export default function PrizeCard({
           ) : null}
         </StyledTimerInfo>
       </StyledPrizeWrapper>
-      <StyledPrizeName>{prizeName}</StyledPrizeName>
+      <StyledPrizeName>
+        {prizeName ?? "Информации по главному призу пока нет"}
+      </StyledPrizeName>
       <StyledLine />
     </StyledWrapper>
   );

@@ -109,6 +109,39 @@ const renderNestedRules = (sections: Record<string, string[]>) =>
     </div>
   ));
 
+const sanitizeRulesHtml = (input: string) => {
+  if (!input) return "";
+
+  const doc = new DOMParser().parseFromString(input, "text/html");
+  const allowedTags = new Set(["b", "strong", "i", "em", "u", "s", "br"]);
+
+  const sanitizeNode = (node: Node) => {
+    const children = Array.from(node.childNodes);
+    children.forEach((child) => {
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        const element = child as HTMLElement;
+        const tagName = element.tagName.toLowerCase();
+
+        if (!allowedTags.has(tagName)) {
+          const text = doc.createTextNode(element.textContent ?? "");
+          node.replaceChild(text, element);
+          return;
+        }
+
+        Array.from(element.attributes).forEach((attr) =>
+          element.removeAttribute(attr.name)
+        );
+        sanitizeNode(element);
+      } else if (child.nodeType === Node.COMMENT_NODE) {
+        node.removeChild(child);
+      }
+    });
+  };
+
+  sanitizeNode(doc.body);
+  return doc.body.innerHTML;
+};
+
 const RulesContent = ({ rulesData, plainText }: RulesContentProps) => {
   const hasStructured = useMemo(
     () => rulesData && Object.keys(rulesData).length > 0,
@@ -118,6 +151,10 @@ const RulesContent = ({ rulesData, plainText }: RulesContentProps) => {
     () => typeof plainText === "string" && plainText.trim().length > 0,
     [plainText]
   );
+  const sanitizedPlainHtml = useMemo(() => {
+    if (typeof plainText !== "string") return "";
+    return sanitizeRulesHtml(plainText);
+  }, [plainText]);
 
   // 1) Если есть структурированные данные — рендерим их (как раньше)
   if (hasStructured && rulesData) {
@@ -144,7 +181,9 @@ const RulesContent = ({ rulesData, plainText }: RulesContentProps) => {
   if (hasPlain && typeof plainText === "string") {
     return (
       <StyledWrapper>
-        <StyledPlainText>{plainText}</StyledPlainText>
+        <StyledPlainText
+          dangerouslySetInnerHTML={{ __html: sanitizedPlainHtml }}
+        />
       </StyledWrapper>
     );
   }
