@@ -15,4 +15,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # ВАЖНО: bind 0.0.0.0, иначе порт не пробросится наружу контейнера
-CMD ["python", "-m", "gunicorn", "--chdir", "/var/www/cat_game/backend", "cat_game_backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--log-level", "info"]
+CMD ["sh", "-c", "\
+python -m gunicorn --chdir /var/www/cat_game/backend \
+cat_game_backend.wsgi:application \
+--bind 0.0.0.0:8000 \
+--workers 9 \
+--threads 2 \
+--timeout 60 \
+--keep-alive 5 \
+--max-requests 2000 \
+--max-requests-jitter 200 \
+--log-level info \
+"]
