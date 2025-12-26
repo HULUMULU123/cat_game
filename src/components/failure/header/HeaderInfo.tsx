@@ -36,6 +36,14 @@ const StyledCloseBtn = styled.button`
   background: transparent;
   width: 25px;
   height: 25px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 `;
 
 const StyledCloseImg = styled.img`
@@ -63,8 +71,8 @@ export default function HeaderInfo() {
     <Wrapper>
       <StyledHeadSection>
         <StyledHeaderSpan>СБОЙ ///</StyledHeaderSpan>
-        <StyledCloseBtn>
-          <StyledCloseImg src={cross} onClick={() => navigate("/")} />
+        <StyledCloseBtn onClick={() => navigate("/")} aria-label="Закрыть">
+          <StyledCloseImg src={cross} alt="" />
         </StyledCloseBtn>
       </StyledHeadSection>
       <StyledBottomSection>
