@@ -175,8 +175,13 @@ const useQualityProfile = () => {
   );
   const [forcedReason, setForcedReason] = useState<string | null>(null);
   const suppressPersistRef = useRef(false);
+  const qualityModeRef = useRef<QualityMode>(qualityMode);
 
   const profile = qualityMode === "auto" ? detectedProfile : qualityMode;
+
+  useEffect(() => {
+    qualityModeRef.current = qualityMode;
+  }, [qualityMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -200,12 +205,26 @@ const useQualityProfile = () => {
     return () => connection.removeEventListener?.("change", handle);
   }, []);
 
+  const canOverrideManual = (reason?: string) =>
+    reason === "low-fps" ||
+    reason === "webgl-lost" ||
+    reason === "memory-pressure" ||
+    reason === "gpu-cap";
+
+  const forceLowProfile = (reason?: string) => {
+    setForcedReason((prev) => prev ?? reason ?? null);
+    setDetectedProfile("low");
+    const currentMode = qualityModeRef.current;
+    if (currentMode === "auto") return;
+    if (!canOverrideManual(reason)) return;
+    suppressPersistRef.current = true;
+    setQualityMode("low");
+  };
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleMemoryPressure = () => {
-      setForcedReason((prev) => prev ?? "memory-pressure");
-      setDetectedProfile("low");
-      setQualityMode("low");
+      forceLowProfile("memory-pressure");
     };
     window.addEventListener("memorypressure" as any, handleMemoryPressure);
     return () => window.removeEventListener("memorypressure" as any, handleMemoryPressure);
@@ -219,13 +238,6 @@ const useQualityProfile = () => {
     }
     window.localStorage.setItem(QUALITY_MODE_STORAGE_KEY, qualityMode);
   }, [qualityMode]);
-
-  const forceLowProfile = (reason?: string) => {
-    setForcedReason((prev) => prev ?? reason ?? null);
-    setDetectedProfile("low");
-    suppressPersistRef.current = true;
-    setQualityMode("low");
-  };
 
   const settings = useMemo(() => {
     const preset = QUALITY_PRESETS[profile];

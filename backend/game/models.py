@@ -4,9 +4,11 @@ import secrets
 import string
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
+from PIL import Image
 
 
 # ==============================
@@ -50,6 +52,20 @@ def ensure_all_profiles_have_referral_code(apps, schema_editor) -> None:
             profile.save(update_fields=["referral_code"])
             existing_codes.add(code)
             break
+
+
+def validate_fhd_image(image) -> None:
+    try:
+        image.file.seek(0)
+        img = Image.open(image)
+        width, height = img.size
+    except Exception as exc:
+        raise ValidationError("Не удалось прочитать изображение.") from exc
+
+    if max(width, height) > 1920:
+        raise ValidationError(
+            "Максимальная сторона изображения — 1920px (FHD)."
+        )
 
 
 class UserProfile(TimestampedModel):
@@ -504,11 +520,12 @@ class Failure(TimestampedModel):
         verbose_name="Название главного приза",
     )
     main_prize_image = models.ImageField(
-    upload_to="main_prizes/",
-    blank=True,
-    null=True,
-    verbose_name="Изображение главного приза",
-)
+        upload_to="main_prizes/",
+        blank=True,
+        null=True,
+        verbose_name="Изображение главного приза",
+        validators=[validate_fhd_image],
+    )
 
 
     class Meta:
