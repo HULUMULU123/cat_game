@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type QualityProfile = "low" | "medium" | "high";
 export type QualityMode = "auto" | QualityProfile;
@@ -174,6 +174,7 @@ const useQualityProfile = () => {
     detectQualityProfile()
   );
   const [forcedReason, setForcedReason] = useState<string | null>(null);
+  const suppressPersistRef = useRef(false);
 
   const profile = qualityMode === "auto" ? detectedProfile : qualityMode;
 
@@ -212,12 +213,17 @@ const useQualityProfile = () => {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (suppressPersistRef.current) {
+      suppressPersistRef.current = false;
+      return;
+    }
     window.localStorage.setItem(QUALITY_MODE_STORAGE_KEY, qualityMode);
   }, [qualityMode]);
 
   const forceLowProfile = (reason?: string) => {
     setForcedReason((prev) => prev ?? reason ?? null);
     setDetectedProfile("low");
+    suppressPersistRef.current = true;
     setQualityMode("low");
   };
 
