@@ -83,19 +83,23 @@ const StyledCloseBtn = styled.button`
   position: absolute;
   top: 5px;
   right: 5px;
-  width: 22px;
-  height: 22px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   display: flex;
   border: none;
-  background: transparent;
+  border-radius: 50%;
+  background: rgba(14, 94, 81, 0.5);
   align-items: center;
+  justify-content: center;
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 `;
 
 const StyledCloseBtnImg = styled.img`
-  width: 100%;
-  height: 100%;
-  margin: auto;
+  width: 14px;
+  height: 14px;
 `;
 
 const StyledMainText = styled.span`

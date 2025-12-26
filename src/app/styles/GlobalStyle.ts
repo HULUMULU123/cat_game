@@ -55,6 +55,8 @@ const GlobalStyle = createGlobalStyle`
     overflow: hidden;
     touch-action: none;
     -ms-touch-action: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
@@ -66,7 +68,7 @@ const GlobalStyle = createGlobalStyle`
     touch-action: none;
     -ms-touch-action: none;
     overscroll-behavior: none;
-    background-color: #00ff0d;
+    background-color: #001915;
     font-family: 'Gilroy', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

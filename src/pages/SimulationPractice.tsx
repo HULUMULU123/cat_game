@@ -142,9 +142,11 @@ const ResultText = styled.p`
 const ResultButton = styled.button`
   border: none;
   border-radius: 8px;
-  padding: 12px 24px;
+  min-height: 40px;
+  padding: 12px 28px;
   font-family: "Conthrax", sans-serif;
   font-size: 12px;
+  line-height: 1;
   text-transform: uppercase;
   color: #0e4f45;
   background: linear-gradient(
