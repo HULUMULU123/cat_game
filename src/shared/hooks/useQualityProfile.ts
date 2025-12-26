@@ -146,7 +146,9 @@ const detectQualityProfile = (): QualityProfile => {
     return "low";
   }
 
-  if (isAndroidTelegramWebView() && (isVeryLowCore || isVeryLowMemory || isLegacyMobile)) {
+  const isLegacyMobileWeak = isLegacyMobile && (isLowCore || isLowMemory);
+
+  if (isAndroidTelegramWebView() && (isVeryLowCore || isVeryLowMemory || isLegacyMobileWeak)) {
     return "low";
   }
 
@@ -154,13 +156,12 @@ const detectQualityProfile = (): QualityProfile => {
     isVeryLowCore ||
     isVeryLowMemory ||
     (isLowCore && isLowMemory) ||
-    isLegacyMobile ||
-    isSlowConnection
+    isLegacyMobileWeak
   ) {
     return "low";
   }
 
-  if (isLowCore || isLowMemory || isModerateConnection) {
+  if (isLowCore || isLowMemory || isSlowConnection || isModerateConnection) {
     return "medium";
   }
 

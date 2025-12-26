@@ -166,12 +166,6 @@ const QualityFab = styled(SoundFab)`
   bottom: 270px;
 `;
 
-const FabGlyph = styled.span`
-  font-family: "Conthrax", sans-serif;
-  font-size: 16px;
-  letter-spacing: 0.06em;
-`;
-
 const LevelBadge = styled.span`
   position: absolute;
   right: -6px;
@@ -187,6 +181,12 @@ const LevelBadge = styled.span`
   line-height: 22px;
   text-align: center;
   pointer-events: none;
+`;
+
+const QualityBadge = styled(LevelBadge)`
+  min-width: 36px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
 `;
 
 const Fallback = styled.div`
@@ -527,6 +527,17 @@ const IconSpeakerHigh = () => (
   </svg>
 );
 
+const IconQuality = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M4 7h9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <circle cx="17" cy="7" r="2" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M4 12h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M4 17h13" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <circle cx="19" cy="17" r="2" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+);
+
 /* ------------------------- Компонент комнаты ----------------------------- */
 
 function RoomWithCat({
@@ -749,10 +760,10 @@ useGLTF.preload("/models/stakan_room.glb");
 const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → средн → макс
 const QUALITY_MODES = ["auto", "low", "medium", "high"] as const;
 const QUALITY_LABELS: Record<(typeof QUALITY_MODES)[number], string> = {
-  auto: "auto",
-  low: "low",
-  medium: "mid",
-  high: "high",
+  auto: "AUTO",
+  low: "LOW",
+  medium: "MID",
+  high: "HIGH",
 };
 
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
@@ -881,9 +892,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
   const qualityLabel =
+    qualityMode === "auto" ? QUALITY_LABELS.auto : QUALITY_LABELS[qualityMode];
+  const qualityTitle =
     qualityMode === "auto"
-      ? `A:${QUALITY_LABELS[detectedProfile]}`
-      : QUALITY_LABELS[qualityMode];
+      ? `Graphics: auto (${QUALITY_LABELS[detectedProfile]})`
+      : `Graphics: ${QUALITY_LABELS[qualityMode]}`;
   const qualityLevel =
     (qualityMode === "auto" ? detectedProfile : qualityMode) === "high"
       ? 3
@@ -1124,11 +1137,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           <QualityFab
             onClick={cycleQuality}
             aria-label="Graphics quality"
-            title="Graphics quality"
+            title={qualityTitle}
             $level={qualityLevel}
           >
-            <FabGlyph>Q</FabGlyph>
-            <LevelBadge>{qualityLabel}</LevelBadge>
+            <IconQuality />
+            <QualityBadge>{qualityLabel}</QualityBadge>
           </QualityFab>
           <SoundFab
             onClick={cycleVolume}
