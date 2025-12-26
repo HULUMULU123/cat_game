@@ -162,6 +162,16 @@ const SoundFab = styled.button<{ $level: number }>`
       : `box-shadow: 0 12px 44px rgba(0, 255, 128, 0.42), inset 0 0 18px rgba(0, 255, 128, 0.36);`}
 `;
 
+const QualityFab = styled(SoundFab)`
+  bottom: 270px;
+`;
+
+const FabGlyph = styled.span`
+  font-family: "Conthrax", sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+`;
+
 const LevelBadge = styled.span`
   position: absolute;
   right: -6px;
@@ -737,6 +747,13 @@ useGLTF.preload("/models/stakan_room.glb");
 /* -------------------------- Основной компонент --------------------------- */
 
 const VOLUME_STEPS = [0, 0.33, 0.66, 1] as const; // выкл → низк → средн → макс
+const QUALITY_MODES = ["auto", "low", "medium", "high"] as const;
+const QUALITY_LABELS: Record<(typeof QUALITY_MODES)[number], string> = {
+  auto: "auto",
+  low: "low",
+  medium: "mid",
+  high: "high",
+};
 
 const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [firstFrame, setFirstFrame] = useState(false);
@@ -747,6 +764,9 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     profile,
     settings: { render: renderQuality },
     forceLowProfile,
+    qualityMode,
+    setQualityMode,
+    detectedProfile,
   } = useQualityProfile();
   const isLow = profile === "low";
   const isMedium = profile === "medium";
@@ -860,6 +880,21 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       <IconSpeakerHigh />
     );
   const levelLabel = ["off", "low", "mid", "max"][volumeIndex];
+  const qualityLabel =
+    qualityMode === "auto"
+      ? `A:${QUALITY_LABELS[detectedProfile]}`
+      : QUALITY_LABELS[qualityMode];
+  const qualityLevel =
+    (qualityMode === "auto" ? detectedProfile : qualityMode) === "high"
+      ? 3
+      : (qualityMode === "auto" ? detectedProfile : qualityMode) === "medium"
+      ? 2
+      : 1;
+  const cycleQuality = () =>
+    setQualityMode((current) => {
+      const idx = QUALITY_MODES.indexOf(current);
+      return QUALITY_MODES[(idx + 1) % QUALITY_MODES.length];
+    });
 
   const baseCanvasBg = isLow ? "#dfe7f2" : "#002200";
   // Для устранения вспышки: пока идёт кроссфейд — фон Canvas чёрный, затем переключаем на основной
@@ -1085,15 +1120,26 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
       {/* Кнопка громкости */}
       {isBottomNavVisible ? (
-        <SoundFab
-          onClick={cycleVolume}
-          aria-label="Volume"
-          title="Volume"
-          $level={volumeIndex}
-        >
-          {currentIcon}
-          <LevelBadge>{levelLabel}</LevelBadge>
-        </SoundFab>
+        <>
+          <QualityFab
+            onClick={cycleQuality}
+            aria-label="Graphics quality"
+            title="Graphics quality"
+            $level={qualityLevel}
+          >
+            <FabGlyph>Q</FabGlyph>
+            <LevelBadge>{qualityLabel}</LevelBadge>
+          </QualityFab>
+          <SoundFab
+            onClick={cycleVolume}
+            aria-label="Volume"
+            title="Volume"
+            $level={volumeIndex}
+          >
+            {currentIcon}
+            <LevelBadge>{levelLabel}</LevelBadge>
+          </SoundFab>
+        </>
       ) : null}
 
       <Content>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 export type QualityProfile = "low" | "medium" | "high";
+export type QualityMode = "auto" | QualityProfile;
 
 export interface QualityPreset {
   render: {
@@ -111,6 +112,17 @@ const isAndroidTelegramWebView = () => {
   return isAndroid && (isTelegram || isWebView);
 };
 
+const QUALITY_MODE_STORAGE_KEY = "quality-mode";
+
+const readStoredMode = (): QualityMode => {
+  if (typeof window === "undefined") return "auto";
+  const raw = window.localStorage.getItem(QUALITY_MODE_STORAGE_KEY);
+  if (raw === "low" || raw === "medium" || raw === "high" || raw === "auto") {
+    return raw;
+  }
+  return "auto";
+};
+
 const detectQualityProfile = (): QualityProfile => {
   if (typeof navigator === "undefined") return "high";
 
@@ -134,7 +146,7 @@ const detectQualityProfile = (): QualityProfile => {
     return "low";
   }
 
-  if (isAndroidTelegramWebView() && (isLowCore || isLowMemory || isLegacyMobile)) {
+  if (isAndroidTelegramWebView() && (isVeryLowCore || isVeryLowMemory || isLegacyMobile)) {
     return "low";
   }
 
@@ -156,12 +168,17 @@ const detectQualityProfile = (): QualityProfile => {
 };
 
 const useQualityProfile = () => {
-  const [profile, setProfile] = useState<QualityProfile>(() => detectQualityProfile());
+  const [qualityMode, setQualityMode] = useState<QualityMode>(() => readStoredMode());
+  const [detectedProfile, setDetectedProfile] = useState<QualityProfile>(() =>
+    detectQualityProfile()
+  );
   const [forcedReason, setForcedReason] = useState<string | null>(null);
+
+  const profile = qualityMode === "auto" ? detectedProfile : qualityMode;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const handle = () => setProfile(detectQualityProfile());
+    const handle = () => setDetectedProfile(detectQualityProfile());
     window.addEventListener("focus", handle);
     window.addEventListener("resize", handle);
     return () => {
@@ -176,7 +193,7 @@ const useQualityProfile = () => {
     const connection = nav.connection;
     if (!connection || !connection.addEventListener) return;
 
-    const handle = () => setProfile(detectQualityProfile());
+    const handle = () => setDetectedProfile(detectQualityProfile());
     connection.addEventListener("change", handle);
     return () => connection.removeEventListener?.("change", handle);
   }, []);
@@ -185,15 +202,22 @@ const useQualityProfile = () => {
     if (typeof window === "undefined") return;
     const handleMemoryPressure = () => {
       setForcedReason((prev) => prev ?? "memory-pressure");
-      setProfile("low");
+      setDetectedProfile("low");
+      setQualityMode("low");
     };
     window.addEventListener("memorypressure" as any, handleMemoryPressure);
     return () => window.removeEventListener("memorypressure" as any, handleMemoryPressure);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(QUALITY_MODE_STORAGE_KEY, qualityMode);
+  }, [qualityMode]);
+
   const forceLowProfile = (reason?: string) => {
     setForcedReason((prev) => prev ?? reason ?? null);
-    setProfile("low");
+    setDetectedProfile("low");
+    setQualityMode("low");
   };
 
   const settings = useMemo(() => {
@@ -214,7 +238,15 @@ const useQualityProfile = () => {
     };
   }, [profile]);
 
-  return { profile, settings, forceLowProfile, forcedReason };
+  return {
+    profile,
+    settings,
+    forceLowProfile,
+    forcedReason,
+    qualityMode,
+    setQualityMode,
+    detectedProfile,
+  };
 };
 
 export default useQualityProfile;
