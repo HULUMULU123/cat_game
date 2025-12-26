@@ -80,6 +80,55 @@ const GlobalStyle = createGlobalStyle`
     width: 100%;
     min-height: 100vh;
   }
+
+  .orientation-lock {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483646;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 8, 14, 0.92);
+    color: #e6f7ff;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .orientation-lock__card {
+    max-width: 420px;
+    width: 100%;
+    padding: 22px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: radial-gradient(140% 140% at 20% 10%, rgba(9, 40, 30, 0.6), rgba(10, 16, 24, 0.9));
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  .orientation-lock__title {
+    font-family: "Conthrax", sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .orientation-lock__text {
+    font-size: 14px;
+    line-height: 1.45;
+    opacity: 0.9;
+  }
+
+  .orientation-lock__icon {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+  }
 `;
 
 export default GlobalStyle;

@@ -1,5 +1,5 @@
 import { BrowserRouter, useLocation } from "react-router-dom";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 import AppRoutes from "./routes/AppRoutes";
 import RouteLoadingGate from "./components/RouteLoadingGate";
@@ -44,6 +44,41 @@ const AppContent = () => {
     return () => window.removeEventListener("orientationchange", tryLock);
   }, []);
 
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const getIsLandscape = () =>
+      window.matchMedia
+        ? window.matchMedia("(orientation: landscape)").matches
+        : window.innerWidth > window.innerHeight;
+
+    const handle = () => setIsLandscape(getIsLandscape());
+    handle();
+
+    window.addEventListener("resize", handle);
+    window.addEventListener("orientationchange", handle);
+    return () => {
+      window.removeEventListener("resize", handle);
+      window.removeEventListener("orientationchange", handle);
+    };
+  }, []);
+
+  const orientationOverlay = useMemo(() => {
+    if (!isLandscape) return null;
+    return (
+      <div className="orientation-lock" role="dialog" aria-modal="true">
+        <div className="orientation-lock__card">
+          <div className="orientation-lock__icon">📱</div>
+          <div className="orientation-lock__title">Поверните устройство</div>
+          <div className="orientation-lock__text">
+            Приложение работает только в вертикальном режиме. Пожалуйста,
+            верните устройство в вертикальную ориентацию.
+          </div>
+        </div>
+      </div>
+    );
+  }, [isLandscape]);
+
   const isFailurePage = pathname.includes("failure");
   const shouldBlockForLegal = Boolean(tokens) && legalAccepted === false;
 
@@ -61,6 +96,7 @@ const AppContent = () => {
 
   return (
     <Fragment>
+      {orientationOverlay}
       <AppLoader isVisible={isLoading && !isFailurePage} />
       <RouteLoadingGate />
       <AppRoutes />
