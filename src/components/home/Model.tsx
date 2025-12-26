@@ -1019,11 +1019,6 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
             <FrameLimiter fps={30} enabled={!showFallback} />
             <FirstFrame onReady={() => setFirstFrame(true)} />
-            <PerformanceGuard
-              enabled={readyCanvas && !showLoader && !isLow && !showFallback}
-              onPoorPerformance={() => forceLowProfile("low-fps")}
-            />
-
             <ambientLight
               intensity={
                 (isLow ? 1.25 : 0.95) * renderQuality.lightIntensityMultiplier

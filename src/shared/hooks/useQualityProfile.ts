@@ -121,6 +121,8 @@ const detectQualityProfile = (): QualityProfile => {
   const cores = nav.hardwareConcurrency ?? 4;
   const memory = typeof nav.deviceMemory === "number" ? nav.deviceMemory : undefined;
   const connectionType = nav.connection?.effectiveType ?? "";
+  const userAgent = nav.userAgent?.toLowerCase?.() ?? "";
+  const isAndroid = userAgent.includes("android");
   const isVeryLowCore = cores <= 2;
   const isLowCore = cores <= 4;
   const isVeryLowMemory = typeof memory === "number" && memory <= 2;
@@ -128,7 +130,10 @@ const detectQualityProfile = (): QualityProfile => {
   const isSlowConnection = connectionType === "slow-2g" || connectionType === "2g";
   const isModerateConnection = connectionType === "3g";
 
-  if (isLiteQuery()) {
+  const isLowEndAndroid =
+    isAndroid && isLowCore && (isLowMemory || typeof memory !== "number");
+
+  if (isLiteQuery() || isLowEndAndroid) {
     return "low";
   }
 
@@ -182,7 +187,9 @@ const useQualityProfile = () => {
 
   const forceLowProfile = (reason?: string) => {
     const currentMode = qualityModeRef.current;
-    const canDowngrade = reason === "low-fps" || reason === "webgl-lost";
+    const canDowngrade =
+      reason === "gpu-cap" ||
+      (typeof document !== "undefined" && document.hidden);
     if (!canDowngrade) return;
     setForcedReason((prev) => prev ?? reason ?? null);
     setDetectedProfile("low");
