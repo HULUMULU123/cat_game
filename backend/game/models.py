@@ -54,7 +54,7 @@ def ensure_all_profiles_have_referral_code(apps, schema_editor) -> None:
             break
 
 
-def validate_fhd_image(image) -> None:
+def validate_hd_image(image) -> None:
     try:
         image.file.seek(0)
         img = Image.open(image)
@@ -62,9 +62,9 @@ def validate_fhd_image(image) -> None:
     except Exception as exc:
         raise ValidationError("Не удалось прочитать изображение.") from exc
 
-    if max(width, height) > 1920:
+    if max(width, height) > 1500:
         raise ValidationError(
-            "Максимальная сторона изображения — 1920px (FHD)."
+            "Максимальный размер изображения — 1500×1500px. Соотношение сторон любое."
         )
 
 
@@ -150,11 +150,13 @@ class Task(TimestampedModel):
         help_text="Сколько пользователей могут выполнить задание. Пусто — без ограничений.",
     )
     icon = models.ImageField(
-    upload_to="icons/",
-    blank=True,
-    null=True,
-    verbose_name="Изображение"
-)
+        upload_to="icons/",
+        blank=True,
+        null=True,
+        verbose_name="Изображение",
+        help_text="Максимальный размер — 1500×1500px. Соотношение сторон любое.",
+        validators=[validate_hd_image],
+    )
     link = models.URLField(blank=True, verbose_name="Ссылка (URL)")  # ← добавили
 
     class Meta:
@@ -329,6 +331,8 @@ class AdvertisementButton(TimestampedModel):
         blank=True,
         null=True,
         verbose_name="Изображение",
+        help_text="Максимальный размер — 1500×1500px. Соотношение сторон любое.",
+        validators=[validate_hd_image],
     )
     order = models.PositiveSmallIntegerField(default=0, verbose_name="Порядок отображения")
     reward_amount = models.PositiveIntegerField(
@@ -381,7 +385,9 @@ class FrontendConfig(TimestampedModel):
     screen_texture = models.ImageField(
         upload_to="textures/",
         blank=True,
-        verbose_name="Текстура экрана"
+        verbose_name="Текстура экрана",
+        help_text="Максимальный размер — 1500×1500px. Соотношение сторон любое.",
+        validators=[validate_hd_image],
     )
 
     class Meta:
@@ -406,11 +412,13 @@ class RuleCategory(TimestampedModel):
     category = models.CharField(max_length=255, verbose_name="Категория")
     rule_text = models.TextField(verbose_name="Правило")
     icon = models.ImageField(
-    upload_to="icons/",
-    blank=True,
-    null=True,
-    verbose_name="Иконка"
-)
+        upload_to="icons/",
+        blank=True,
+        null=True,
+        verbose_name="Иконка",
+        help_text="Максимальный размер — 1500×1500px. Соотношение сторон любое.",
+        validators=[validate_hd_image],
+    )
 
     class Meta:
         db_table = "правила_по_категориям"
@@ -524,7 +532,8 @@ class Failure(TimestampedModel):
         blank=True,
         null=True,
         verbose_name="Изображение главного приза",
-        validators=[validate_fhd_image],
+        help_text="Максимальный размер — 1500×1500px. Соотношение сторон любое.",
+        validators=[validate_hd_image],
     )
 
 
