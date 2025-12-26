@@ -4,9 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import useQualityProfile, {
-  shouldPreloadHeavyAssets,
-} from "../../shared/hooks/useQualityProfile";
+import useQualityProfile from "../../shared/hooks/useQualityProfile";
 
 const primaryModelUrl = "/models/anim1.glb";
 const secondaryModelUrls = [
@@ -16,9 +14,7 @@ const secondaryModelUrls = [
 ];
 
 // Предзагружаем основные ассеты, чтобы не блокировать Suspense
-if (shouldPreloadHeavyAssets()) {
-  useGLTF.preload(primaryModelUrl);
-}
+useGLTF.preload(primaryModelUrl);
 
 const getClipKey = (clip: THREE.AnimationClip): string =>
   clip.uuid || clip.name || String(clip.id);

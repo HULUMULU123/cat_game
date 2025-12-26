@@ -20,10 +20,7 @@ import type { FrontendConfigResponse } from "../../shared/api/types";
 import { resolveMediaUrl } from "../../shared/api/urls";
 import { useQuery } from "react-query";
 import LoadingSpinner from "../../shared/components/LoadingSpinner";
-import useQualityProfile, {
-  shouldPreloadHeavyAssets,
-  shouldForceFallbackOnStartup,
-} from "../../shared/hooks/useQualityProfile";
+import useQualityProfile from "../../shared/hooks/useQualityProfile";
 
 const LOADER_MESSAGES = [
   "Не делай вид, что случайно зашёл. Мы оба знаем правду.",
@@ -756,9 +753,7 @@ function RoomWithCat({
   );
 }
 
-if (shouldPreloadHeavyAssets()) {
-  useGLTF.preload("/models/stakan_room.glb");
-}
+useGLTF.preload("/models/stakan_room.glb");
 
 /* -------------------------- Основной компонент --------------------------- */
 
@@ -794,13 +789,11 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [isContextLost, setIsContextLost] = useState(false);
   const [gpuMaxTextureSize, setGpuMaxTextureSize] = useState<number | null>(null);
   const [maxTextureSize, setMaxTextureSize] = useState(() =>
-    isLow ? 512 : isMedium ? 2048 : 4096
+    isLow ? 256 : isMedium ? 2048 : 4096
   );
   const glCleanupRef = useRef<(() => void) | null>(null);
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
-  const [showFallback, setShowFallback] = useState(() =>
-    shouldForceFallbackOnStartup()
-  );
+  const [showFallback, setShowFallback] = useState(false);
 
   const {
     data: frontendConfig,
@@ -926,7 +919,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const videoEnabled = isHigh;
 
   useEffect(() => {
-    const baseSize = isLow ? 512 : isMedium ? 2048 : 4096;
+    const baseSize = isLow ? 256 : isMedium ? 2048 : 4096;
     const cap = gpuMaxTextureSize ?? baseSize;
     setMaxTextureSize(Math.min(baseSize, cap));
     THREE.DefaultLoadingManager.setURLModifier((url) => url); // no-op to keep instance

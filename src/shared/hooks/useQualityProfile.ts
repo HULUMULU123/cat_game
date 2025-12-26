@@ -103,12 +103,6 @@ const isLiteQuery = () => {
   return params.get("lite") === "1";
 };
 
-export const isTelegramWebView = () => {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent?.toLowerCase?.() ?? "";
-  return ua.includes("telegram");
-};
-
 const QUALITY_MODE_STORAGE_KEY = "quality-mode";
 
 const readStoredMode = (): QualityMode => {
@@ -152,17 +146,6 @@ export const detectQualityProfile = (): QualityProfile => {
   }
 
   return "high";
-};
-
-export const shouldPreloadHeavyAssets = () => {
-  if (typeof window === "undefined") return false;
-  if (isTelegramWebView()) return false;
-  return detectQualityProfile() !== "low";
-};
-
-export const shouldForceFallbackOnStartup = () => {
-  if (typeof window === "undefined") return false;
-  return isTelegramWebView() && detectQualityProfile() === "low";
 };
 
 const useQualityProfile = () => {
