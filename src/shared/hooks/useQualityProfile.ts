@@ -111,7 +111,7 @@ const readStoredMode = (): QualityMode => {
   if (raw === "low" || raw === "medium" || raw === "high" || raw === "auto") {
     return raw;
   }
-  return "auto";
+  return "low";
 };
 
 const detectQualityProfile = (): QualityProfile => {
