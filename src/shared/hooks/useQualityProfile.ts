@@ -77,13 +77,13 @@ const QUALITY_PRESETS: Record<QualityProfile, QualityPreset> = {
   },
   low: {
     render: {
-      dpr: 1,
+      dpr: 0.85,
       enableShadows: false,
       enablePostprocessing: false,
       enableEnvironment: false,
       enableFog: false,
       lightIntensityMultiplier: 0.8,
-      shadowMapSize: 512,
+      shadowMapSize: 256,
     },
     droplets: {
       spawnIntervalMultiplier: 1.8,
@@ -222,7 +222,7 @@ const useQualityProfile = () => {
       typeof window === "undefined"
         ? preset.render.dpr
         : profile === "low"
-        ? 1
+        ? Math.min(window.devicePixelRatio || 1, preset.render.dpr)
         : Math.min(window.devicePixelRatio || 1.5, 2);
 
     return {

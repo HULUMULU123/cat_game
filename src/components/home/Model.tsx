@@ -789,7 +789,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [isContextLost, setIsContextLost] = useState(false);
   const [gpuMaxTextureSize, setGpuMaxTextureSize] = useState<number | null>(null);
   const [maxTextureSize, setMaxTextureSize] = useState(() =>
-    isLow ? 768 : isMedium ? 2048 : 4096
+    isLow ? 512 : isMedium ? 2048 : 4096
   );
   const glCleanupRef = useRef<(() => void) | null>(null);
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -919,7 +919,7 @@ const Model: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const videoEnabled = isHigh;
 
   useEffect(() => {
-    const baseSize = isLow ? 768 : isMedium ? 2048 : 4096;
+    const baseSize = isLow ? 512 : isMedium ? 2048 : 4096;
     const cap = gpuMaxTextureSize ?? baseSize;
     setMaxTextureSize(Math.min(baseSize, cap));
     THREE.DefaultLoadingManager.setURLModifier((url) => url); // no-op to keep instance
