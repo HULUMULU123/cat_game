@@ -9,12 +9,13 @@ const StyledWrapper = styled.div`
   margin: 20px auto;
   gap: 15px;
   position: relative;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
-  box-sizing: content-box;
+  box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: #e1fffb #2cc2a9;
-  height: 75vh;
+  max-height: calc(100vh - 220px);
+  padding-bottom: 18vh;
 
   &::-webkit-scrollbar {
     width: 4px;
