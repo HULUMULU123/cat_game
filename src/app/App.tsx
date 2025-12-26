@@ -32,6 +32,18 @@ const AppContent = () => {
     }
   }, [tokens, loadProfile, fetchAdsgramBlock]);
 
+  useEffect(() => {
+    const tryLock = () => {
+      const orientation = screen?.orientation;
+      if (!orientation || !orientation.lock) return;
+      orientation.lock("portrait").catch(() => {});
+    };
+
+    tryLock();
+    window.addEventListener("orientationchange", tryLock);
+    return () => window.removeEventListener("orientationchange", tryLock);
+  }, []);
+
   const isFailurePage = pathname.includes("failure");
   const shouldBlockForLegal = Boolean(tokens) && legalAccepted === false;
 

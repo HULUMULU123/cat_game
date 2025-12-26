@@ -53,6 +53,8 @@ const GlobalStyle = createGlobalStyle`
 
   html {
     overflow: hidden;
+    touch-action: none;
+    -ms-touch-action: none;
   }
 
   body {
@@ -61,6 +63,9 @@ const GlobalStyle = createGlobalStyle`
     height: 100vh;
     width: 100vw;
     overflow: hidden;
+    touch-action: none;
+    -ms-touch-action: none;
+    overscroll-behavior: none;
     background-color: #00ff0d;
     font-family: 'Gilroy', sans-serif;
     -webkit-font-smoothing: antialiased;
