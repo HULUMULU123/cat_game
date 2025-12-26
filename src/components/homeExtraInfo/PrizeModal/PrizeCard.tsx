@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import prizePhoto from "../../../assets/prize-photo.png";
+import { resolveMediaUrl } from "../../../shared/api/urls";
 
 const StyledWrapper = styled.div`
   width: 95%;
@@ -97,7 +98,7 @@ export default function PrizeCard({
   timerValue,
   completionNote,
 }: PrizeCardProps) {
-  const imageSrc = mainPrizeImage?.trim() ? mainPrizeImage : prizePhoto;
+  const imageSrc = resolveMediaUrl(mainPrizeImage) ?? prizePhoto;
   const prizeName = mainPrizeTitle?.trim() || "Скоро объявим приз";
 
   return (
