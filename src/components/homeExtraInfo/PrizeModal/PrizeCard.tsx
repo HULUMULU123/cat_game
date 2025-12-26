@@ -15,9 +15,9 @@ const StyledPrizeWrapper = styled.div`
   flex-direction: column;
   position: relative;
   width: 100%;
-  min-height: 220px;
-  max-height: 320px;
-  height: clamp(220px, 40vw, 320px);
+  min-height: 260px;
+  max-height: 420px;
+  height: clamp(260px, 55vw, 420px);
   border-radius: 7px;
   overflow: hidden;
   background: linear-gradient(
